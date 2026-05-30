@@ -1510,9 +1510,23 @@ function App() {
     _useState82 = _slicedToArray(_useState81, 2),
     weekOffset = _useState82[0],
     setWeekOffset = _useState82[1];
+  
+  var _useState181 = useState(function () {
+      return TODAY;
+    }),
+    _useState182 = _slicedToArray(_useState181, 2),
+    selectedDay = _useState182[0],
+    setSelectedDay = _useState182[1];
+  
   var week = useMemo(function () {
     return getWeek(weekOffset);
   }, [weekOffset]);
+  
+  var selectedDate = week.find(function (d) {
+    return d.toISOString().slice(0, 10) === selectedDay;
+  }) || week[0];
+  
+  var selectedKey = selectedDate.toISOString().slice(0, 10);
   var todayMeals = planer[TODAY] || [];
   var eaten = todayMeals.reduce(function (a, m) {
     return {
@@ -2448,7 +2462,7 @@ function App() {
       color: T.acc,
       borderColor: T.acc
     })
-  }, "Dzi\u015B")), week.map(function (d) {
+  }, "Dzi\u015B")), [selectedDate].map(function (d) {
     var key = d.toISOString().slice(0, 10);
     var meals = planer[key] || [];
     var total = meals.reduce(function (a, m) {
