@@ -2354,7 +2354,8 @@ function App() {
       display: "flex",
       gap: 5,
       padding: "12px 16px 0",
-      overflowX: "auto"
+      overflowX: "hidden",
+      justifyContent: "space-between"
     }
   }, [["profil", "Profil"], ["pomiary", "Pomiary"], ["planer", "Planer"], ["przepisy", "Przepisy"], ["produkty", "Produkty"], ["zakupy", "Zakupy"]].map(function (_ref15) {
     var _ref16 = _slicedToArray(_ref15, 2),
@@ -2366,10 +2367,11 @@ function App() {
         return setPage(id);
       },
       style: {
-        flexShrink: 0,
-        padding: "7px 14px",
+        flex: "1 1 0",
+        minWidth: 0,
+        padding: "7px 4px",
         borderRadius: 100,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: page === id ? 700 : 400,
         cursor: "pointer",
         border: "1px solid " + (page === id ? T.acc : T.border),
