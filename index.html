@@ -2276,7 +2276,7 @@ function App() {
     style: {
       fontSize: 38,
       fontWeight: 900,
-      color: T.kcal,
+      color: eaten.kcal <= 0 ? T.text3 : eaten.kcal > TARGETS.kcal ? "#dc2626" : T.kcal,
       lineHeight: 1
     }
   }, Math.round(eaten.kcal)), /*#__PURE__*/React.createElement("span", {
