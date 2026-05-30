@@ -2404,9 +2404,7 @@ function App() {
     style: {
       padding: "12px 16px 8px"
     }
-  }, page === "planer" && React.createElement("div", {
-  style: { textAlign: "center", marginBottom: 10 }
-},
+  }, page === "planer" && React.createElement(React.Fragment, null,
   React.createElement("div", {
     style: { fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.text3, marginBottom: 1 }
   }, "Tydzień " + getWeekNumber(week[0])),
