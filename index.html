@@ -417,8 +417,8 @@ var THEMES = {
   },
   light: {
     bg: "#f8f9fc", surf: "#ffffff", surf2: "#f0f2f8", border: "#e2e6f0",
-    acc: "#1a56db", acc2: "#e65100", text: "#0f172a", text2: "#475569", text3: "#94a3b8",
-    prot: "#1a56db", carbs: "#0891b2", fat: "#d97706", kcal: "#dc2626",
+    acc: "#2563EB", acc2: "#1E3A8A", text: "#0f172a", text2: "#475569", text3: "#94a3b8",
+    prot: "#2563EB", carbs: "#0891b2", fat: "#d97706", kcal: "#2563EB",
     navbg: "rgba(248,249,252,.98)", name: "☀️ Jasny"
   }
 };
@@ -605,7 +605,7 @@ function MG(_ref) {
       gap: 6,
       margin: "8px 0"
     }
-  }, [[Math.round(kcal), "Kcal", T.kcal], [r2(protein) + "g", "Białko", T.prot], [r2(carbs) + "g", "Węgle", T.carbs], [r2(fat) + "g", "Tłuszcz", T.fat]].map(function (_ref2) {
+  }, [[Math.round(kcal), "Kcal", kcal <= 0 ? T.text3 : kcal > (TARGETS?.kcal || 9999) ? "#dc2626" : T.kcal], [r2(protein) + "g", "Białko", T.prot], [r2(carbs) + "g", "Węgle", T.carbs], [r2(fat) + "g", "Tłuszcz", T.fat]].map(function (_ref2) {
     var _ref3 = _slicedToArray(_ref2, 3),
       v = _ref3[0],
       l = _ref3[1],
@@ -819,7 +819,8 @@ function Modal(_ref6) {
       maxWidth: 430,
       padding: 20,
       maxHeight: "93vh",
-      overflowY: "auto"
+      overflowY: "auto",
+      paddingBottom: 300
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2465,14 +2466,15 @@ function App() {
         border: "1px solid " + (isT ? T.acc : T.border),
         borderRadius: 14,
         marginBottom: 10,
-        overflow: "hidden"
+        overflow: "hidden",
+        boxShadow: tn === "light" ? "0 2px 8px rgba(37,99,235,0.08)" : "none"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        display: "flex",
-        alignItems: "center",
-        padding: "12px 14px",
-        gap: 10
+        display: "flex", 
+        alignItems: "center", 
+        padding: "8px 12px", 
+        gap: 8
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2634,9 +2636,9 @@ function App() {
       }));
     })), /*#__PURE__*/React.createElement("div", {
       style: {
-        padding: "10px 14px",
+        padding: "6px 12px",
         display: "flex",
-        gap: 8
+        gap: 6
       }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
