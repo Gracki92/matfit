@@ -5213,21 +5213,8 @@ function App() {
   }, toast);
 }
 
-window.onerror = function(msg, src, line, col, err) {
-  document.getElementById('root').innerHTML =
-    '<pre style="padding:20px;color:red;background:#111;white-space:pre-wrap;font-size:13px;">' +
-    msg + '\n' + line + ':' + col + '\n\n' + (err && err.stack ? err.stack : '') +
-    '</pre>';
-};
-
-window.onunhandledrejection = function(e) {
-  document.getElementById('root').innerHTML =
-    '<pre style="padding:20px;color:red;background:#111;white-space:pre-wrap;font-size:13px;">PROMISE ERROR\n' +
-    (e.reason && e.reason.stack ? e.reason.stack : e.reason) +
-    '</pre>';
-};
-
-ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+document.getElementById('root').innerHTML =
+  '<div style="padding:30px;font-size:30px;color:red;font-weight:900;">TEST DZIAŁA</div>';
 })();
   </script>
 </body>
