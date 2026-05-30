@@ -2371,58 +2371,122 @@ function App() {
     style: {
       padding: "12px 16px 8px"
     }
-  }, page === "planer" && React.createElement(React.Fragment, null,
+}, page === "planer" && React.createElement(React.Fragment, null,
   React.createElement("div", {
-    style: { fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: T.text3, marginBottom: 1 }
-  }, "Tydzień " + getWeekNumber(week[0])),
+    style: {
+      fontSize: 10,
+      textTransform: "uppercase",
+      letterSpacing: 2,
+      color: T.text3,
+      marginBottom: 1,
+      textAlign: "center"
+    }
+  }, "TYDZIEŃ " + getWeekNumber(week[0])),
+
   React.createElement("div", {
-    style: { fontSize: 11, color: T.text3, marginBottom: 8 }
+    style: {
+      fontSize: 11,
+      color: T.text3,
+      marginBottom: 8,
+      textAlign: "center"
+    }
   },
     week[0].toLocaleDateString("pl-PL", { day: "numeric" }) +
     "\u2013" +
     week[6].toLocaleDateString("pl-PL", { day: "numeric", month: "long" })
   ),
+
   React.createElement("div", {
-    style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 2,
+      marginBottom: 10
+    }
   },
     React.createElement("button", {
-      onClick: function() { setWeekOffset(function(w) { return w - 1; }); },
-      style: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: T.text2, padding: "0 6px" }
+      onClick: function () {
+        setWeekOffset(function (w) {
+          return w - 1;
+        });
+      },
+      style: {
+        background: "none",
+        border: "none",
+        fontSize: 20,
+        cursor: "pointer",
+        color: T.text2,
+        padding: "0 6px"
+      }
     }, "\u2039"),
-    week.map(function(d) {
+
+    week.map(function (d) {
       var k = d.toISOString().slice(0, 10);
       var dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
-      var labels = ["Pn","Wt","\u015Ar","Cz","Pt","Sb","Nd"];
+      var labels = ["Pn", "Wt", "\u015Ar", "Cz", "Pt", "Sb", "Nd"];
       var isSel = k === selectedDay;
       var isToday = k === TODAY;
+
       return React.createElement("div", {
         key: k,
-        onClick: function() { setSelectedDay(k); },
-        style: { display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", padding: "2px 3px" }
+        onClick: function () {
+          setSelectedDay(k);
+        },
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          cursor: "pointer",
+          padding: "2px 3px"
+        }
       },
         React.createElement("div", {
-          style: { fontSize: 9, color: isSel ? T.acc : T.text3, fontWeight: isSel ? 700 : 400, marginBottom: 3 }
+          style: {
+            fontSize: 9,
+            color: isSel ? T.acc : T.text3,
+            fontWeight: isSel ? 700 : 400,
+            marginBottom: 3
+          }
         }, labels[dow]),
+
         React.createElement("div", {
           style: {
-            width: 28, height: 28, borderRadius: "50%",
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
             background: isSel ? T.acc : "transparent",
             border: "1px solid " + (isSel ? T.acc : isToday ? T.acc + "66" : T.border),
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: isSel ? 700 : 400,
-            color: isSel ? (safeTn === "light" ? "#fff" : "#000") : isToday ? T.acc : T.text2
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: isSel ? 700 : 400,
+            color: isSel ? (tn === "light" ? "#fff" : "#000") : isToday ? T.acc : T.text2
           }
         }, d.getDate())
       );
     }),
+
     React.createElement("button", {
-      onClick: function() { setWeekOffset(function(w) { return w + 1; }); },
-      style: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: T.text2, padding: "0 6px" }
+      onClick: function () {
+        setWeekOffset(function (w) {
+          return w + 1;
+        });
+      },
+      style: {
+        background: "none",
+        border: "none",
+        fontSize: 20,
+        cursor: "pointer",
+        color: T.text2,
+        padding: "0 6px"
+      }
     }, "\u203A")
-    )
-    ),
-    
-    [selectedDate].map(function (d) {
+  ),
+
+  [selectedDate].map(function (d) {
+      
     var key = d.toISOString().slice(0, 10);
     var meals = planer[key] || [];
     var total = meals.reduce(function (a, m) {
