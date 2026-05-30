@@ -12,6 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { background: linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%); font-family: system-ui, -apple-system, sans-serif; overflow-x:hidden; }
     #root { max-width: 430px; margin: 0 auto; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+    html { scroll-padding-bottom: 320px; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { opacity: 1; }
     input[type=range] { -webkit-appearance: slider-horizontal; }
@@ -408,39 +409,17 @@ var _React = React,
   useMemo = _React.useMemo,
   useCallback = _React.useCallback;
 var THEMES = {
-  amoled: {
-    bg: "#000000",
-    surf: "#0d0d0d",
-    surf2: "#141414",
-    border: "#1f1f1f",
-    acc: "#c8f55a",
-    acc2: "#ff6b35",
-    text: "#ffffff",
-    text2: "#777",
-    text3: "#444",
-    prot: "#c8f55a",
-    carbs: "#60a5fa",
-    fat: "#f59e0b",
-    kcal: "#ff6b35",
-    navbg: "rgba(0,0,0,.99)",
-    name: "⬛ Ciemny"
+  royal: {
+    bg: "#070c1a", surf: "#0d1529", surf2: "#111e36", border: "#1e3054",
+    acc: "#D4AF37", acc2: "#E8C84A", text: "#f0e6c8", text2: "#8a9bbf", text3: "#3d5080",
+    prot: "#D4AF37", carbs: "#4a9eff", fat: "#e8834a", kcal: "#E8C84A",
+    navbg: "rgba(7,12,26,.97)", name: "👑 Royal"
   },
   light: {
-    bg: "#f5f5f0",
-    surf: "#ffffff",
-    surf2: "#eeeeea",
-    border: "#ddddd5",
-    acc: "#2d7d32",
-    acc2: "#e65100",
-    text: "#1a1a1a",
-    text2: "#555",
-    text3: "#999",
-    prot: "#2d7d32",
-    carbs: "#1565c0",
-    fat: "#e65100",
-    kcal: "#c62828",
-    navbg: "rgba(245,245,240,.97)",
-    name: "☀️ Jasny"
+    bg: "#f8f9fc", surf: "#ffffff", surf2: "#f0f2f8", border: "#e2e6f0",
+    acc: "#1a56db", acc2: "#e65100", text: "#0f172a", text2: "#475569", text3: "#94a3b8",
+    prot: "#1a56db", carbs: "#0891b2", fat: "#d97706", kcal: "#dc2626",
+    navbg: "rgba(248,249,252,.98)", name: "☀️ Jasny"
   }
 };
 var PRODUCTS_DEFAULT = [];
@@ -1196,7 +1175,7 @@ function ScanModal(_ref9) {
 }
 function App() {
   var _products$find, _recipes$find, _recipes$find2;
-  var _useLS = useLS("fb_theme", "light"),
+  var _useLS = useLS("fb_theme", "royal"),
     _useLS2 = _slicedToArray(_useLS, 2),
     tn = _useLS2[0],
     setTn = _useLS2[1];
@@ -1634,8 +1613,8 @@ function App() {
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
     });
-    toast_("Dodano!");
     setModal(null);
+    toast_("✅ Dodano do planera!");
   }
 
   // NAPRAWIONE: addRecipe z porą dnia
@@ -1668,8 +1647,8 @@ function App() {
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, selRDay, [].concat(_toConsumableArray(prev[selRDay] || []), [meal])));
     });
-    toast_("Dodano!");
     setModal(null);
+    toast_("✅ Dodano do planera!");
   }
 
   // Dodaj przepis z scalonego modalu (używa addDay/addMealTime)
@@ -1702,8 +1681,8 @@ function App() {
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
     });
-    toast_("Dodano!");
     setModal(null);
+    toast_("✅ Dodano do planera!");
   }
   function removeMeal(key, id) {
     setPlaner(function (prev) {
@@ -2217,7 +2196,7 @@ function App() {
       fontSize: 16
     }),
     title: "Zmie\u0144 motyw"
-  }, tn === "amoled" ? "⬛" : "☀️"), /*#__PURE__*/React.createElement("button", {
+  }, tn === "royal" ? "👑" : "☀️"), /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
       setAddDay(TODAY);
       setAddMealTime("sniadanie");
@@ -5245,7 +5224,7 @@ function App() {
       left: "50%",
       transform: "translateX(-50%)",
       background: T.acc,
-      color: tn === "light" ? "#fff" : "#000",
+      color: tn === "royal" ? "#000" : "#fff",
       padding: "9px 18px",
       borderRadius: 100,
       fontWeight: 700,
