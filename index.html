@@ -1144,7 +1144,8 @@ function App() {
     _useLS2 = _slicedToArray(_useLS, 2),
     tn = _useLS2[0],
     setTn = _useLS2[1];
-  var T = THEMES[tn];
+  var safeTn = THEMES[tn] ? tn : "royal";
+  var T = THEMES[safeTn];
   var _useState11 = useState("planer"),
     _useState12 = _slicedToArray(_useState11, 2),
     page = _useState12[0],
@@ -1520,7 +1521,7 @@ function App() {
   };
   var btnA = {
     background: T.acc,
-    color: tn === "light" ? "#fff" : "#000",
+    color: safeTn === "light" ? "#fff" : "#000",
     border: "none",
     borderRadius: 10,
     padding: "11px 16px",
@@ -2122,7 +2123,7 @@ function App() {
           cursor: "pointer",
           border: "1px solid " + (value === mt.key ? T.acc : T.border),
           background: value === mt.key ? T.acc : "transparent",
-          color: value === mt.key ? tn === "light" ? "#fff" : "#000" : T.text2,
+          color: value === mt.key ? safeTn === "light" ? "#fff" : "#000" : T.text2,
           whiteSpace: "nowrap"
         }
       }, mt.label);
@@ -2175,7 +2176,7 @@ function App() {
       fontSize: 16
     }),
     title: "Zmie\u0144 motyw"
-  }, tn === "royal" ? "👑" : "☀️"), /*#__PURE__*/React.createElement("button", {
+  }, safeTn === "royal" ? "👑" : "☀️"), /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
       setAddDay(TODAY);
       setAddMealTime("sniadanie");
@@ -2354,7 +2355,7 @@ function App() {
         cursor: "pointer",
         border: "1px solid " + (page === id ? T.acc : T.border),
         background: page === id ? T.acc : "transparent",
-        color: page === id ? tn === "light" ? "#fff" : "#000" : T.text2,
+        color: page === id ? safeTn === "light" ? "#fff" : "#000" : T.text2,
         whiteSpace: "nowrap"
       }
     }, label);
@@ -2401,7 +2402,7 @@ function App() {
             border: "1px solid " + (isSel ? T.acc : isToday ? T.acc + "66" : T.border),
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 11, fontWeight: isSel ? 700 : 400,
-            color: isSel ? (tn === "light" ? "#fff" : "#000") : isToday ? T.acc : T.text2
+            color: isSel ? (safeTn === "light" ? "#fff" : "#000") : isToday ? T.acc : T.text2
           }
         }, d.getDate())
       );
@@ -2431,12 +2432,12 @@ function App() {
     return /*#__PURE__*/React.createElement("div", {
       key: key,
       style: {
-        background: isT && tn === "light" ? "linear-gradient(180deg, rgba(37,99,235,0.045), rgba(255,255,255,1))" : T.surf,
+        background: isT && safeTn === "light" ? "linear-gradient(180deg, rgba(37,99,235,0.045), rgba(255,255,255,1))" : T.surf,
         border: "1px solid " + (isT ? T.acc : T.border),
         borderRadius: 16,
         marginBottom: 10,
         overflow: "hidden",
-        boxShadow: tn === "light" ? (isT ? "0 6px 18px rgba(37,99,235,0.14)" : "0 3px 10px rgba(15,23,42,0.06)") : "none"
+        boxShadow: safeTn === "light" ? (isT ? "0 6px 18px rgba(37,99,235,0.14)" : "0 3px 10px rgba(15,23,42,0.06)") : "none"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -2623,9 +2624,9 @@ function App() {
         flex: 1,
         fontSize: 12,
         padding: "9px",
-        background: tn === "light" ? "#ffffff" : T.surf2,
-        borderColor: tn === "light" ? "#dbeafe" : T.border,
-        color: tn === "light" ? "#0f172a" : T.text,
+        background: safeTn === "light" ? "#ffffff" : T.surf2,
+        borderColor: safeTn === "light" ? "#dbeafe" : T.border,
+        color: safeTn === "light" ? "#0f172a" : T.text,
         fontWeight: 700
       })
     }, "+ Produkt"), /*#__PURE__*/React.createElement("button", {
@@ -2641,9 +2642,9 @@ function App() {
         flex: 1,
         fontSize: 12,
         padding: "9px",
-        background: tn === "light" ? "#ffffff" : T.surf2,
-        borderColor: tn === "light" ? "#dbeafe" : T.border,
-        color: tn === "light" ? "#0f172a" : T.text,
+        background: safeTn === "light" ? "#ffffff" : T.surf2,
+        borderColor: safeTn === "light" ? "#dbeafe" : T.border,
+        color: safeTn === "light" ? "#0f172a" : T.text,
         fontWeight: 700
       })
     }, "+ Przepis")));
@@ -3012,7 +3013,7 @@ function App() {
         background: zDays === d ? T.acc : T.surf,
         border: "1px solid " + (zDays === d ? T.acc : T.border),
         borderRadius: 10,
-        color: zDays === d ? tn === "light" ? "#fff" : "#000" : T.text,
+        color: zDays === d ? safeTn === "light" ? "#fff" : "#000" : T.text,
         padding: "9px",
         fontSize: 12,
         fontWeight: zDays === d ? 700 : 400,
@@ -5201,7 +5202,7 @@ function App() {
       left: "50%",
       transform: "translateX(-50%)",
       background: T.acc,
-      color: tn === "royal" ? "#000" : "#fff",
+      color: safeTn === "royal" ? "#000" : "#fff",
       padding: "9px 18px",
       borderRadius: 100,
       fontWeight: 700,
@@ -5213,8 +5214,24 @@ function App() {
   }, toast);
 }
 
-document.getElementById('root').innerHTML =
-  '<div style="padding:30px;font-size:30px;color:red;font-weight:900;">TEST DZIAŁA</div>';
+window.onerror = function(msg, src, line, col, err) {
+  document.getElementById('root').innerHTML =
+    '<pre style="padding:20px;color:red;background:#111;white-space:pre-wrap;font-size:13px;">' +
+    msg + '\n' + line + ':' + col + '\n\n' +
+    (err && err.stack ? err.stack : '') +
+    '</pre>';
+};
+
+window.onunhandledrejection = function(e) {
+  document.getElementById('root').innerHTML =
+    '<pre style="padding:20px;color:red;background:#111;white-space:pre-wrap;font-size:13px;">PROMISE ERROR\n' +
+    (e.reason && e.reason.stack ? e.reason.stack : e.reason) +
+    '</pre>';
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  React.createElement(App)
+);
 })();
   </script>
 </body>
