@@ -1102,7 +1102,7 @@ function ScanModal(_ref9) {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
-      setScanResult && onClose();
+      onClose();
     },
     style: _objectSpread(_objectSpread({}, btnB), {}, {
       flex: 1
@@ -1205,6 +1205,14 @@ function App() {
     _useState20 = _slicedToArray(_useState19, 2),
     toast = _useState20[0],
     setToast = _useState20[1];
+    
+    function toast_(msg) {
+      setToast(msg);
+      setTimeout(function () {
+        setToast("");
+      }, 2500);
+    }
+  
   var _useState21 = useState(null),
     _useState22 = _slicedToArray(_useState21, 2),
     expanded = _useState22[0],
