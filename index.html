@@ -2261,11 +2261,11 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 52,
+      fontSize: 34,
       fontWeight: 900,
-      color: eaten.kcal <= 0 ? T.text3 : eaten.kcal > TARGETS.kcal ? "#dc2626" : T.kcal,
+      color: eaten.kcal > TARGETS.kcal ? "#dc2626" : T.acc,
       lineHeight: 1,
-      letterSpacing: -1
+      letterSpacing: -0.5
     }
   }, Math.round(eaten.kcal)), /*#__PURE__*/React.createElement("span", {
     style: {
@@ -2282,10 +2282,10 @@ function App() {
     }
   }, TARGETS.kcal), /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 12,
-      fontWeight: 700,
-      color: T.text3,
-      paddingBottom: 4
+      fontSize: 18,
+      fontWeight: 800,
+      color: T.text2,
+      paddingBottom: 3
     }
   }, "kcal")), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2575,6 +2575,7 @@ function App() {
         setCpTo(TODAY);
         setModal("copy");
       },
+      title: "Kopiuj dzień",
       style: {
         background: "none",
         border: "none",
@@ -2583,7 +2584,7 @@ function App() {
         padding: "4px",
         color: T.text3
       }
-    }, "Kopiuj"), /*#__PURE__*/React.createElement("button", {
+    }, "📄"), /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
         return shareDay(key);
       },
