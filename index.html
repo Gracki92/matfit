@@ -2616,7 +2616,7 @@ function App() {
           color: T.text3,
           background: T.surf2
         }
-      }), mt.label + "  " + (isCollapsed ? "▶" : "▼") + "  " + mealItems.length + " prod. • " + Math.round(mealTotal) + " kcal"), !isCollapsed && mealItems.map(function (m) {
+      }), mt.label), grouped[mt.key].map(function (m) {
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           onClick: function onClick() {
