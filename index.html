@@ -1515,7 +1515,8 @@ function App() {
     carbs: 0,
     fat: 0
   });
-  var pct = Math.min(100, Math.round(eaten.kcal / TARGETS.kcal * 100));
+  var pct = Math.round(eaten.kcal / TARGETS.kcal * 100);
+  var pctBar = Math.min(pct, 100);
   var inp = {
     width: "100%",
     background: T.surf2,
@@ -2271,7 +2272,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: "100%",
-      width: Math.min(pct, 100) + "%",
+      width: pctBar + "%",
       background: pct > 108 ? T.acc2 : T.kcal,
       borderRadius: 3,
       transition: "width .5s"
