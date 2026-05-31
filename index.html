@@ -2598,7 +2598,14 @@ function App() {
     }, MEAL_TIMES.filter(function (mt) {
       return grouped[mt.key] && grouped[mt.key].length > 0;
     }).map(function (mt) {
-      return /*#__PURE__*/React.createElement("div", {
+        var mealCollapseKey = key + "_" + mt.key;
+        var isCollapsed = !!collapsedMeals[mealCollapseKey];
+        var mealItems = grouped[mt.key] || [];
+        var mealTotal = mealItems.reduce(function (sum, m) {
+            return sum + (m.kcal || 0);
+        }, 0);
+
+        return /*#__PURE__*/React.createElement("div", {
         key: mt.key
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2609,7 +2616,7 @@ function App() {
           color: T.text3,
           background: T.surf2
         }
-      }, mt.label), grouped[mt.key].map(function (m) {
+      }), mt.label + "  " + (isCollapsed ? "▶" : "▼") + "  " + mealItems.length + " prod. • " + Math.round(mealTotal) + " kcal"), !isCollapsed && mealItems.map(function (m) {
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           onClick: function onClick() {
