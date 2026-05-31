@@ -2609,7 +2609,7 @@ function App() {
           color: T.text3,
           background: T.surf2
         }
-      }, mt.label), grouped[mt.key].map(function (m) {
+      }, mt.label + "  ▼  " + grouped[mt.key].length + " prod."), grouped[mt.key].map(function (m) {
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           onClick: function onClick() {
