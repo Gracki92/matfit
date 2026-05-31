@@ -2271,7 +2271,7 @@ function App() {
   }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: "100%",
-      width: pct + "%",
+      width: Math.min(pct, 100) + "%",
       background: pct > 108 ? T.acc2 : T.kcal,
       borderRadius: 3,
       transition: "width .5s"
