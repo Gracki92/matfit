@@ -2615,7 +2615,7 @@ function App() {
       }, /*#__PURE__*/React.createElement("div", {
         style: {
           fontSize: 11,
-          fontWeight: 800
+          fontWeight: 600
         }
       }, mt.label), /*#__PURE__*/React.createElement("div", {
         style: {
@@ -2633,7 +2633,7 @@ function App() {
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: T.primary,
+          color: "#2563eb",
           fontWeight: 800
         }
       }, grouped[mt.key].reduce(function (sum, m) { return sum + (m.kcal || 0); }, 0)), " kcal • B " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.protein || 0); }, 0)) + "g • W " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.carbs || 0); }, 0)) + "g • T " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.fat || 0); }, 0)) + "g"),
