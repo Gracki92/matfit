@@ -2637,7 +2637,7 @@ function App() {
           fontWeight: 800
         }
       }, grouped[mt.key].reduce(function (sum, m) { return sum + (m.kcal || 0); }, 0)), " kcal • B " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.protein || 0); }, 0)) + "g • W " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.carbs || 0); }, 0)) + "g • T " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.fat || 0); }, 0)) + "g"),
-
+      grouped[mt.key].map(function (m) {
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           onClick: function onClick() {
