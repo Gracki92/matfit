@@ -465,10 +465,11 @@ function getWeek() {
   }
   return days;
 }
+var STORAGE_PREFIX = window.location.pathname.indexOf("/dev/") !== -1 ? "matfit_dev_" : "";
 function useLS(key, def) {
   var _useState = useState(function () {
       try {
-        var s = localStorage.getItem(key);
+        var s = localStorage.getItem(STORAGE_PREFIX + key);
         return s ? JSON.parse(s) : def;
       } catch (_unused) {
         return def;
@@ -480,7 +481,7 @@ function useLS(key, def) {
   var set = useCallback(function (val) {
     sv(val);
     try {
-      localStorage.setItem(key, JSON.stringify(val));
+      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val));
     } catch (_unused2) {}
   }, [key]);
   return [v, set];
