@@ -2598,11 +2598,25 @@ function App() {
     }, MEAL_TIMES.filter(function (mt) {
       return grouped[mt.key] && grouped[mt.key].length > 0;
     }).map(function (mt) {
-        return /*#__PURE__*/React.createElement("div", {
+      var mealSectionKey = key + ":" + mt.key;
+      var mealKcal = Math.round(grouped[mt.key].reduce(function (sum, m) {
+        return sum + (m.kcal || 0);
+      }, 0));
+      var mealProtein = Math.round(grouped[mt.key].reduce(function (sum, m) {
+        return sum + (m.protein || 0);
+      }, 0));
+      var mealCarbs = Math.round(grouped[mt.key].reduce(function (sum, m) {
+        return sum + (m.carbs || 0);
+      }, 0));
+      var mealFat = Math.round(grouped[mt.key].reduce(function (sum, m) {
+        return sum + (m.fat || 0);
+      }, 0));
+      var isMealCollapsed = !!collapsedMeals[mealSectionKey];
+      return /*#__PURE__*/React.createElement("div", {
         key: mt.key
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          padding: "7px 14px 1px",
+          padding: "8px 14px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -2616,7 +2630,7 @@ function App() {
           onClick: function onClick() {
             setCollapsedMeals(function (prev) {
               var next = Object.assign({}, prev);
-              next[mt.key] = !next[mt.key];
+              next[mealSectionKey] = !next[mealSectionKey];
               return next;
             });
           }
@@ -2627,25 +2641,27 @@ function App() {
         }
       }, mt.label), /*#__PURE__*/React.createElement("span", {
         style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
           fontSize: 12,
           fontWeight: 800,
-          color: T.text2
+          color: T.kcal
         }
-      }, collapsedMeals[mt.key] ? "▸" : "▾")), /*#__PURE__*/React.createElement("div", {
+      }, mealKcal, " kcal ", /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: T.text2,
+          fontSize: 13
+        }
+      }, isMealCollapsed ? "▸" : "▾"))), isMealCollapsed ? null : /*#__PURE__*/React.createElement("div", {
         style: {
           padding: "0 14px 7px",
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: 600,
-          color: T.text,
+          color: T.text2,
           background: T.surf2
         }
-      }, /*#__PURE__*/React.createElement("span", {
-        style: {
-          color: "#2563eb",
-          fontWeight: 800
-        }
-      }, grouped[mt.key].reduce(function (sum, m) { return sum + (m.kcal || 0); }, 0)), " kcal • B " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.protein || 0); }, 0)) + "g • W " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.carbs || 0); }, 0)) + "g • T " + Math.round(grouped[mt.key].reduce(function (sum, m) { return sum + (m.fat || 0); }, 0)) + "g"),
-      collapsedMeals[mt.key] ? null : grouped[mt.key].map(function (m) {
+      }, "B " + mealProtein + "g • W " + mealCarbs + "g • T " + mealFat + "g"), isMealCollapsed ? null : grouped[mt.key].map(function (m) {
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           onClick: function onClick() {
