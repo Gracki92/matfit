@@ -479,10 +479,13 @@ function useLS(key, def) {
     v = _useState2[0],
     sv = _useState2[1];
   var set = useCallback(function (val) {
-    sv(val);
-    try {
-      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(val));
-    } catch (_unused2) {}
+    sv(function (prev) {
+      var next = typeof val === "function" ? val(prev) : val;
+      try {
+        localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(next));
+      } catch (_unused2) {}
+      return next;
+    });
   }, [key]);
   return [v, set];
 }
@@ -1305,6 +1308,7 @@ function App() {
       name: "",
       emoji: "",
       brand: "",
+      ean: "",
       kcal: "",
       protein: "",
       carbs: "",
@@ -1946,8 +1950,19 @@ function App() {
       toast_("Podaj nazwę");
       return;
     }
+    var normalizedEan = (pf.ean || "").trim();
+    if (normalizedEan && products.some(function (p) {
+      return p.ean === normalizedEan;
+    })) {
+      toast_("Produkt z tym kodem już istnieje");
+      return;
+    }
+    var returnToPlanner = modal === "newProdFromPlanner";
     var newProd = _objectSpread(_objectSpread({}, pf), {}, {
       id: "u" + Date.now(),
+      name: pf.name.trim(),
+      brand: (pf.brand || "").trim(),
+      ean: normalizedEan || null,
       kcal: parseFloat(pf.kcal) || 0,
       protein: parseFloat(pf.protein) || 0,
       carbs: parseFloat(pf.carbs) || 0,
@@ -1962,14 +1977,22 @@ function App() {
       name: "",
       emoji: "",
       brand: "",
+      ean: "",
       kcal: "",
       protein: "",
       carbs: "",
       fat: "",
       packageSize: ""
     });
-    setModal(null);
-    toast_("Dodano!");
+    if (returnToPlanner) {
+      setSelP(newProd.id);
+      setModalProdSearch(newProd.name + (newProd.brand ? " (" + newProd.brand + ")" : ""));
+      setModal("addProd");
+      toast_("Dodano do bazy — ustaw gramaturę");
+    } else {
+      setModal(null);
+      toast_("Dodano!");
+    }
   }
   function getIngMap(days) {
     var map = {};
@@ -3027,7 +3050,18 @@ function App() {
     })
   }), /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
-      return setModal("newProd");
+      setPf({
+        name: "",
+        emoji: "",
+        brand: "",
+        ean: "",
+        kcal: "",
+        protein: "",
+        carbs: "",
+        fat: "",
+        packageSize: ""
+      });
+      setModal("newProd");
     },
     style: _objectSpread(_objectSpread({}, btnA), {}, {
       padding: "10px 14px",
@@ -4369,7 +4403,29 @@ function App() {
         }
       }, p.kcal, " kcal"));
     }));
-  }(), selP && /*#__PURE__*/React.createElement("div", {
+  }(), !selP && /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      setPf({
+        name: modalProdSearch.trim(),
+        emoji: "",
+        brand: "",
+        ean: "",
+        kcal: "",
+        protein: "",
+        carbs: "",
+        fat: "",
+        packageSize: ""
+      });
+      setModal("newProdFromPlanner");
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      width: "100%",
+      marginTop: 8,
+      borderColor: T.acc,
+      color: T.acc,
+      fontWeight: 700
+    })
+  }, "+ Dodaj nowy produkt"), selP && /*#__PURE__*/React.createElement("div", {
     style: {
       padding: "6px 0 2px",
       fontSize: 12,
@@ -4845,10 +4901,10 @@ function App() {
     style: _objectSpread(_objectSpread({}, btnA), {}, {
       flex: 2
     })
-  }, editRId ? "Zapisz zmiany" : "Zapisz przepis"))), modal === "newProd" && /*#__PURE__*/React.createElement(Modal, {
-    title: "Nowy produkt",
+  }, editRId ? "Zapisz zmiany" : "Zapisz przepis"))), (modal === "newProd" || modal === "newProdFromPlanner") && /*#__PURE__*/React.createElement(Modal, {
+    title: modal === "newProdFromPlanner" ? "Nowy produkt do planera" : "Nowy produkt",
     onClose: function onClose() {
-      return setModal(null);
+      return setModal(modal === "newProdFromPlanner" ? "addProd" : null);
     },
     T: T
   }, /*#__PURE__*/React.createElement(Lbl, {
@@ -4874,6 +4930,18 @@ function App() {
     },
     style: inp,
     placeholder: "Biedronka"
+  }), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Kod kreskowy — opcjonalnie"), /*#__PURE__*/React.createElement("input", {
+    value: pf.ean || "",
+    onChange: function onChange(e) {
+      return setPf(_objectSpread(_objectSpread({}, pf), {}, {
+        ean: e.target.value.replace(/\D/g, "")
+      }));
+    },
+    inputMode: "numeric",
+    placeholder: "np. 5901234123457",
+    style: inp
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
@@ -4924,7 +4992,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
-      return setModal(null);
+      return setModal(modal === "newProdFromPlanner" ? "addProd" : null);
     },
     style: _objectSpread(_objectSpread({}, btnB), {}, {
       flex: 1
