@@ -514,12 +514,16 @@ function r2(n) {
 }
 function calcBMR(pr) {
   if (!pr.weight || !pr.height || !pr.age) return 0;
-  return pr.gender === "m" ? 88.36 + 13.4 * pr.weight + 4.8 * pr.height - 5.7 * pr.age : 447.6 + 9.2 * pr.weight + 3.1 * pr.height - 4.3 * pr.age;
+  return 10 * pr.weight + 6.25 * pr.height - 5 * pr.age + (pr.gender === "m" ? 5 : -161);
 }
-function calcTDEE(pr) {
+function calcFormulaTDEE(pr) {
   return Math.round(calcBMR(pr) * (ACTIVITY.find(function (a) {
     return a.key === pr.activity;
   }) || ACTIVITY[2]).mul);
+}
+function calcTDEE(pr) {
+  var calibrated = parseFloat(pr.tdeeManual);
+  return calibrated >= 1200 && calibrated <= 6000 ? Math.round(calibrated) : calcFormulaTDEE(pr);
 }
 function calcNavyBodyFat(pr, measures) {
   var height = parseFloat(pr.height);
@@ -1203,7 +1207,8 @@ function App() {
       macroCarb: "45",
       targetWeight: "",
       targetBf: "",
-      goalStartWeight: ""
+      goalStartWeight: "",
+      tdeeManual: ""
     }),
     _useLS0 = _slicedToArray(_useLS9, 2),
     profile = _useLS0[0],
@@ -3371,7 +3376,7 @@ function App() {
       color: T.text3,
       marginTop: 2
     }
-  }, "TDEE kcal/dzie\u0144"))), /*#__PURE__*/React.createElement(MG, {
+  }, profile.tdeeManual ? "TDEE skalibrowane" : "TDEE ze wzoru"))), /*#__PURE__*/React.createElement(MG, {
     kcal: TARGETS.kcal,
     protein: TARGETS.protein,
     carbs: TARGETS.carbs,
@@ -3384,7 +3389,9 @@ function App() {
     var currentWeight = parseFloat(measures.weight) || parseFloat(profile.weight) || 0;
     var targetWeight = parseFloat(profile.targetWeight) || 0;
     var targetBf = parseFloat(profile.targetBf) || 0;
-    var currentBf = calcNavyBodyFat(profile, measures) || parseFloat(measures.bf) || 0;
+    var navyBf = calcNavyBodyFat(profile, measures) || 0;
+    var manualBf = parseFloat(measures.bfManual) || 0;
+    var currentBf = manualBf || navyBf || parseFloat(measures.bf) || 0;
     var leanMass = currentWeight && currentBf ? currentWeight * (1 - currentBf / 100) : 0;
     var weightAtTargetBf = leanMass && targetBf > 2 && targetBf < 60 ? leanMass / (1 - targetBf / 100) : 0;
     var bfAtTargetWeight = leanMass && targetWeight ? (1 - leanMass / targetWeight) * 100 : 0;
@@ -3411,9 +3418,9 @@ function App() {
       style: { background: T.surf2, borderRadius: 10, padding: "10px 11px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: { fontSize: 10, color: T.text3 }
-    }, "AKTUALNY BF — METODA NAVY"), /*#__PURE__*/React.createElement("div", {
+    }, manualBf ? "AKTUALNY BF — WARTOŚĆ RĘCZNA" : "AKTUALNY BF — SZACUNEK NAVY"), /*#__PURE__*/React.createElement("div", {
       style: { fontSize: 10, color: T.text3, marginTop: 2 }
-    }, "Szacunek z obwodu pasa, szyi", profile.gender === "f" ? " i bioder" : "")), /*#__PURE__*/React.createElement("b", {
+    }, manualBf ? "Navy z obwodów: " + (navyBf ? navyBf.toFixed(1) + "%" : "brak") : "Możliwy błąd kilku p.p.; liczy się trend")), /*#__PURE__*/React.createElement("b", {
       style: { fontSize: 22, color: T.acc, fontFamily: "monospace" }
     }, currentBf.toFixed(1), "%")) : /*#__PURE__*/React.createElement("div", {
       style: { background: T.acc2 + "14", border: "1px solid " + T.acc2 + "55", borderRadius: 10, padding: 10, marginBottom: 10, fontSize: 11, lineHeight: 1.5, color: T.text2 }
@@ -3551,6 +3558,21 @@ function App() {
       }
     }, a.desc));
   })), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "TDEE skalibrowane (opcjonalnie)"), /*#__PURE__*/React.createElement("div", {
+    style: { background: T.surf2, borderRadius: 10, padding: 10, marginBottom: 4 }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }
+  }, /*#__PURE__*/React.createElement("input", {
+    value: profile.tdeeManual || "",
+    onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: e.target.value })); },
+    type: "number", min: "1200", max: "6000", step: "10", placeholder: "np. 2900 kcal", style: inp
+  }), profile.tdeeManual ? /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: "" })); },
+    style: _objectSpread(_objectSpread({}, btnB), {}, { padding: "9px 10px" })
+  }, "Wyczyść") : null), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 10, color: T.text3, lineHeight: 1.5, marginTop: 5 }
+  }, profile.tdeeManual ? "✓ Używamy Twojego skalibrowanego TDEE zamiast mnożnika aktywności." : "Wzór daje tylko punkt startowy: " + calcFormulaTDEE(profile) + " kcal. Jeśli masa przez 2–3 tygodnie stoi, średnie spożycie z tego okresu jest lepszym przybliżeniem TDEE.")), /*#__PURE__*/React.createElement(Lbl, {
     T: T
   }, "Korekta TDEE"), function () {
     var adj = profile.tdeeAdjust || 0;
@@ -3893,7 +3915,8 @@ function App() {
       var entry = _objectSpread(_objectSpread({}, formData), {}, {
         date: TODAY
       });
-      if (autoNavyBF) entry.bf = String(autoNavyBF);
+      if (autoNavyBF) entry.bfNavy = String(autoNavyBF);
+      entry.bf = entry.bfManual ? String(entry.bfManual) : autoNavyBF ? String(autoNavyBF) : "";
       setBodyLog(function (prev) {
         return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, TODAY, entry));
       });
@@ -4129,20 +4152,23 @@ function App() {
         color: T.text3,
         marginBottom: 2
       }
-    }, "\uD83D\uDCCA BF% ", autoNavyBF && /*#__PURE__*/React.createElement("span", {
+    }, "\uD83D\uDCCA BF% ręczny ", autoNavyBF && /*#__PURE__*/React.createElement("span", {
       style: {
         color: "#7daa6e",
         fontWeight: 700
       }
-    }, "\u2193", autoNavyBF, "%")), /*#__PURE__*/React.createElement("div", {
+    }, "Navy: ", autoNavyBF, "%")), /*#__PURE__*/React.createElement("input", {
+      value: formData.bfManual || "",
+      onChange: function onChange(e) { return setBodyForm(function (f) { return _objectSpread(_objectSpread({}, f), {}, { bfManual: e.target.value }); }); },
+      type: "number", min: "2", max: "60", step: "0.1", placeholder: autoNavyBF ? "Navy " + autoNavyBF + "%" : "opcjonalnie",
       style: _objectSpread(_objectSpread({}, inp), {}, {
         padding: "6px 8px",
         fontSize: 13,
         fontFamily: "monospace",
         textAlign: "center",
-        color: autoNavyBF ? "#7daa6e" : T.text3
+        color: formData.bfManual ? T.acc : T.text3
       })
-    }, autoNavyBF || "auto"))), [0, 2, 4, 6, 8].map(function (i) {
+    }))), [0, 2, 4, 6, 8].map(function (i) {
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
