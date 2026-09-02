@@ -20,6 +20,7 @@
     :root{--kb:0px;--royal:#2457d6;--gold:#d99a18;}
     button{touch-action:manipulation;}
     input,select,textarea{font-size:16px!important;}
+    .water-compact{font-size:12px!important;}
     input:focus,select:focus,textarea:focus{outline:2px solid rgba(36,87,214,.22)!important; outline-offset:2px;}
     @supports (padding-bottom: env(keyboard-inset-height)){body{padding-bottom:env(keyboard-inset-height);}}
   
@@ -4259,13 +4260,14 @@ function App() {
       }
     }, waterDate === TODAY ? "Dzisiaj" : waterDate)), /*#__PURE__*/React.createElement("input", {
       type: "date",
+      className: "water-compact",
       value: waterDate,
       max: TODAY,
       onChange: function onChange(e) {
         return setWaterDate(e.target.value || TODAY);
       },
       style: _objectSpread(_objectSpread({}, inp), {}, {
-        width: 150,
+        width: 140,
         padding: "8px 10px"
       })
     })), /*#__PURE__*/React.createElement("div", {
@@ -4275,7 +4277,7 @@ function App() {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontSize: 30,
+        fontSize: 26,
         lineHeight: 1.1,
         fontWeight: 800,
         color: T.acc
@@ -4316,7 +4318,8 @@ function App() {
           return addWaterAmount(amount);
         },
         style: _objectSpread(_objectSpread({}, btnA), {}, {
-          padding: "10px 5px"
+          padding: "9px 5px",
+          fontSize: 12
         })
       }, "+", amount, " ml");
     })), /*#__PURE__*/React.createElement("div", {
@@ -4326,6 +4329,7 @@ function App() {
       }
     }, /*#__PURE__*/React.createElement("input", {
       type: "number",
+      className: "water-compact",
       min: "50",
       max: "2000",
       step: "50",
@@ -4343,7 +4347,8 @@ function App() {
         return addWaterAmount(waterCustom);
       },
       style: _objectSpread(_objectSpread({}, btnA), {}, {
-        whiteSpace: "nowrap"
+        whiteSpace: "nowrap",
+        fontSize: 12
       })
     }, "+ Dodaj"))), /*#__PURE__*/React.createElement("div", {
       style: sectionCard
@@ -4379,6 +4384,7 @@ function App() {
       style: smallLabel
     }, "Własny cel (ml)"), /*#__PURE__*/React.createElement("input", {
       type: "number",
+      className: "water-compact",
       min: "500",
       max: "8000",
       step: "50",
@@ -4397,6 +4403,7 @@ function App() {
       style: smallLabel
     }, "Trening (min)"), /*#__PURE__*/React.createElement("input", {
       type: "number",
+      className: "water-compact",
       min: "0",
       max: "300",
       step: "5",
@@ -4414,6 +4421,7 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       style: smallLabel
     }, "Temperatura / warunki"), /*#__PURE__*/React.createElement("select", {
+      className: "water-compact",
       value: heatLevel,
       onChange: function onChange(e) {
         return updateWaterDay("heat", e.target.value);
