@@ -20,18 +20,18 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 
 ## Elastyczne przepisy
 
-Funkcja jest zaplanowana po ustabilizowaniu rdzenia i rozpoczęciu dodawania naszych przepisów.
+Wersja v1 działa w DEV i czeka na testy przed przeniesieniem na produkcję.
 
-- suwak liczby porcji;
-- zmiana docelowej gramatury całego przepisu;
-- niezależna edycja gramatury każdego składnika;
-- ustawienie docelowej ilości białka;
-- ustawienie docelowej liczby kalorii;
-- proporcjonalne skalowanie składników;
-- natychmiastowe przeliczenie kcal oraz B/W/T;
-- aktualizacja karty przepisu po każdej zmianie;
-- możliwość przywrócenia gramatur bazowych;
-- zabezpieczenia przed nierealnymi wartościami i czytelne zaokrąglenia.
+- [x] suwak liczby porcji;
+- [x] zmiana docelowej gramatury całego przepisu;
+- [x] niezależna edycja gramatury każdego składnika;
+- [x] ustawienie docelowej ilości białka;
+- [x] ustawienie docelowej liczby kalorii;
+- [x] proporcjonalne skalowanie składników;
+- [x] natychmiastowe przeliczenie kcal oraz B/W/T;
+- [x] przekazanie zmienionego wariantu do planera i podglądu karty;
+- [x] możliwość przywrócenia gramatur bazowych;
+- [x] zabezpieczenia przed nierealnymi wartościami i czytelne zaokrąglenia.
 
 ## Dalszy rozwój
 

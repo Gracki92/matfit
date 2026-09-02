@@ -1650,6 +1650,10 @@ function App() {
     _useState24 = _slicedToArray(_useState23, 2),
     scales = _useState24[0],
     setScales = _useState24[1];
+  var _useStateRecipeVariants = useState({}),
+    _useStateRecipeVariants2 = _slicedToArray(_useStateRecipeVariants, 2),
+    recipeVariants = _useStateRecipeVariants2[0],
+    setRecipeVariants = _useStateRecipeVariants2[1];
   var _useState25 = useState(""),
     _useState26 = _slicedToArray(_useState25, 2),
     prodSearch = _useState26[0],
@@ -1714,6 +1718,10 @@ function App() {
     _useStateRecipePortions2 = _slicedToArray(_useStateRecipePortions, 2),
     selRPortions = _useStateRecipePortions2[0],
     setSelRPortions = _useStateRecipePortions2[1];
+  var _useStateSelectedRecipeItems = useState(null),
+    _useStateSelectedRecipeItems2 = _slicedToArray(_useStateSelectedRecipeItems, 2),
+    selRItems = _useStateSelectedRecipeItems2[0],
+    setSelRItems = _useStateSelectedRecipeItems2[1];
   var _useState47 = useState(null),
     _useState48 = _slicedToArray(_useState47, 2),
     emKey = _useState48[0],
@@ -2020,6 +2028,123 @@ function App() {
       fat: r.fat || 0
     };
   }
+  function setRecipeVariant(id, portions, items, extra) {
+    var key = String(id);
+    setRecipeVariants(function (prev) {
+      var next = _objectSpread({}, prev);
+      next[key] = _objectSpread(_objectSpread(_objectSpread({}, prev[key] || {}), {}, {
+        portions: portions,
+        items: (items || []).map(function (item) {
+          return _objectSpread({}, item);
+        })
+      }), extra || {});
+      return next;
+    });
+  }
+  function changeRecipePortions(r, currentPortions, currentItems, nextPortions) {
+    var oldPortions = Math.max(1, parseFloat(currentPortions) || 1);
+    var portions = Math.min(12, Math.max(1, parseInt(nextPortions) || 1));
+    var factor = portions / oldPortions;
+    var items = (currentItems || []).map(function (item) {
+      return _objectSpread(_objectSpread({}, item), {}, {
+        grams: r2((parseFloat(item.grams) || 0) * factor)
+      });
+    });
+    setScales(function (prev) {
+      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, r.id, portions));
+    });
+    setRecipeVariant(r.id, portions, items, {
+      targetGrams: "",
+      targetKcal: "",
+      targetProtein: ""
+    });
+  }
+  function changeRecipeIngredient(r, portions, currentItems, index, value) {
+    var grams = value === "" ? "" : Math.max(0, parseFloat(value) || 0);
+    var items = (currentItems || []).map(function (item, itemIndex) {
+      return itemIndex === index ? _objectSpread(_objectSpread({}, item), {}, {
+        grams: grams
+      }) : _objectSpread({}, item);
+    });
+    setRecipeVariant(r.id, portions, items, {
+      targetGrams: "",
+      targetKcal: "",
+      targetProtein: ""
+    });
+  }
+  function setRecipeTarget(r, portions, currentItems, field, value) {
+    var targets = {
+      targetGrams: "",
+      targetKcal: "",
+      targetProtein: ""
+    };
+    targets[field] = value;
+    setRecipeVariant(r.id, portions, currentItems, targets);
+  }
+  function applyRecipeTarget(r, portions, currentItems, kind, value) {
+    var target = parseFloat(value);
+    var macro = calcMacro(currentItems, products);
+    var totalGrams = (currentItems || []).reduce(function (sum, item) {
+      return sum + (parseFloat(item.grams) || 0);
+    }, 0);
+    var current = kind === "targetGrams" ? totalGrams : kind === "targetKcal" ? macro.kcal : macro.protein;
+    var minimum = kind === "targetProtein" ? 1 : 10;
+    var maximum = kind === "targetProtein" ? 1000 : 20000;
+    if (!target || target < minimum || target > maximum) {
+      toast_(kind === "targetProtein" ? "Podaj białko od 1 do 1000 g" : "Podaj wartość od 10 do 20000");
+      return;
+    }
+    if (!current || current <= 0) {
+      toast_("Nie można przeliczyć tego przepisu");
+      return;
+    }
+    var factor = target / current;
+    if (factor < 0.05 || factor > 20) {
+      toast_("Zmiana jest zbyt duża — sprawdź wartość");
+      return;
+    }
+    var items = (currentItems || []).map(function (item) {
+      return _objectSpread(_objectSpread({}, item), {}, {
+        grams: r2((parseFloat(item.grams) || 0) * factor)
+      });
+    });
+    var targets = {
+      targetGrams: "",
+      targetKcal: "",
+      targetProtein: ""
+    };
+    targets[kind] = String(target);
+    setRecipeVariant(r.id, portions, items, targets);
+    toast_("Przeliczono proporcjonalnie");
+  }
+  function resetRecipeVariant(r) {
+    setRecipeVariants(function (prev) {
+      var next = _objectSpread({}, prev);
+      delete next[String(r.id)];
+      return next;
+    });
+    setScales(function (prev) {
+      var next = _objectSpread({}, prev);
+      delete next[r.id];
+      return next;
+    });
+    toast_("Przywrócono oryginalny przepis");
+  }
+  function changeSelectedRecipePortions(value) {
+    var oldPortions = Math.max(1, parseFloat(selRPortions) || 1);
+    var nextPortions = parseFloat(value);
+    if (Array.isArray(selRItems) && selRItems.length && nextPortions > 0) {
+      var factor = nextPortions / oldPortions;
+      setSelRItems(function (items) {
+        return (items || []).map(function (item) {
+          return _objectSpread(_objectSpread({}, item), {}, {
+            grams: r2((parseFloat(item.grams) || 0) * factor)
+          });
+        });
+      });
+    }
+    setSelRPortions(value);
+  }
 
   // NAPRAWIONE: addProd z porą dnia
   function addProd() {
@@ -2073,14 +2198,16 @@ function App() {
       toast_("Nie znaleziono przepisu");
       return;
     }
-    var m = recipeM(r);
     var portions = Math.max(1, parseFloat(selRPortions) || 1);
     var factor = portions / Math.max(1, parseFloat(r.servings) || 1);
-    var scaledItems = (r.ingredients || []).map(function (item) {
+    var sourceItems = Array.isArray(selRItems) && selRItems.length ? selRItems : r.ingredients || [];
+    var customItemsSelected = Array.isArray(selRItems) && selRItems.length;
+    var scaledItems = sourceItems.map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: r2((parseFloat(item.grams) || 0) * factor)
+        grams: customItemsSelected ? r2(parseFloat(item.grams) || 0) : r2((parseFloat(item.grams) || 0) * factor)
       });
     });
+    var mealMacro = calcMacro(scaledItems, products);
     var meal = {
       id: Date.now(),
       type: "recipe",
@@ -2088,15 +2215,16 @@ function App() {
       mealTime: selRMealTime,
       name: r.name,
       portions: portions,
-      kcal: Math.round(m.kcal * factor),
-      protein: r2(m.protein * factor),
-      carbs: r2(m.carbs * factor),
-      fat: r2(m.fat * factor),
+      kcal: Math.round(mealMacro.kcal),
+      protein: r2(mealMacro.protein),
+      carbs: r2(mealMacro.carbs),
+      fat: r2(mealMacro.fat),
       items: scaledItems
     };
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, selRDay, [].concat(_toConsumableArray(prev[selRDay] || []), [meal])));
     });
+    setSelRItems(null);
     setModal(null);
     toast_("✅ Dodano do planera!");
   }
@@ -2115,14 +2243,16 @@ function App() {
       toast_("Nie znaleziono przepisu");
       return;
     }
-    var m = recipeM(r);
     var portions = Math.max(1, parseFloat(selRPortions) || 1);
     var factor = portions / Math.max(1, parseFloat(r.servings) || 1);
-    var scaledItems = (r.ingredients || []).map(function (item) {
+    var sourceItems = Array.isArray(selRItems) && selRItems.length ? selRItems : r.ingredients || [];
+    var customItemsSelected = Array.isArray(selRItems) && selRItems.length;
+    var scaledItems = sourceItems.map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: r2((parseFloat(item.grams) || 0) * factor)
+        grams: customItemsSelected ? r2(parseFloat(item.grams) || 0) : r2((parseFloat(item.grams) || 0) * factor)
       });
     });
+    var mealMacro = calcMacro(scaledItems, products);
     var meal = {
       id: Date.now(),
       type: "recipe",
@@ -2130,15 +2260,16 @@ function App() {
       mealTime: addMealTime,
       name: r.name,
       portions: portions,
-      kcal: Math.round(m.kcal * factor),
-      protein: r2(m.protein * factor),
-      carbs: r2(m.carbs * factor),
-      fat: r2(m.fat * factor),
+      kcal: Math.round(mealMacro.kcal),
+      protein: r2(mealMacro.protein),
+      carbs: r2(mealMacro.carbs),
+      fat: r2(mealMacro.fat),
       items: scaledItems
     };
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
     });
+    setSelRItems(null);
     setModal(null);
     toast_("✅ Dodano do planera!");
   }
@@ -2215,6 +2346,7 @@ function App() {
     });
     setBItems([]);
     setSelRPortions("1");
+    setSelRItems(null);
     setAddRecipeToPlaner(false);
     setModal("recipe");
   }
@@ -2230,6 +2362,7 @@ function App() {
     });
     setBItems([]);
     setSelRPortions("1");
+    setSelRItems(null);
     setAddRecipeToPlaner(true);
     setModal("recipe");
   }
@@ -2283,6 +2416,16 @@ function App() {
         return prev.map(function (x) {
           return x.id === editRId ? r : x;
         });
+      });
+      setRecipeVariants(function (prev) {
+        var next = _objectSpread({}, prev);
+        delete next[String(editRId)];
+        return next;
+      });
+      setScales(function (prev) {
+        var next = _objectSpread({}, prev);
+        delete next[editRId];
+        return next;
       });
     } else {
       setRecipes(function (prev) {
@@ -2342,6 +2485,16 @@ function App() {
       return (Array.isArray(prev) ? prev : []).filter(function (id) {
         return String(id) !== String(r.id);
       });
+    });
+    setRecipeVariants(function (prev) {
+      var next = _objectSpread({}, prev);
+      delete next[String(r.id)];
+      return next;
+    });
+    setScales(function (prev) {
+      var next = _objectSpread({}, prev);
+      delete next[r.id];
+      return next;
     });
     setExpanded(null);
     toast_("Usunięto przepis");
@@ -2635,6 +2788,16 @@ function App() {
   }
   var emMacro = calcMacro(emItems, products);
   var bMacro = calcMacro(bItems, products);
+  var selectedRecipeForPlaner = recipes.find(function (recipe) {
+    return String(recipe.id) === String(selRId);
+  });
+  var selectedRecipeFactor = selectedRecipeForPlaner ? Math.max(1, parseFloat(selRPortions) || 1) / Math.max(1, parseFloat(selectedRecipeForPlaner.servings) || 1) : 1;
+  var selectedRecipeItems = Array.isArray(selRItems) && selRItems.length ? selRItems : selectedRecipeForPlaner ? (selectedRecipeForPlaner.ingredients || []).map(function (item) {
+    return _objectSpread(_objectSpread({}, item), {}, {
+      grams: r2((parseFloat(item.grams) || 0) * selectedRecipeFactor)
+    });
+  }) : [];
+  var selectedRecipeMacro = calcMacro(selectedRecipeItems, products);
   var productSearchNeedle = (prodSearch || "").trim().toLowerCase();
   var filtProd = products.filter(function (p) {
     var categoryMatch = productCategory === "all" || productCategory === "own" && p.custom || p.category === productCategory;
@@ -3280,6 +3443,7 @@ function App() {
         setAddMealTime("sniadanie");
         setSelRId("");
         setSelRPortions("1");
+        setSelRItems(null);
         setModalProdSearch("");
         setShowRecipeList(false);
         setModal("addRecipeSearch");
@@ -3380,10 +3544,25 @@ function App() {
     var exp = expanded === r.id,
       sc = scales[r.id] || r.servings,
       f = sc / r.servings,
-      m = recipeM(r),
-      perServingFactor = 1 / Math.max(1, parseFloat(r.servings) || 1),
-      finishedWeight = parseFloat(r.finishedWeight) || 0,
-      per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0;
+      variant = recipeVariants[String(r.id)] || null,
+      baseItems = (r.ingredients || []).map(function (item) {
+        return _objectSpread(_objectSpread({}, item), {}, {
+          grams: r2((parseFloat(item.grams) || 0) * f)
+        });
+      }),
+      currentItems = variant && variant.portions === sc && Array.isArray(variant.items) ? variant.items : baseItems,
+      m = calcMacro(currentItems, products),
+      perServingFactor = 1 / Math.max(1, parseFloat(sc) || 1),
+      baseIngredientWeight = (r.ingredients || []).reduce(function (sum, item) {
+        return sum + (parseFloat(item.grams) || 0);
+      }, 0),
+      currentIngredientWeight = currentItems.reduce(function (sum, item) {
+        return sum + (parseFloat(item.grams) || 0);
+      }, 0),
+      originalFinishedWeight = parseFloat(r.finishedWeight) || 0,
+      finishedWeight = originalFinishedWeight > 0 && baseIngredientWeight > 0 ? originalFinishedWeight * (currentIngredientWeight / baseIngredientWeight) : 0,
+      per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0,
+      isCustomized = !!variant;
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
       onClick: function onClick() {
@@ -3478,9 +3657,7 @@ function App() {
       }
     }, /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
-        return setScales(function (p) {
-          return _objectSpread(_objectSpread({}, p), {}, _defineProperty({}, r.id, Math.max(1, (p[r.id] || r.servings) - 1)));
-        });
+        return changeRecipePortions(r, sc, currentItems, sc - 1);
       },
       style: {
         width: 30,
@@ -3502,9 +3679,7 @@ function App() {
       }
     }, sc), /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
-        return setScales(function (p) {
-          return _objectSpread(_objectSpread({}, p), {}, _defineProperty({}, r.id, (p[r.id] || r.servings) + 1));
-        });
+        return changeRecipePortions(r, sc, currentItems, sc + 1);
       },
       style: {
         width: 30,
@@ -3516,7 +3691,21 @@ function App() {
         fontSize: 18,
         cursor: "pointer"
       }
-    }, "+"))), /*#__PURE__*/React.createElement("div", {
+    }, "+"))), /*#__PURE__*/React.createElement("input", {
+      type: "range",
+      min: "1",
+      max: "12",
+      step: "1",
+      value: sc,
+      onChange: function onChange(e) {
+        return changeRecipePortions(r, sc, currentItems, e.target.value);
+      },
+      style: {
+        width: "100%",
+        accentColor: T.acc,
+        margin: "0 0 10px"
+      }
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         textTransform: "uppercase",
@@ -3525,10 +3714,10 @@ function App() {
         marginBottom: 2
       }
     }, "Razem dla ", sc, sc === 1 ? " porcji" : " porcji"), /*#__PURE__*/React.createElement(MG, {
-      kcal: m.kcal * f,
-      protein: m.protein * f,
-      carbs: m.carbs * f,
-      fat: m.fat * f,
+      kcal: m.kcal,
+      protein: m.protein,
+      carbs: m.carbs,
+      fat: m.fat,
       T: T
     }), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -3565,7 +3754,7 @@ function App() {
         color: T.text,
         fontWeight: 600
       }
-    }, "100 g gotowego dania"), Math.round(m.kcal * per100Factor), " kcal · B ", r2(m.protein * per100Factor), "g · W ", r2(m.carbs * per100Factor), "g · T ", r2(m.fat * per100Factor), "g")), !finishedWeight && /*#__PURE__*/React.createElement("div", {
+    }, isCustomized ? "100 g gotowego dania (szac.)" : "100 g gotowego dania"), Math.round(m.kcal * per100Factor), " kcal · B ", r2(m.protein * per100Factor), "g · W ", r2(m.carbs * per100Factor), "g · T ", r2(m.fat * per100Factor), "g")), !finishedWeight && /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 10,
         color: T.text3,
@@ -3573,13 +3762,124 @@ function App() {
       }
     }, "Wpisz masę gotowego dania w edycji, aby zobaczyć wartości na 100 g."), /*#__PURE__*/React.createElement("div", {
       style: {
+        background: T.surf2,
+        border: "1px solid " + (isCustomized ? T.acc : T.border),
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 4
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        fontSize: 12,
+        fontWeight: 600,
+        color: T.text
+      }
+    }, "Dopasuj przepis", isCustomized && /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: T.acc,
+        fontSize: 9,
+        marginLeft: 6
+      }
+    }, "● WARIANT AKTYWNY")), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return resetRecipeVariant(r);
+      },
+      disabled: !isCustomized,
+      style: {
+        background: "transparent",
+        border: "1px solid " + T.border,
+        borderRadius: 7,
+        color: isCustomized ? T.text2 : T.text3,
+        padding: "6px 8px",
+        fontSize: 10,
+        cursor: isCustomized ? "pointer" : "default",
+        opacity: isCustomized ? 1 : 0.55
+      }
+    }, "↺ Oryginał")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        color: T.text3,
+        lineHeight: 1.4,
+        marginBottom: 8
+      }
+    }, "Cele skalują wszystkie składniki proporcjonalnie. Każdy cel działa osobno — ostatni wybór zastępuje poprzedni. Pojedyncze składniki możesz poprawić niżej."), [["Łączna gramatura", "targetGrams", "g", Math.round(currentIngredientWeight)], ["Docelowe kalorie", "targetKcal", "kcal", Math.round(m.kcal)], ["Docelowe białko", "targetProtein", "g", r2(m.protein)]].map(function (_refRecipeTarget) {
+      var _refRecipeTarget2 = _slicedToArray(_refRecipeTarget, 4),
+        label = _refRecipeTarget2[0],
+        field = _refRecipeTarget2[1],
+        unit = _refRecipeTarget2[2],
+        currentValue = _refRecipeTarget2[3];
+      var targetValue = variant && variant[field] !== undefined ? variant[field] : "";
+      return /*#__PURE__*/React.createElement("div", {
+        key: field,
+        style: {
+          display: "grid",
+          gridTemplateColumns: "1fr 82px 48px",
+          gap: 6,
+          alignItems: "center",
+          marginTop: 6
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          color: T.text2
+        }
+      }, label, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 8,
+          color: T.text3
+        }
+      }, "Teraz: ", currentValue, " ", unit)), /*#__PURE__*/React.createElement("input", {
+        value: targetValue,
+        onChange: function onChange(e) {
+          return setRecipeTarget(r, sc, currentItems, field, e.target.value);
+        },
+        type: "number",
+        min: "1",
+        placeholder: String(currentValue),
+        style: {
+          width: "100%",
+          boxSizing: "border-box",
+          background: T.surf,
+          border: "1px solid " + T.border,
+          borderRadius: 7,
+          color: T.text,
+          padding: "7px 6px",
+          fontSize: 11,
+          textAlign: "center",
+          outline: "none"
+        }
+      }), /*#__PURE__*/React.createElement("button", {
+        onClick: function onClick() {
+          return applyRecipeTarget(r, sc, currentItems, field, targetValue);
+        },
+        style: {
+          background: T.acc,
+          border: "none",
+          borderRadius: 7,
+          color: safeTn === "light" ? "#fff" : "#000",
+          padding: "8px 4px",
+          fontSize: 9,
+          fontWeight: 600,
+          cursor: "pointer"
+        }
+      }, "Ustaw"));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
         fontSize: 11,
         textTransform: "uppercase",
         letterSpacing: 1,
         color: T.text3,
         marginBottom: 6
       }
-    }, "Sk\u0142adniki"), (r.ingredients || []).map(function (item, i) {
+    }, "Sk\u0142adniki — gramaturę możesz zmienić ręcznie"), currentItems.map(function (item, i) {
       var p = products.find(function (x) {
         return x.id === item.productId;
       });
@@ -3587,22 +3887,51 @@ function App() {
         key: i,
         style: {
           display: "flex",
-          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 8,
           padding: "6px 0",
           borderBottom: "1px solid " + T.border,
           fontSize: 13
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          color: T.text2
+          color: T.text2,
+          flex: 1,
+          minWidth: 0
         }
-      }, p.name), /*#__PURE__*/React.createElement("span", {
+      }, p.name, p.state ? /*#__PURE__*/React.createElement("span", {
         style: {
+          display: "block",
+          fontSize: 8,
+          color: T.text3
+        }
+      }, p.state) : null), /*#__PURE__*/React.createElement("input", {
+        value: item.grams,
+        onChange: function onChange(e) {
+          return changeRecipeIngredient(r, sc, currentItems, i, e.target.value);
+        },
+        type: "number",
+        min: "0",
+        step: "1",
+        style: {
+          width: 68,
+          boxSizing: "border-box",
+          background: T.surf2,
+          border: "1px solid " + T.border,
+          borderRadius: 7,
+          color: T.acc,
           fontFamily: "monospace",
           fontSize: 12,
-          color: T.acc
+          padding: "6px",
+          textAlign: "center",
+          outline: "none"
         }
-      }, r2(item.grams * f), "g")) : null;
+      }), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          color: T.text3
+        }
+      }, "g")) : null;
     }), (r.steps || []).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
@@ -3623,6 +3952,7 @@ function App() {
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
+        flexWrap: "wrap",
         gap: 8,
         marginTop: 12
       }
@@ -3632,16 +3962,25 @@ function App() {
         setSelRMealTime("sniadanie");
         setSelRId(String(r.id));
         setSelRPortions(String(sc));
+        setSelRItems(currentItems.map(function (item) {
+          return _objectSpread({}, item);
+        }));
         setModalRecipeSearch(r.name);
         setModal("addRecipe");
       },
       style: _objectSpread(_objectSpread({}, btnA), {}, {
-        flex: 1,
+        flex: "1 1 150px",
         fontSize: 12
       })
-    }, "+ Planer"), /*#__PURE__*/React.createElement("button", {
+    }, isCustomized ? "+ Wariant do planera" : "+ Planer"), /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
-        return openRecipeCard(r);
+        return openRecipeCard(_objectSpread(_objectSpread({}, r), {}, {
+          servings: sc,
+          ingredients: currentItems.map(function (item) {
+            return _objectSpread({}, item);
+          }),
+          finishedWeight: finishedWeight || ""
+        }));
       },
       style: _objectSpread(_objectSpread({}, btnB), {}, {
         padding: "10px 14px",
@@ -5755,6 +6094,7 @@ function App() {
       setModalProdSearch(e.target.value);
       setSelRId("");
       setSelRPortions("1");
+      setSelRItems(null);
       setShowRecipeList(false);
     },
     onFocus: function onFocus() {
@@ -5830,6 +6170,7 @@ function App() {
         onClick: function onClick() {
           setSelRId(selected ? "" : String(r.id));
           setSelRPortions("1");
+          setSelRItems(null);
           setShowRecipeList(false);
           setModalProdSearch("");
         },
@@ -5892,13 +6233,19 @@ function App() {
   }, "Liczba porcji"), /*#__PURE__*/React.createElement("input", {
     value: selRPortions,
     onChange: function onChange(e) {
-      return setSelRPortions(e.target.value);
+      return changeSelectedRecipePortions(e.target.value);
     },
     type: "number",
     min: "1",
     step: "1",
     style: inp
-  })), /*#__PURE__*/React.createElement("div", {
+  })), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
+    kcal: selectedRecipeMacro.kcal,
+    protein: selectedRecipeMacro.protein,
+    carbs: selectedRecipeMacro.carbs,
+    fat: selectedRecipeMacro.fat,
+    T: T
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5959,13 +6306,19 @@ function App() {
   }, "Liczba porcji"), /*#__PURE__*/React.createElement("input", {
     value: selRPortions,
     onChange: function onChange(e) {
-      return setSelRPortions(e.target.value);
+      return changeSelectedRecipePortions(e.target.value);
     },
     type: "number",
     min: "1",
     step: "1",
     style: inp
-  })), /*#__PURE__*/React.createElement("div", {
+  })), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
+    kcal: selectedRecipeMacro.kcal,
+    protein: selectedRecipeMacro.protein,
+    carbs: selectedRecipeMacro.carbs,
+    fat: selectedRecipeMacro.fat,
+    T: T
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
