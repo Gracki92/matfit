@@ -532,15 +532,14 @@ function calcNavyBodyFat(pr, measures) {
   var hips = parseFloat(measures.hips);
   if (!height || !neck || !waist) return null;
   var inch = 1 / 2.54;
-  var density;
+  var result;
   if (pr.gender === "f") {
     if (!hips) return null;
-    density = 1.29579 - 0.35004 * Math.log10((waist + hips - neck) * inch) + 0.221 * Math.log10(height * inch);
+    result = 163.205 * Math.log10((waist + hips - neck) * inch) - 97.684 * Math.log10(height * inch) - 78.387;
   } else {
     if (waist <= neck) return null;
-    density = 1.0324 - 0.19077 * Math.log10((waist - neck) * inch) + 0.15456 * Math.log10(height * inch);
+    result = 86.01 * Math.log10((waist - neck) * inch) - 70.041 * Math.log10(height * inch) + 36.76;
   }
-  var result = 495 / density - 450;
   return result >= 1 && result <= 60 ? Math.round(result * 10) / 10 : null;
 }
 function addDaysISO(days) {
