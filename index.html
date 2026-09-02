@@ -521,6 +521,29 @@ function calcTDEE(pr) {
     return a.key === pr.activity;
   }) || ACTIVITY[2]).mul);
 }
+function calcNavyBodyFat(pr, measures) {
+  var height = parseFloat(pr.height);
+  var neck = parseFloat(measures.neck);
+  var waist = parseFloat(measures.belly || measures.waist);
+  var hips = parseFloat(measures.hips);
+  if (!height || !neck || !waist) return null;
+  var inch = 1 / 2.54;
+  var density;
+  if (pr.gender === "f") {
+    if (!hips) return null;
+    density = 1.29579 - 0.35004 * Math.log10((waist + hips - neck) * inch) + 0.221 * Math.log10(height * inch);
+  } else {
+    if (waist <= neck) return null;
+    density = 1.0324 - 0.19077 * Math.log10((waist - neck) * inch) + 0.15456 * Math.log10(height * inch);
+  }
+  var result = 495 / density - 450;
+  return result >= 1 && result <= 60 ? Math.round(result * 10) / 10 : null;
+}
+function addDaysISO(days) {
+  var d = new Date();
+  d.setDate(d.getDate() + Math.max(0, Math.round(days)));
+  return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
+}
 function calcTargets(pr) {
   var dayMul = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
   var tdee = calcTDEE(pr);
@@ -1177,7 +1200,10 @@ function App() {
       macroMode: "auto",
       macroProt: "30",
       macroFat: "25",
-      macroCarb: "45"
+      macroCarb: "45",
+      targetWeight: "",
+      targetBf: "",
+      goalStartWeight: ""
     }),
     _useLS0 = _slicedToArray(_useLS9, 2),
     profile = _useLS0[0],
@@ -3351,7 +3377,54 @@ function App() {
     carbs: TARGETS.carbs,
     fat: TARGETS.fat,
     T: T
-  })), /*#__PURE__*/React.createElement("div", {
+  })), function () {
+    var latest = Object.entries(bodyLog).sort(function (a, b) { return b[0].localeCompare(a[0]); }).find(function (x) { return x[1] && Object.keys(x[1]).length; });
+    var measures = latest ? latest[1] : {};
+    var currentWeight = parseFloat(profile.weight) || parseFloat(measures.weight) || 0;
+    var targetWeight = parseFloat(profile.targetWeight) || 0;
+    var startWeight = parseFloat(profile.goalStartWeight) || currentWeight;
+    var currentBf = parseFloat(measures.bf) || calcNavyBodyFat(profile, measures);
+    var targetBf = parseFloat(profile.targetBf) || 0;
+    var delta = targetWeight && currentWeight ? targetWeight - currentWeight : 0;
+    var calorieBalance = tdee ? TARGETS.kcal - tdee : 0;
+    var directionOk = delta < 0 && calorieBalance < 0 || delta > 0 && calorieBalance > 0;
+    var weeklyRate = directionOk ? Math.abs(calorieBalance) * 7 / 7700 : 0;
+    var finishFast = weeklyRate >= 0.1 ? addDaysISO(Math.abs(delta) / (weeklyRate * 1.15) * 7) : null;
+    var finishSlow = weeklyRate >= 0.1 ? addDaysISO(Math.abs(delta) / (weeklyRate * 0.85) * 7) : null;
+    var progress = targetWeight && startWeight !== targetWeight ? Math.max(0, Math.min(100, Math.round((startWeight - currentWeight) / (startWeight - targetWeight) * 100))) : 0;
+    return /*#__PURE__*/React.createElement("div", {
+      style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 14, padding: 14, marginBottom: 12 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 14, fontWeight: 800, color: T.text }
+    }, "🎯 Cel sylwetkowy PRO"), /*#__PURE__*/React.createElement("span", {
+      style: { fontSize: 10, color: T.text3 }
+    }, "auto-zapis")), /*#__PURE__*/React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, { mt: 0, T: T }, "Waga docelowa (kg)"), /*#__PURE__*/React.createElement("input", {
+      value: profile.targetWeight || "", type: "number", min: "30", max: "300", step: "0.1", placeholder: "np. 90", style: inp,
+      onChange: function onChange(e) {
+        var value = e.target.value;
+        return setProfile(_objectSpread(_objectSpread({}, profile), {}, { targetWeight: value, goalStartWeight: profile.goalStartWeight || (value ? String(currentWeight || "") : "") }));
+      }
+    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, { mt: 0, T: T }, "Docelowy BF% (opc.)"), /*#__PURE__*/React.createElement("input", {
+      value: profile.targetBf || "", type: "number", min: "3", max: "50", step: "0.1", placeholder: "np. 12", style: inp,
+      onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { targetBf: e.target.value })); }
+    }))), targetWeight && currentWeight ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 12, background: T.surf2, borderRadius: 10, padding: 11 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 7 }
+    }, /*#__PURE__*/React.createElement("span", { style: { color: T.text2 } }, currentWeight, " kg → ", targetWeight, " kg"), /*#__PURE__*/React.createElement("b", { style: { color: T.acc } }, progress, "%")), /*#__PURE__*/React.createElement("div", {
+      style: { height: 7, borderRadius: 8, overflow: "hidden", background: T.border }
+    }, /*#__PURE__*/React.createElement("div", { style: { width: progress + "%", height: "100%", background: T.acc, transition: "width .25s" } })), /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 8, fontSize: 11, color: T.text3, lineHeight: 1.5 }
+    }, "Do celu: ", /*#__PURE__*/React.createElement("b", { style: { color: T.text } }, Math.abs(delta).toFixed(1), " kg"), currentBf ? " • Szac. BF: " + currentBf + "%" : "", targetBf ? " → " + targetBf + "%" : "")), /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 8, borderRadius: 10, padding: "10px 11px", background: directionOk && finishFast ? T.acc + "18" : T.acc2 + "14", fontSize: 11, lineHeight: 1.55, color: T.text2 }
+    }, directionOk && finishFast ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", { style: { color: T.acc } }, "Przewidywany finisz: ", finishFast, " – ", finishSlow), /*#__PURE__*/React.createElement("div", { style: { color: T.text3 } }, "Tempo teoretyczne: ok. ", weeklyRate.toFixed(2), " kg/tydz. Zakres później skoryguje historia pomiarów.")) : delta === 0 ? "Cel osiągnięty — dobra robota." : "Ustaw korektę TDEE zgodną z celem: deficyt przy redukcji albo nadwyżkę przy budowie masy.")) : /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 10, fontSize: 11, color: T.text3, lineHeight: 1.5 }
+    }, "Uzupełnij wagę w profilu i wagę docelową. Finisz policzymy z TDEE oraz deficytu lub nadwyżki."));
+  }(), /*#__PURE__*/React.createElement("div", {
     style: {
       background: T.surf,
       border: "1px solid " + T.border,
@@ -3791,15 +3864,9 @@ function App() {
       unit: "cm",
       color: "#b56a7a"
     }];
-    function calcNavyBF(neck, belly, height) {
-      if (!neck || !belly || !height) return null;
-      var val = 495 / (1.0324 - 0.19077 * Math.log10(belly - neck) + 0.15456 * Math.log10(height)) - 450;
-      if (val < 1 || val > 50) return null;
-      return Math.round(val * 10) / 10;
-    }
     var todayEntry = bodyLog[TODAY] || {};
     var formData = Object.keys(bodyForm).length > 0 ? _objectSpread(_objectSpread({}, todayEntry), bodyForm) : todayEntry;
-    var autoNavyBF = calcNavyBF(parseFloat(formData.neck), parseFloat(formData.belly), parseFloat(profile.height));
+    var autoNavyBF = calcNavyBodyFat(profile, formData);
     function saveEntry() {
       var entry = _objectSpread(_objectSpread({}, formData), {}, {
         date: TODAY
