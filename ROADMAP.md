@@ -17,7 +17,7 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [x] Generator kart v1: style Sweet/Savory, segmentowe logo MatFit, zdjęcie, aktywny wariant przepisu, eksport PNG oraz PDF/druk.
 - [ ] Zdjęcia AI do kart przez bezpieczny backend (bez klucza API w HTML).
 - [ ] Osobny skrócony format karty do social mediów.
-- [ ] Backup i przywracanie danych.
+- [x] Backup/Restore PRO: pełna, wersjonowana kopia danych; podgląd zawartości; scalanie lub zastąpienie; automatyczna kopia ratunkowa; zgodność ze starszym formatem i walidacja pliku.
 - [ ] Przygotowanie wydania Android / Google Play.
 
 ## Elastyczne przepisy
