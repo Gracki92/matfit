@@ -536,7 +536,201 @@ function onlyUserProducts(products) {
     return product && product.id && !baseIds.has(product.id);
   });
 }
-var RECIPES_DEFAULT = [];
+function baseRecipe(id, name, emoji, cat, servings, ingredients, steps, finishedWeight) {
+  return {
+    id: "base_recipe_" + id,
+    name: name,
+    emoji: emoji,
+    cat: cat,
+    servings: servings,
+    ingredients: ingredients,
+    steps: steps,
+    finishedWeight: finishedWeight || "",
+    source: "matfit",
+    custom: false
+  };
+}
+var RECIPES_DEFAULT = [
+  baseRecipe("protein_owsianka", "Owsianka proteinowa z bananem", "🥣", "sniadanie", 1, [{
+    productId: "base_oats",
+    grams: 70
+  }, {
+    productId: "base_skyr_natural",
+    grams: 200
+  }, {
+    productId: "base_banana",
+    grams: 120
+  }, {
+    productId: "base_wpc_80",
+    grams: 25
+  }, {
+    productId: "base_peanut_butter",
+    grams: 15
+  }], ["Płatki zalej niewielką ilością gorącej wody i odstaw na kilka minut.", "Dodaj skyr i odżywkę białkową, dokładnie wymieszaj.", "Na wierzchu ułóż banana i masło orzechowe."], 430),
+  baseRecipe("protein_pancakes", "Naleśniki proteinowe", "🥞", "slodkie", 2, [{
+    productId: "base_oat_flour",
+    grams: 80
+  }, {
+    productId: "base_egg_whole",
+    grams: 100
+  }, {
+    productId: "base_skyr_natural",
+    grams: 150
+  }, {
+    productId: "base_wpc_80",
+    grams: 30
+  }, {
+    productId: "base_banana",
+    grams: 100
+  }], ["Zblenduj wszystkie składniki na gładkie ciasto.", "Smaż cienkie naleśniki na dobrej patelni bez dodatku tłuszczu.", "Podziel na dwie równe porcje."], 430),
+  baseRecipe("chicken_rice", "Kurczak z ryżem i brokułem", "🍗", "obiad", 2, [{
+    productId: "base_chicken_breast_raw",
+    grams: 300
+  }, {
+    productId: "base_rice_basmati_dry",
+    grams: 160
+  }, {
+    productId: "base_broccoli",
+    grams: 300
+  }, {
+    productId: "base_olive_oil",
+    grams: 10
+  }], ["Ryż ugotuj zgodnie z instrukcją na opakowaniu.", "Kurczaka dopraw i usmaż lub ugrilluj, używając odmierzonej oliwy.", "Brokuł ugotuj na parze i podziel całość na dwie porcje."], ""),
+  baseRecipe("chicken_tortilla", "Tortilla fit z kurczakiem", "🌯", "wytrawne", 1, [{
+    productId: "base_tortilla_wheat",
+    grams: 60
+  }, {
+    productId: "base_chicken_breast_cooked",
+    grams: 150
+  }, {
+    productId: "base_yogurt_natural_2",
+    grams: 60
+  }, {
+    productId: "base_tomato",
+    grams: 100
+  }, {
+    productId: "base_cucumber",
+    grams: 80
+  }], ["Podgrzej tortillę na suchej patelni.", "Dodaj pokrojonego kurczaka i warzywa.", "Polej jogurtem doprawionym według uznania i zawiń."], 450),
+  baseRecipe("tuna_pasta", "Makaron z tuńczykiem", "🍝", "obiad", 2, [{
+    productId: "base_pasta_wheat_dry",
+    grams: 160
+  }, {
+    productId: "base_tuna_water",
+    grams: 240
+  }, {
+    productId: "base_yogurt_natural_2",
+    grams: 120
+  }, {
+    productId: "base_tomato",
+    grams: 200
+  }, {
+    productId: "base_onion",
+    grams: 60
+  }], ["Ugotuj makaron al dente.", "Dodaj odsączonego tuńczyka, pomidora i drobno posiekaną cebulę.", "Po lekkim przestudzeniu połącz z jogurtem i podziel na dwie porcje."], ""),
+  baseRecipe("quark_bowl", "Miska twarogowa z borówkami", "🫐", "kolacja", 1, [{
+    productId: "base_quark_lean",
+    grams: 250
+  }, {
+    productId: "base_yogurt_natural_2",
+    grams: 100
+  }, {
+    productId: "base_blueberry",
+    grams: 100
+  }, {
+    productId: "base_almonds",
+    grams: 15
+  }], ["Twaróg rozgnieć z jogurtem na kremową masę.", "Dodaj borówki i posyp posiekanymi migdałami."], 465),
+  baseRecipe("protein_shake", "Shake białkowy z bananem", "🥤", "slodkie", 1, [{
+    productId: "base_milk_15",
+    grams: 300
+  }, {
+    productId: "base_wpc_80",
+    grams: 30
+  }, {
+    productId: "base_banana",
+    grams: 120
+  }, {
+    productId: "base_peanut_butter",
+    grams: 15
+  }], ["Wszystkie składniki umieść w blenderze.", "Blenduj do uzyskania gładkiej konsystencji."], 465),
+  baseRecipe("salmon_potatoes", "Łosoś z ziemniakami i brokułem", "🐟", "obiad", 2, [{
+    productId: "base_salmon_raw",
+    grams: 300
+  }, {
+    productId: "base_potato_raw",
+    grams: 600
+  }, {
+    productId: "base_broccoli",
+    grams: 300
+  }, {
+    productId: "base_olive_oil",
+    grams: 10
+  }], ["Ziemniaki ugotuj lub upiecz.", "Łososia dopraw i upiecz, a brokuł ugotuj na parze.", "Dodaj odmierzoną oliwę i podziel całość na dwie porcje."], ""),
+  baseRecipe("tofu_rice", "Tofu z ryżem i warzywami", "🌱", "obiad", 2, [{
+    productId: "base_tofu_natural",
+    grams: 300
+  }, {
+    productId: "base_rice_basmati_dry",
+    grams: 140
+  }, {
+    productId: "base_zucchini",
+    grams: 250
+  }, {
+    productId: "base_pepper_red",
+    grams: 200
+  }, {
+    productId: "base_rapeseed_oil",
+    grams: 10
+  }], ["Ryż ugotuj zgodnie z instrukcją.", "Tofu i warzywa pokrój, następnie podsmaż na odmierzonej ilości oleju.", "Połącz składniki i podziel na dwie porcje."], ""),
+  baseRecipe("egg_breakfast", "Jajka z pieczywem i pomidorem", "🍳", "sniadanie", 1, [{
+    productId: "base_egg_whole",
+    grams: 150
+  }, {
+    productId: "base_egg_white",
+    grams: 150
+  }, {
+    productId: "base_bread_rye_whole",
+    grams: 100
+  }, {
+    productId: "base_tomato",
+    grams: 150
+  }], ["Jajka i białka przygotuj na patelni bez dodatku tłuszczu.", "Podaj z pieczywem i pokrojonym pomidorem."], 550)
+];
+function isBaseRecipeId(id) {
+  return RECIPES_DEFAULT.some(function (recipe) {
+    return String(recipe.id) === String(id);
+  });
+}
+function mergeRecipeCatalog(storedRecipes, hiddenRecipeIds) {
+  var hidden = new Set((Array.isArray(hiddenRecipeIds) ? hiddenRecipeIds : []).map(String));
+  var stored = Array.isArray(storedRecipes) ? storedRecipes : [];
+  var overrides = new Map();
+  var userRecipes = [];
+  var seenUserIds = new Set();
+  stored.forEach(function (recipe) {
+    if (!recipe || recipe.id === undefined || recipe.id === null) return;
+    var id = String(recipe.id);
+    if (isBaseRecipeId(id)) {
+      if (recipe.overridden) overrides.set(id, recipe);
+      return;
+    }
+    if (seenUserIds.has(id)) return;
+    seenUserIds.add(id);
+    userRecipes.push(recipe);
+  });
+  var baseRecipes = RECIPES_DEFAULT.filter(function (recipe) {
+    return !hidden.has(String(recipe.id));
+  }).map(function (recipe) {
+    return overrides.get(String(recipe.id)) || recipe;
+  });
+  return userRecipes.concat(baseRecipes);
+}
+function onlyStoredRecipes(recipes) {
+  return (Array.isArray(recipes) ? recipes : []).filter(function (recipe) {
+    return recipe && recipe.id !== undefined && (!isBaseRecipeId(recipe.id) || recipe.overridden);
+  });
+}
 var TODAY = new Date().toISOString().slice(0, 10);
 var DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 var CAT_LABELS = {
@@ -1335,10 +1529,24 @@ function App() {
     _useState12 = _slicedToArray(_useState11, 2),
     page = _useState12[0],
     setPage = _useState12[1];
-  var _useLS3 = useLS("fb10_recipes", RECIPES_DEFAULT),
-    _useLS4 = _slicedToArray(_useLS3, 2),
-    recipes = _useLS4[0],
-    setRecipes = _useLS4[1];
+  var _useLSRecipes = useLS("fb10_recipes", []),
+    _useLSRecipes2 = _slicedToArray(_useLSRecipes, 2),
+    storedRecipes = _useLSRecipes2[0],
+    setStoredRecipes = _useLSRecipes2[1];
+  var _useLSHiddenRecipes = useLS("fb10_hidden_recipes", []),
+    _useLSHiddenRecipes2 = _slicedToArray(_useLSHiddenRecipes, 2),
+    hiddenRecipes = _useLSHiddenRecipes2[0],
+    setHiddenRecipes = _useLSHiddenRecipes2[1];
+  var recipes = useMemo(function () {
+    return mergeRecipeCatalog(storedRecipes, hiddenRecipes);
+  }, [storedRecipes, hiddenRecipes]);
+  function setRecipes(value) {
+    setStoredRecipes(function (previousStored) {
+      var currentCatalog = mergeRecipeCatalog(previousStored, hiddenRecipes);
+      var nextCatalog = typeof value === "function" ? value(currentCatalog) : value;
+      return onlyStoredRecipes(nextCatalog);
+    });
+  }
   var _useLS5 = useLS("fb10_products", PRODUCTS_DEFAULT),
     _useLS6 = _slicedToArray(_useLS5, 2),
     storedProducts = _useLS6[0],
@@ -1446,6 +1654,14 @@ function App() {
     _useState26 = _slicedToArray(_useState25, 2),
     prodSearch = _useState26[0],
     setProdSearch = _useState26[1];
+  var _useStateRecipeSearch = useState(""),
+    _useStateRecipeSearch2 = _slicedToArray(_useStateRecipeSearch, 2),
+    recipeSearch = _useStateRecipeSearch2[0],
+    setRecipeSearch = _useStateRecipeSearch2[1];
+  var _useStateRecipeCategory = useState("all"),
+    _useStateRecipeCategory2 = _slicedToArray(_useStateRecipeCategory, 2),
+    recipeCategory = _useStateRecipeCategory2[0],
+    setRecipeCategory = _useStateRecipeCategory2[1];
   var _useStateProductCategory = useState("all"),
     _useStateProductCategory2 = _slicedToArray(_useStateProductCategory, 2),
     productCategory = _useStateProductCategory2[0],
@@ -1494,6 +1710,10 @@ function App() {
     _useState46 = _slicedToArray(_useState45, 2),
     selRId = _useState46[0],
     setSelRId = _useState46[1];
+  var _useStateRecipePortions = useState("1"),
+    _useStateRecipePortions2 = _slicedToArray(_useStateRecipePortions, 2),
+    selRPortions = _useStateRecipePortions2[0],
+    setSelRPortions = _useStateRecipePortions2[1];
   var _useState47 = useState(null),
     _useState48 = _slicedToArray(_useState47, 2),
     emKey = _useState48[0],
@@ -1511,6 +1731,7 @@ function App() {
       emoji: "",
       cat: "slodkie",
       servings: "1",
+      finishedWeight: "",
       steps: ""
     }),
     _useState54 = _slicedToArray(_useState53, 2),
@@ -1853,17 +2074,25 @@ function App() {
       return;
     }
     var m = recipeM(r);
+    var portions = Math.max(1, parseFloat(selRPortions) || 1);
+    var factor = portions / Math.max(1, parseFloat(r.servings) || 1);
+    var scaledItems = (r.ingredients || []).map(function (item) {
+      return _objectSpread(_objectSpread({}, item), {}, {
+        grams: r2((parseFloat(item.grams) || 0) * factor)
+      });
+    });
     var meal = {
       id: Date.now(),
       type: "recipe",
       sourceId: r.id,
       mealTime: selRMealTime,
       name: r.name,
-      kcal: Math.round(m.kcal),
-      protein: r2(m.protein),
-      carbs: r2(m.carbs),
-      fat: r2(m.fat),
-      items: r.ingredients || []
+      portions: portions,
+      kcal: Math.round(m.kcal * factor),
+      protein: r2(m.protein * factor),
+      carbs: r2(m.carbs * factor),
+      fat: r2(m.fat * factor),
+      items: scaledItems
     };
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, selRDay, [].concat(_toConsumableArray(prev[selRDay] || []), [meal])));
@@ -1887,17 +2116,25 @@ function App() {
       return;
     }
     var m = recipeM(r);
+    var portions = Math.max(1, parseFloat(selRPortions) || 1);
+    var factor = portions / Math.max(1, parseFloat(r.servings) || 1);
+    var scaledItems = (r.ingredients || []).map(function (item) {
+      return _objectSpread(_objectSpread({}, item), {}, {
+        grams: r2((parseFloat(item.grams) || 0) * factor)
+      });
+    });
     var meal = {
       id: Date.now(),
       type: "recipe",
       sourceId: r.id,
       mealTime: addMealTime,
       name: r.name,
-      kcal: Math.round(m.kcal),
-      protein: r2(m.protein),
-      carbs: r2(m.carbs),
-      fat: r2(m.fat),
-      items: r.ingredients || []
+      portions: portions,
+      kcal: Math.round(m.kcal * factor),
+      protein: r2(m.protein * factor),
+      carbs: r2(m.carbs * factor),
+      fat: r2(m.fat * factor),
+      items: scaledItems
     };
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
@@ -1973,9 +2210,11 @@ function App() {
       emoji: "",
       cat: "slodkie",
       servings: "1",
+      finishedWeight: "",
       steps: ""
     });
     setBItems([]);
+    setSelRPortions("1");
     setAddRecipeToPlaner(false);
     setModal("recipe");
   }
@@ -1986,9 +2225,11 @@ function App() {
       emoji: "",
       cat: "slodkie",
       servings: "1",
+      finishedWeight: "",
       steps: ""
     });
     setBItems([]);
+    setSelRPortions("1");
     setAddRecipeToPlaner(true);
     setModal("recipe");
   }
@@ -2000,6 +2241,7 @@ function App() {
       emoji: r.emoji || "",
       cat: r.cat,
       servings: String(r.servings),
+      finishedWeight: r.finishedWeight ? String(r.finishedWeight) : "",
       steps: (r.steps || []).join("\n")
     });
     setBItems(r.ingredients && (_r$ingredients$2 = r.ingredients[0]) !== null && _r$ingredients$2 !== void 0 && _r$ingredients$2.productId ? _toConsumableArray(r.ingredients) : []);
@@ -2023,6 +2265,7 @@ function App() {
       emoji: rf.emoji || "",
       cat: rf.cat,
       servings: parseInt(rf.servings) || 1,
+      finishedWeight: parseFloat(rf.finishedWeight) > 0 ? r2(parseFloat(rf.finishedWeight)) : "",
       kcal: Math.round(m.kcal),
       protein: r2(m.protein),
       carbs: r2(m.carbs),
@@ -2030,7 +2273,10 @@ function App() {
       ingredients: _toConsumableArray(bItems),
       steps: rf.steps.split("\n").filter(function (s) {
         return s.trim();
-      })
+      }),
+      source: editRId && isBaseRecipeId(editRId) ? "user-override" : "user",
+      custom: true,
+      overridden: !!(editRId && isBaseRecipeId(editRId))
     };
     if (editRId) {
       setRecipes(function (prev) {
@@ -2045,17 +2291,24 @@ function App() {
     }
     // Jeśli otwarto z planera — od razu dodaj do planera
     if (addRecipeToPlaner && !editRId) {
+      var portions = 1;
+      var factor = portions / Math.max(1, r.servings);
       var meal = {
         id: Date.now() + 1,
         type: "recipe",
         sourceId: newId,
         mealTime: addMealTime,
         name: r.name,
-        kcal: Math.round(m.kcal),
-        protein: r2(m.protein),
-        carbs: r2(m.carbs),
-        fat: r2(m.fat),
-        items: _toConsumableArray(bItems)
+        portions: portions,
+        kcal: Math.round(m.kcal * factor),
+        protein: r2(m.protein * factor),
+        carbs: r2(m.carbs * factor),
+        fat: r2(m.fat * factor),
+        items: bItems.map(function (item) {
+          return _objectSpread(_objectSpread({}, item), {}, {
+            grams: r2((parseFloat(item.grams) || 0) * factor)
+          });
+        })
       };
       setPlaner(function (prev) {
         return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
@@ -2065,6 +2318,33 @@ function App() {
       toast_(editRId ? "Zaktualizowano!" : "Zapisano!");
     }
     setModal(null);
+  }
+  function removeRecipe(r) {
+    if (!r || !window.confirm("Usunąć przepis „" + r.name + "”?")) return;
+    if (isBaseRecipeId(r.id)) {
+      setHiddenRecipes(function (prev) {
+        var ids = Array.isArray(prev) ? prev.map(String) : [];
+        return ids.includes(String(r.id)) ? ids : ids.concat([String(r.id)]);
+      });
+      setStoredRecipes(function (prev) {
+        return (Array.isArray(prev) ? prev : []).filter(function (item) {
+          return String(item.id) !== String(r.id);
+        });
+      });
+    } else {
+      setRecipes(function (prev) {
+        return prev.filter(function (item) {
+          return String(item.id) !== String(r.id);
+        });
+      });
+    }
+    setFavorites(function (prev) {
+      return (Array.isArray(prev) ? prev : []).filter(function (id) {
+        return String(id) !== String(r.id);
+      });
+    });
+    setExpanded(null);
+    toast_("Usunięto przepis");
   }
   function lookupBarcode(_x2) {
     return _lookupBarcode.apply(this, arguments);
@@ -2999,6 +3279,7 @@ function App() {
         setAddDay(key);
         setAddMealTime("sniadanie");
         setSelRId("");
+        setSelRPortions("1");
         setModalProdSearch("");
         setShowRecipeList(false);
         setModal("addRecipeSearch");
@@ -3015,28 +3296,94 @@ function App() {
     }, "+ Przepis")));
   })), page === "przepisy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
-      textAlign: "center",
-      padding: "36px 20px",
-      color: T.text3
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 10
     }
-  }, recipes.length === 0 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
-      marginBottom: 14
+      flex: 1
     }
-  }, "Nie masz jeszcze żadnych przepisów."), /*#__PURE__*/React.createElement("button", {
-    onClick: function onClick() {
-      setModal("addRecipe");
-    },
-    style: _objectSpread(_objectSpread({}, btnB), {}, {
-      width: "100%",
-      maxWidth: 260,
-      margin: "0 auto"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontWeight: 700,
+      fontSize: 18,
+      color: T.text
+    }
+  }, "Przepisy"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      marginTop: 2
+    }
+  }, recipes.length, " w bazie · makro liczone ze składników")), /*#__PURE__*/React.createElement("button", {
+    onClick: openNR,
+    style: _objectSpread(_objectSpread({}, btnA), {}, {
+      padding: "9px 12px",
+      whiteSpace: "nowrap"
     })
-  }, "+ Dodaj przepis")), recipes.map(function (r) {
+  }, "+ Nowy")), /*#__PURE__*/React.createElement("input", {
+    value: recipeSearch,
+    onChange: function onChange(e) {
+      return setRecipeSearch(e.target.value);
+    },
+    placeholder: "Szukaj przepisu...",
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      marginBottom: 8
+    })
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      overflowX: "auto",
+      paddingBottom: 8,
+      marginBottom: 4
+    }
+  }, [["all", "Wszystkie"], ["sniadanie", "Śniadanie"], ["obiad", "Obiad"], ["kolacja", "Kolacja"], ["slodkie", "Słodkie"], ["wytrawne", "Wytrawne"]].map(function (_refRecipeCategory) {
+    var _refRecipeCategory2 = _slicedToArray(_refRecipeCategory, 2),
+      key = _refRecipeCategory2[0],
+      label = _refRecipeCategory2[1];
+    var active = recipeCategory === key;
+    return /*#__PURE__*/React.createElement("button", {
+      key: key,
+      onClick: function onClick() {
+        return setRecipeCategory(key);
+      },
+      style: {
+        border: "1px solid " + (active ? T.acc : T.border),
+        background: active ? T.acc + "22" : T.surf,
+        color: active ? T.acc : T.text2,
+        borderRadius: 999,
+        padding: "7px 10px",
+        fontSize: 11,
+        whiteSpace: "nowrap",
+        cursor: "pointer"
+      }
+    }, label);
+  })), recipes.filter(function (r) {
+    var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
+    var q = recipeSearch.trim().toLowerCase();
+    return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
+  }).length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: "28px 12px",
+      color: T.text3,
+      fontSize: 12
+    }
+  }, "Brak przepisów dla wybranego filtra."), recipes.filter(function (r) {
+    var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
+    var q = recipeSearch.trim().toLowerCase();
+    return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
+  }).map(function (r) {
     var exp = expanded === r.id,
       sc = scales[r.id] || r.servings,
       f = sc / r.servings,
-      m = recipeM(r);
+      m = recipeM(r),
+      perServingFactor = 1 / Math.max(1, parseFloat(r.servings) || 1),
+      finishedWeight = parseFloat(r.finishedWeight) || 0,
+      per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0;
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
       onClick: function onClick() {
@@ -3074,7 +3421,7 @@ function App() {
         color: T.text2,
         marginTop: 2
       }
-    }, r.servings, " porcje \xB7 ", CAT_LABELS[r.cat] || r.cat)), /*#__PURE__*/React.createElement("span", {
+    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.custom === false ? " · MatFit" : " · Własny")), /*#__PURE__*/React.createElement("span", {
       onClick: function onClick(e) {
         e.stopPropagation();
         toggleFav(r.id);
@@ -3097,12 +3444,12 @@ function App() {
         fontWeight: 900,
         color: T.kcal
       }
-    }, Math.round(m.kcal)), /*#__PURE__*/React.createElement("div", {
+    }, Math.round(m.kcal * perServingFactor)), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 9,
         color: T.text3
       }
-    }, "kcal"))), exp && /*#__PURE__*/React.createElement("div", {
+    }, "kcal / porcję"))), exp && /*#__PURE__*/React.createElement("div", {
       style: {
         padding: "0 12px 12px",
         borderTop: "1px solid " + T.border
@@ -3123,7 +3470,7 @@ function App() {
         fontSize: 12,
         color: T.text2
       }
-    }, "Porcje"), /*#__PURE__*/React.createElement("div", {
+    }, "Skaluj liczbę porcji"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -3169,13 +3516,62 @@ function App() {
         fontSize: 18,
         cursor: "pointer"
       }
-    }, "+"))), /*#__PURE__*/React.createElement(MG, {
+    }, "+"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        color: T.text3,
+        marginBottom: 2
+      }
+    }, "Razem dla ", sc, sc === 1 ? " porcji" : " porcji"), /*#__PURE__*/React.createElement(MG, {
       kcal: m.kcal * f,
       protein: m.protein * f,
       carbs: m.carbs * f,
       fat: m.fat * f,
       T: T
     }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: finishedWeight > 0 ? "1fr 1fr" : "1fr",
+        gap: 6,
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.surf2,
+        borderRadius: 8,
+        padding: "8px 9px",
+        fontSize: 10,
+        color: T.text2,
+        lineHeight: 1.5
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: T.text,
+        fontWeight: 600
+      }
+    }, "1 porcja"), Math.round(m.kcal * perServingFactor), " kcal · B ", r2(m.protein * perServingFactor), "g · W ", r2(m.carbs * perServingFactor), "g · T ", r2(m.fat * perServingFactor), "g"), finishedWeight > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.surf2,
+        borderRadius: 8,
+        padding: "8px 9px",
+        fontSize: 10,
+        color: T.text2,
+        lineHeight: 1.5
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: T.text,
+        fontWeight: 600
+      }
+    }, "100 g gotowego dania"), Math.round(m.kcal * per100Factor), " kcal · B ", r2(m.protein * per100Factor), "g · W ", r2(m.carbs * per100Factor), "g · T ", r2(m.fat * per100Factor), "g")), !finishedWeight && /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: T.text3,
+        margin: "-4px 0 10px"
+      }
+    }, "Wpisz masę gotowego dania w edycji, aby zobaczyć wartości na 100 g."), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         textTransform: "uppercase",
@@ -3206,7 +3602,7 @@ function App() {
           fontSize: 12,
           color: T.acc
         }
-      }, item.grams, "g")) : null;
+      }, r2(item.grams * f), "g")) : null;
     }), (r.steps || []).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
@@ -3235,6 +3631,7 @@ function App() {
         setSelRDay(TODAY);
         setSelRMealTime("sniadanie");
         setSelRId(String(r.id));
+        setSelRPortions(String(sc));
         setModalRecipeSearch(r.name);
         setModal("addRecipe");
       },
@@ -3257,18 +3654,14 @@ function App() {
       style: _objectSpread(_objectSpread({}, btnB), {}, {
         padding: "10px 14px"
       })
-    }, "Edit"), /*#__PURE__*/React.createElement("button", {
+    }, "Edytuj"), /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
-        setRecipes(recipes.filter(function (x) {
-          return x.id !== r.id;
-        }));
-        setExpanded(null);
-        toast_("Usunięto");
+        return removeRecipe(r);
       },
       style: _objectSpread(_objectSpread({}, btnB), {}, {
         padding: "10px 14px"
       })
-    }, "Del"))));
+    }, "Usuń"))));
   })), page === "produkty" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       fontWeight: 700,
@@ -5361,6 +5754,7 @@ function App() {
     onChange: function onChange(e) {
       setModalProdSearch(e.target.value);
       setSelRId("");
+      setSelRPortions("1");
       setShowRecipeList(false);
     },
     onFocus: function onFocus() {
@@ -5435,6 +5829,7 @@ function App() {
         key: String(r.id),
         onClick: function onClick() {
           setSelRId(selected ? "" : String(r.id));
+          setSelRPortions("1");
           setShowRecipeList(false);
           setModalProdSearch("");
         },
@@ -5472,7 +5867,7 @@ function App() {
           fontFamily: "monospace",
           color: T.kcal
         }
-      }, Math.round(m.kcal), " kcal"), selected && /*#__PURE__*/React.createElement("span", {
+      }, Math.round(m.kcal / Math.max(1, parseFloat(r.servings) || 1)), " kcal/porcję"), selected && /*#__PURE__*/React.createElement("span", {
         style: {
           color: T.acc,
           fontSize: 14
@@ -5492,7 +5887,18 @@ function App() {
     }
   }, "\u2713 ", (_recipes$find = recipes.find(function (x) {
     return String(x.id) === selRId;
-  })) === null || _recipes$find === void 0 ? void 0 : _recipes$find.name), /*#__PURE__*/React.createElement("div", {
+  })) === null || _recipes$find === void 0 ? void 0 : _recipes$find.name), selRId && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Liczba porcji"), /*#__PURE__*/React.createElement("input", {
+    value: selRPortions,
+    onChange: function onChange(e) {
+      return setSelRPortions(e.target.value);
+    },
+    type: "number",
+    min: "1",
+    step: "1",
+    style: inp
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5548,7 +5954,18 @@ function App() {
     }
   }, "\u2713 ", (_recipes$find2 = recipes.find(function (x) {
     return String(x.id) === selRId;
-  })) === null || _recipes$find2 === void 0 ? void 0 : _recipes$find2.name), /*#__PURE__*/React.createElement("div", {
+  })) === null || _recipes$find2 === void 0 ? void 0 : _recipes$find2.name), selRId && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Liczba porcji"), /*#__PURE__*/React.createElement("input", {
+    value: selRPortions,
+    onChange: function onChange(e) {
+      return setSelRPortions(e.target.value);
+    },
+    type: "number",
+    min: "1",
+    step: "1",
+    style: inp
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5593,6 +6010,7 @@ function App() {
         emoji: "",
         cat: "wytrawne",
         servings: "1",
+        finishedWeight: "",
         steps: ""
       });
       setBItems(_toConsumableArray(emItems));
@@ -5682,6 +6100,17 @@ function App() {
     },
     style: inp,
     placeholder: "np. Sernik Proteinowy"
+  }), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Emoji — opcjonalnie"), /*#__PURE__*/React.createElement("input", {
+    value: rf.emoji,
+    onChange: function onChange(e) {
+      return setRf(_objectSpread(_objectSpread({}, rf), {}, {
+        emoji: e.target.value.slice(0, 4)
+      }));
+    },
+    style: inp,
+    placeholder: "np. 🥞"
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
@@ -5727,13 +6156,39 @@ function App() {
     T: T,
     inp: inp,
     btnA: btnA
-  }), bItems.length > 0 && /*#__PURE__*/React.createElement(MG, {
+  }), bItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      marginTop: 10
+    }
+  }, "MAKRO CAŁEGO PRZEPISU"), /*#__PURE__*/React.createElement(MG, {
     kcal: bMacro.kcal,
     protein: bMacro.protein,
     carbs: bMacro.carbs,
     fat: bMacro.fat,
     T: T
-  }), /*#__PURE__*/React.createElement(Lbl, {
+  })), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Masa gotowego dania (g) — opcjonalnie"), /*#__PURE__*/React.createElement("input", {
+    value: rf.finishedWeight || "",
+    onChange: function onChange(e) {
+      return setRf(_objectSpread(_objectSpread({}, rf), {}, {
+        finishedWeight: e.target.value
+      }));
+    },
+    type: "number",
+    min: "1",
+    style: inp,
+    placeholder: "Zważ całość po przygotowaniu"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      lineHeight: 1.4,
+      marginTop: 4
+    }
+  }, "Po wpisaniu masy aplikacja pokaże prawidłowe makro na 100 g gotowego dania."), /*#__PURE__*/React.createElement(Lbl, {
     T: T
   }, "Przygotowanie"), /*#__PURE__*/React.createElement("textarea", {
     value: rf.steps,
