@@ -14,7 +14,9 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [ ] Powiadomienia o wodzie (etap aplikacji Android).
 - [x] Startowa baza produktów: 82 pozycje, kategorie i bezpieczne scalanie z produktami użytkownika.
 - [x] Przepisy v1: 10 przepisów startowych, wyszukiwanie i kategorie, własne przepisy, edycja/usuwanie, porcje i dodawanie do planera.
-- [ ] Generator kart PNG/PDF.
+- [x] Generator kart v1: style Sweet/Savory, segmentowe logo MatFit, zdjęcie, aktywny wariant przepisu, eksport PNG oraz PDF/druk.
+- [ ] Zdjęcia AI do kart przez bezpieczny backend (bez klucza API w HTML).
+- [ ] Osobny skrócony format karty do social mediów.
 - [ ] Backup i przywracanie danych.
 - [ ] Przygotowanie wydania Android / Google Play.
 

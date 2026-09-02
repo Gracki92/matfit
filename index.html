@@ -1803,63 +1803,109 @@ function App() {
       _useState78 = _slicedToArray(_useState77, 2),
       cardLoading = _useState78[0],
       setCardLoading = _useState78[1];
+  var _useStateCardStyle = useState("savory"),
+      _useStateCardStyle2 = _slicedToArray(_useStateCardStyle, 2),
+      cardStyle = _useStateCardStyle2[0],
+      setCardStyle = _useStateCardStyle2[1];
   
   var _useStateCollapsedMeals = useState({}),
       _useStateCollapsedMeals2 = _slicedToArray(_useStateCollapsedMeals, 2),
       collapsedMeals = _useStateCollapsedMeals2[0],
       setCollapsedMeals = _useStateCollapsedMeals2[1];
 
-  function openRecipeCard(_x) {
-    return _openRecipeCard.apply(this, arguments);
+  function openRecipeCard(r) {
+    var name = String(r && r.name || "");
+    var inferredSweet = r && (r.cardStyle === "sweet" || r.cat === "slodkie") || /owsiank|naleś|gofr|shake|twarog|sernik|drożdż|racuch|deser|brownie|ciast/i.test(name);
+    setCardRecipe(r);
+    setCardImg(r && r.image ? r.image : null);
+    setCardStyle(inferredSweet ? "sweet" : "savory");
+    setCardLoading(false);
+    setModal("recipeCard");
   }
-  function _openRecipeCard() {
-    _openRecipeCard = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(r) {
-      var _data$content, res, data, prompt, _t;
-      return _regenerator().w(function (_context) {
-        while (1) switch (_context.p = _context.n) {
-          case 0:
-            setCardRecipe(r);
-            setCardImg(null);
-            setCardLoading(true);
-            setModal("recipeCard");
-            _context.p = 1;
-            _context.n = 2;
-            return fetch("https://api.anthropic.com/v1/messages", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                model: "claude-sonnet-4-20250514",
-                max_tokens: 200,
-                messages: [{
-                  role: "user",
-                  content: "Napisz prompt po angielsku do wygenerowania zdj\u0119cia potrawy \"".concat(r.name, "\". Tylko sam prompt, max 20 s\u0142\xF3w, styl food photography.")
-                }]
-              })
-            });
-          case 2:
-            res = _context.v;
-            _context.n = 3;
-            return res.json();
-          case 3:
-            data = _context.v;
-            prompt = ((_data$content = data.content) === null || _data$content === void 0 || (_data$content = _data$content[0]) === null || _data$content === void 0 || (_data$content = _data$content.text) === null || _data$content === void 0 ? void 0 : _data$content.trim()) || r.name;
-            setCardImg(prompt);
-            _context.n = 5;
-            break;
-          case 4:
-            _context.p = 4;
-            _t = _context.v;
-            setCardImg(null);
-          case 5:
+  function handleCardImageUpload(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!String(file.type || "").startsWith("image/")) {
+      toast_("Wybierz plik graficzny");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast_("Zdjęcie może mieć maksymalnie 10 MB");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (event) {
+      setCardImg(event.target.result);
+      toast_("Zdjęcie dodane");
+    };
+    reader.onerror = function () {
+      toast_("Nie udało się wczytać zdjęcia");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+  function downloadRecipeCardPNG() {
+    var node = document.getElementById("recipe-card");
+    if (!node) {
+      toast_("Nie znaleziono karty");
+      return;
+    }
+    setCardLoading(true);
+    try {
+      var width = node.scrollWidth;
+      var height = node.scrollHeight;
+      var clone = node.cloneNode(true);
+      clone.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+      clone.style.width = width + "px";
+      clone.style.height = height + "px";
+      clone.style.margin = "0";
+      var html = new XMLSerializer().serializeToString(clone);
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '"><foreignObject width="100%" height="100%">' + html + '</foreignObject></svg>';
+      var blob = new Blob([svg], {
+        type: "image/svg+xml;charset=utf-8"
+      });
+      var url = URL.createObjectURL(blob);
+      var image = new Image();
+      image.onload = function () {
+        var scale = 1080 / width;
+        var canvas = document.createElement("canvas");
+        canvas.width = 1080;
+        canvas.height = Math.ceil(height * scale);
+        var context = canvas.getContext("2d");
+        context.fillStyle = "#f8f3e8";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (png) {
+          if (!png) {
             setCardLoading(false);
-          case 6:
-            return _context.a(2);
-        }
-      }, _callee, null, [[1, 4]]);
-    }));
-    return _openRecipeCard.apply(this, arguments);
+            toast_("Nie udało się utworzyć PNG");
+            return;
+          }
+          var pngUrl = URL.createObjectURL(png);
+          var link = document.createElement("a");
+          link.href = pngUrl;
+          link.download = "matfit-" + String(cardRecipe && cardRecipe.name || "przepis").toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/gi, "-").replace(/^-|-$/g, "") + ".png";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(function () {
+            return URL.revokeObjectURL(pngUrl);
+          }, 1000);
+          setCardLoading(false);
+          toast_("PNG pobrane");
+        }, "image/png", 0.95);
+      };
+      image.onerror = function () {
+        URL.revokeObjectURL(url);
+        setCardLoading(false);
+        toast_("Przeglądarka nie pozwoliła zapisać PNG — użyj PDF/druk");
+      };
+      image.src = url;
+    } catch (_unusedCardExport) {
+      setCardLoading(false);
+      toast_("Nie udało się utworzyć PNG");
+    }
   }
   function shareDay(key) {
     var meals = planer[key] || [];
@@ -6800,6 +6846,36 @@ function App() {
   }, "Dodaj do planera"))), modal === "recipeCard" && cardRecipe && function () {
     var r = cardRecipe;
     var m = recipeM(r);
+    var servings = Math.max(1, parseFloat(r.servings) || 1);
+    var finishedWeight = parseFloat(r.finishedWeight) || 0;
+    var per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0;
+    var perServingFactor = 1 / servings;
+    var sweet = cardStyle === "sweet";
+    var theme = sweet ? {
+      bg: "#fbf7ef",
+      panel: "#fffdf8",
+      soft: "#f2e4cf",
+      accent: "#b57a2a",
+      accent2: "#e0b865",
+      dark: "#211912",
+      muted: "#6f6256",
+      line: "#dbcdb9",
+      hero: "linear-gradient(135deg,#f4e5c9,#d7a85a)"
+    } : {
+      bg: "#f7f4ea",
+      panel: "#fffdf7",
+      soft: "#e5ecdd",
+      accent: "#245735",
+      accent2: "#9fb27f",
+      dark: "#14271a",
+      muted: "#5c695d",
+      line: "#cdd5c4",
+      hero: "linear-gradient(135deg,#dfe9d6,#6f8f65)"
+    };
+    var category = CAT_LABELS[r.cat] || (sweet ? "Słodkie" : "Wytrawne");
+    var proteinPerServing = m.protein * perServingFactor;
+    var ingredients = r.ingredients || [];
+    var steps = r.steps || [];
     return /*#__PURE__*/React.createElement("div", {
       onClick: function onClick() {
         return setModal(null);
@@ -6807,7 +6883,7 @@ function App() {
       style: {
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,.88)",
+        background: "rgba(0,0,0,.9)",
         zIndex: 200,
         display: "flex",
         alignItems: "flex-end",
@@ -6818,242 +6894,567 @@ function App() {
         return e.stopPropagation();
       },
       style: {
-        background: "#fff",
+        background: "#eef2f5",
         borderRadius: "20px 20px 0 0",
         width: "100%",
-        maxWidth: 430,
-        maxHeight: "96vh",
-        overflowY: "auto"
+        maxWidth: 460,
+        maxHeight: "97vh",
+        overflowY: "auto",
+        boxShadow: "0 -12px 40px rgba(0,0,0,.35)"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "card-controls",
+      style: {
+        padding: "12px",
+        position: "sticky",
+        top: 0,
+        zIndex: 5,
+        background: "rgba(238,242,245,.97)",
+        borderBottom: "1px solid #d8dee5"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
+        alignItems: "center",
         gap: 8,
-        padding: "14px 16px 0",
-        justifyContent: "space-between",
-        alignItems: "center"
+        marginBottom: 8
       }
-    }, /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
+        flex: 1,
         fontWeight: 700,
-        fontSize: 15,
-        color: "#1a1a1a"
+        fontSize: 14,
+        color: "#17202a"
       }
-    }, "\uD83D\uDDA8\uFE0F Karta przepisu"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: "flex",
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: function onClick() {
-        return window.print();
-      },
-      style: {
-        background: "#2d7d32",
-        color: "#fff",
-        border: "none",
-        borderRadius: 10,
-        padding: "8px 16px",
-        fontWeight: 700,
-        fontSize: 13,
-        cursor: "pointer"
-      }
-    }, "Drukuj"), /*#__PURE__*/React.createElement("button", {
+    }, "Karta MatFit"), /*#__PURE__*/React.createElement("button", {
       onClick: function onClick() {
         return setModal(null);
       },
       style: {
-        background: "none",
+        background: "transparent",
         border: "none",
         fontSize: 22,
-        cursor: "pointer",
-        color: "#888"
+        color: "#64748b",
+        cursor: "pointer"
       }
-    }, "\u2715"))), /*#__PURE__*/React.createElement("div", {
-      id: "recipe-card",
-      style: {
-        padding: "16px",
-        fontFamily: "Georgia, serif",
-        color: "#1a1a1a"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: "100%",
-        height: 180,
-        background: "linear-gradient(135deg,#f0f4e8,#d4e6c3)",
-        borderRadius: 12,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 14,
-        position: "relative",
-        overflow: "hidden"
-      }
-    }, cardLoading ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        color: "#666"
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 32,
-        marginBottom: 8
-      }
-    }, "\u2728"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 12
-      }
-    }, "Generuj\u0119 opis zdj\u0119cia...")) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        padding: 16
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 48,
-        marginBottom: 6
-      }
-    }, r.emoji || "🍽️"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: "#888",
-        fontStyle: "italic",
-        maxWidth: 200,
-        lineHeight: 1.4
-      }
-    }, cardImg || r.name))), /*#__PURE__*/React.createElement("h2", {
-      style: {
-        fontSize: 22,
-        fontWeight: 900,
-        textAlign: "center",
-        margin: "0 0 4px",
-        textTransform: "uppercase",
-        letterSpacing: 2,
-        color: "#1a1a1a"
-      }
-    }, r.name), /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        fontSize: 12,
-        color: "#888",
-        marginBottom: 14
-      }
-    }, r.servings, " porcje"), /*#__PURE__*/React.createElement("div", {
+    }, "×")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        gap: 12
-      }
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 13,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        borderBottom: "2px solid #1a1a1a",
-        paddingBottom: 4,
+        gap: 6,
         marginBottom: 8
       }
-    }, "Sk\u0142adniki"), (r.ingredients || []).map(function (item, i) {
-      var p = products.find(function (x) {
-        return x.id === item.productId;
-      });
-      return p ? /*#__PURE__*/React.createElement("div", {
-        key: i,
+    }, [["sweet", "🍰 Sweet"], ["savory", "🥗 Savory"]].map(function (_refCardStyle) {
+      var _refCardStyle2 = _slicedToArray(_refCardStyle, 2),
+        key = _refCardStyle2[0],
+        label = _refCardStyle2[1];
+      var active = cardStyle === key;
+      return /*#__PURE__*/React.createElement("button", {
+        key: key,
+        onClick: function onClick() {
+          return setCardStyle(key);
+        },
         style: {
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "4px 0",
-          borderBottom: "1px solid #eee",
-          fontSize: 12
+          border: "1px solid " + (active ? theme.accent : "#cbd5e1"),
+          background: active ? theme.soft : "#fff",
+          color: active ? theme.dark : "#475569",
+          borderRadius: 9,
+          padding: "8px",
+          fontWeight: active ? 700 : 500,
+          fontSize: 11,
+          cursor: "pointer"
         }
-      }, /*#__PURE__*/React.createElement("span", null, p.name), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontWeight: 600,
-          color: "#2d7d32"
-        }
-      }, item.grams, "g")) : null;
-    })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      }, label);
+    })), /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 6
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      id: "recipe-card-image-input",
+      type: "file",
+      accept: "image/*",
+      onChange: handleCardImageUpload,
+      style: {
+        display: "none"
+      }
+    }), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        var input = document.getElementById("recipe-card-image-input");
+        if (input) input.click();
+      },
+      style: {
+        flex: "1 1 110px",
+        background: "#fff",
+        border: "1px solid #cbd5e1",
+        borderRadius: 9,
+        padding: "8px",
+        color: "#334155",
+        fontSize: 10,
+        cursor: "pointer"
+      }
+    }, cardImg ? "🖼️ Zmień zdjęcie" : "🖼️ Dodaj zdjęcie"), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return toast_("Zdjęcia AI podłączymy przez bezpieczny serwer — bez klucza w HTML");
+      },
+      style: {
+        flex: "1 1 110px",
+        background: "#fff",
+        border: "1px solid #cbd5e1",
+        borderRadius: 9,
+        padding: "8px",
+        color: "#334155",
+        fontSize: 10,
+        cursor: "pointer"
+      }
+    }, "✨ Zdjęcie AI"), cardImg && /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return setCardImg(null);
+      },
+      style: {
+        background: "#fff",
+        border: "1px solid #cbd5e1",
+        borderRadius: 9,
+        padding: "8px",
+        color: "#64748b",
+        fontSize: 10,
+        cursor: "pointer"
+      }
+    }, "Usuń"), /*#__PURE__*/React.createElement("button", {
+      onClick: downloadRecipeCardPNG,
+      disabled: cardLoading,
+      style: {
+        flex: "1 1 90px",
+        background: theme.accent,
+        border: "none",
+        borderRadius: 9,
+        padding: "8px",
+        color: "#fff",
         fontWeight: 700,
-        fontSize: 13,
-        textTransform: "uppercase",
-        letterSpacing: 1,
-        borderBottom: "2px solid #1a1a1a",
-        paddingBottom: 4,
-        marginBottom: 8
+        fontSize: 10,
+        cursor: cardLoading ? "wait" : "pointer",
+        opacity: cardLoading ? .6 : 1
       }
-    }, "Makro (ca\u0142o\u015B\u0107)"), [["Kalorie", Math.round(m.kcal), "kcal"], ["Białko", r2(m.protein), "g"], ["Tłuszcze", r2(m.fat), "g"], ["Węglowodany", r2(m.carbs), "g"]].map(function (_ref65) {
-      var _ref66 = _slicedToArray(_ref65, 3),
-        l = _ref66[0],
-        v = _ref66[1],
-        u = _ref66[2];
-      return /*#__PURE__*/React.createElement("div", {
-        key: l,
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "5px 0",
-          borderBottom: "1px solid #eee",
-          fontSize: 12
-        }
-      }, /*#__PURE__*/React.createElement("span", null, l), /*#__PURE__*/React.createElement("span", {
-        style: {
-          fontWeight: 700
-        }
-      }, v, " ", u));
-    }), /*#__PURE__*/React.createElement("div", {
+    }, cardLoading ? "Tworzę..." : "↓ PNG"), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        return window.print();
+      },
       style: {
-        marginTop: 8,
-        padding: "6px 8px",
-        background: "#f0f4e8",
-        borderRadius: 6,
-        fontSize: 11,
-        textAlign: "center",
-        color: "#2d7d32",
-        fontWeight: 600
+        flex: "1 1 90px",
+        background: theme.dark,
+        border: "none",
+        borderRadius: 9,
+        padding: "8px",
+        color: "#fff",
+        fontWeight: 700,
+        fontSize: 10,
+        cursor: "pointer"
       }
-    }, "\xBD porcji: ", Math.round(m.kcal / 2), " kcal | ", r2(m.protein / 2), "g bia\u0142ka"))), (r.steps || []).length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "PDF / druk"))), /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 12
+        padding: "12px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      id: "recipe-card",
+      style: {
+        background: theme.bg,
+        color: theme.dark,
+        fontFamily: "Arial, Helvetica, sans-serif",
+        borderRadius: 14,
+        overflow: "hidden",
+        border: "1px solid " + theme.line,
+        boxShadow: "0 10px 30px rgba(34,25,18,.12)"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        padding: "12px 14px 9px",
+        background: theme.panel,
+        borderBottom: "1px solid " + theme.line
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "42",
+      height: "42",
+      viewBox: "0 0 64 64",
+      role: "img",
+      "aria-label": "MatFit"
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: "1",
+      y: "1",
+      width: "62",
+      height: "62",
+      rx: "14",
+      fill: theme.dark
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "10,50 10,14 20,14 20,50",
+      fill: theme.bg
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "22,14 30,10 38,28 31,39",
+      fill: theme.bg
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "42,10 51,14 35,40 28,29",
+      fill: theme.bg
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "46,14 56,14 56,50 46,50",
+      fill: theme.bg
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 18,
+        fontWeight: 900,
+        letterSpacing: -.5
+      }
+    }, "MatFit", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: theme.accent,
+        fontSize: 10,
+        marginLeft: 5,
+        letterSpacing: 1
+      }
+    }, "PRO")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 8,
+        color: theme.muted,
+        fontStyle: "italic"
+      }
+    }, "Smacznie · zdrowo · z balansem")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: theme.dark,
+        color: "#fff",
+        borderRadius: 999,
+        padding: "6px 8px",
+        fontSize: 8,
+        fontWeight: 800,
+        letterSpacing: .6,
+        textTransform: "uppercase"
+      }
+    }, proteinPerServing >= 20 ? "High Protein" : "MatFit Recipe")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1.05fr .95fr",
+        minHeight: 190,
+        background: theme.panel
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "18px 14px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "inline-block",
+        alignSelf: "flex-start",
+        background: theme.accent,
+        color: "#fff",
+        padding: "5px 8px",
+        fontSize: 8,
+        fontWeight: 800,
+        letterSpacing: 1,
+        textTransform: "uppercase",
+        marginBottom: 9,
+        transform: "rotate(-1deg)"
+      }
+    }, sweet ? "Sweet Edition" : "Savory Edition"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 25,
+        lineHeight: .96,
+        fontWeight: 950,
+        textTransform: "uppercase",
+        letterSpacing: -.7,
+        overflowWrap: "anywhere"
+      }
+    }, r.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10,
+        fontSize: 9,
+        color: theme.muted,
+        fontWeight: 600
+      }
+    }, servings, servings === 1 ? " porcja" : " porcje", " · ", category)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: theme.hero,
+        position: "relative",
+        overflow: "hidden",
+        minHeight: 190
+      }
+    }, cardImg ? /*#__PURE__*/React.createElement("img", {
+      src: cardImg,
+      alt: r.name,
+      style: {
+        width: "100%",
+        height: "100%",
+        minHeight: 190,
+        objectFit: "cover",
+        display: "block"
+      }
+    }) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: 12,
+        color: theme.dark
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 54,
+        filter: "drop-shadow(0 4px 8px rgba(0,0,0,.12))"
+      }
+    }, r.emoji || "🍽️"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 8,
         fontWeight: 700,
-        fontSize: 13,
+        marginTop: 7,
+        opacity: .75,
+        textTransform: "uppercase",
+        letterSpacing: .8
+      }
+    }, "Dodaj zdjęcie lub wygeneruj AI")))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3,1fr)",
+        gap: 0,
+        background: theme.soft,
+        borderTop: "1px solid " + theme.line,
+        borderBottom: "1px solid " + theme.line
+      }
+    }, [["💪", r2(proteinPerServing) + " g", "białka / porcję"], ["🍽️", String(servings), servings === 1 ? "porcja" : "porcje"], ["✦", sweet ? "SWEET" : "SAVORY", "styl karty"]].map(function (_refCardBenefit, index) {
+      var _refCardBenefit2 = _slicedToArray(_refCardBenefit, 3),
+        icon = _refCardBenefit2[0],
+        value = _refCardBenefit2[1],
+        label = _refCardBenefit2[2];
+      return /*#__PURE__*/React.createElement("div", {
+        key: label,
+        style: {
+          textAlign: "center",
+          padding: "9px 4px",
+          borderRight: index < 2 ? "1px solid " + theme.line : "none"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 14
+        }
+      }, icon), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 10,
+          fontWeight: 900,
+          color: theme.dark
+        }
+      }, value), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 7,
+          color: theme.muted,
+          textTransform: "uppercase"
+        }
+      }, label));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "12px 14px 8px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 9,
+        fontWeight: 900,
         textTransform: "uppercase",
         letterSpacing: 1,
-        borderBottom: "2px solid #1a1a1a",
-        paddingBottom: 4,
-        marginBottom: 8
+        marginBottom: 6
       }
-    }, "Przygotowanie"), r.steps.map(function (st, i) {
+    }, "Makro całego przepisu"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "repeat(4,1fr)",
+        gap: 6
+      }
+    }, [["Kcal", Math.round(m.kcal)], ["Białko", r2(m.protein) + "g"], ["Tłuszcz", r2(m.fat) + "g"], ["Węgle", r2(m.carbs) + "g"]].map(function (_refCardMacro) {
+      var _refCardMacro2 = _slicedToArray(_refCardMacro, 2),
+        label = _refCardMacro2[0],
+        value = _refCardMacro2[1];
+      return /*#__PURE__*/React.createElement("div", {
+        key: label,
+        style: {
+          background: theme.panel,
+          border: "1px solid " + theme.line,
+          borderRadius: 9,
+          padding: "8px 3px",
+          textAlign: "center"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          color: theme.accent,
+          fontWeight: 950,
+          fontSize: 14
+        }
+      }, value), /*#__PURE__*/React.createElement("div", {
+        style: {
+          color: theme.muted,
+          fontSize: 7,
+          textTransform: "uppercase",
+          marginTop: 2
+        }
+      }, label));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 7,
+        background: theme.dark,
+        color: "#fff",
+        borderRadius: 8,
+        padding: "7px 9px",
+        textAlign: "center",
+        fontSize: 8
+      }
+    }, "1 porcja: ", /*#__PURE__*/React.createElement("strong", null, Math.round(m.kcal * perServingFactor), " kcal"), " · B ", r2(m.protein * perServingFactor), " g · W ", r2(m.carbs * perServingFactor), " g · T ", r2(m.fat * perServingFactor), " g", finishedWeight > 0 ? " · 100 g: " + Math.round(m.kcal * per100Factor) + " kcal" : "")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 10,
+        padding: "8px 14px 14px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: theme.panel,
+        border: "1px solid " + theme.line,
+        borderRadius: 10,
+        padding: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: theme.accent,
+        fontSize: 11,
+        fontWeight: 950,
+        textTransform: "uppercase",
+        letterSpacing: .7,
+        borderBottom: "2px solid " + theme.accent,
+        paddingBottom: 4,
+        marginBottom: 6
+      }
+    }, "Składniki"), ingredients.map(function (item, i) {
+      var product = products.find(function (p) {
+        return p.id === item.productId;
+      });
+      if (!product) return null;
       return /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           display: "flex",
-          gap: 8,
-          padding: "5px 0",
-          fontSize: 12,
-          borderBottom: "1px solid #eee"
+          gap: 5,
+          justifyContent: "space-between",
+          padding: "4px 0",
+          borderBottom: "1px solid " + theme.line,
+          fontSize: 8,
+          lineHeight: 1.3
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
-          fontWeight: 700,
-          color: "#2d7d32",
-          flexShrink: 0
+          flex: 1
         }
-      }, i + 1, "."), /*#__PURE__*/React.createElement("span", null, st));
+      }, product.name), /*#__PURE__*/React.createElement("strong", {
+        style: {
+          color: theme.accent,
+          whiteSpace: "nowrap"
+        }
+      }, r2(parseFloat(item.grams) || 0), " g"));
     })), /*#__PURE__*/React.createElement("div", {
       style: {
-        marginTop: 14,
-        textAlign: "center",
-        fontSize: 10,
-        color: "#aaa",
-        borderTop: "1px solid #eee",
-        paddingTop: 8
+        background: theme.panel,
+        border: "1px solid " + theme.line,
+        borderRadius: 10,
+        padding: 10
       }
-    }, "MatFit Pro \u2014 ", new Date().toLocaleDateString("pl-PL"))), /*#__PURE__*/React.createElement("style", null, "\n              @media print {\n                body * { visibility: hidden; }\n                #recipe-card, #recipe-card * { visibility: visible; }\n                #recipe-card { position: fixed; top: 0; left: 0; width: 100%; padding: 20px; }\n              }\n            ")));
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: theme.accent,
+        fontSize: 11,
+        fontWeight: 950,
+        textTransform: "uppercase",
+        letterSpacing: .7,
+        borderBottom: "2px solid " + theme.accent,
+        paddingBottom: 4,
+        marginBottom: 6
+      }
+    }, "Wykonanie"), steps.length ? steps.map(function (step, i) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: i,
+        style: {
+          display: "flex",
+          gap: 6,
+          padding: "4px 0",
+          borderBottom: "1px solid " + theme.line,
+          fontSize: 8,
+          lineHeight: 1.35
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          background: theme.accent,
+          color: "#fff",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          fontSize: 8,
+          fontWeight: 900
+        }
+      }, i + 1), /*#__PURE__*/React.createElement("span", null, step));
+    }) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 8,
+        color: theme.muted,
+        lineHeight: 1.4
+      }
+    }, "Dodaj instrukcję przygotowania w edycji przepisu."))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: theme.dark,
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "9px 14px"
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      width: "20",
+      height: "20",
+      viewBox: "0 0 64 64",
+      "aria-hidden": "true"
+    }, /*#__PURE__*/React.createElement("polygon", {
+      points: "8,52 8,12 18,12 18,52",
+      fill: "#fff"
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "21,14 29,10 37,28 30,39",
+      fill: "#fff"
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "43,10 52,14 36,40 29,29",
+      fill: "#fff"
+    }), /*#__PURE__*/React.createElement("polygon", {
+      points: "46,12 56,12 56,52 46,52",
+      fill: "#fff"
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        fontSize: 8,
+        letterSpacing: .6,
+        textTransform: "uppercase"
+      }
+    }, "MatFit Pro · Smacznie · Zdrowo · Z balansem"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: theme.accent2,
+        fontSize: 8,
+        fontWeight: 800
+      }
+    }, sweet ? "SWEET" : "SAVORY"))), /*#__PURE__*/React.createElement("style", null, "@media print { body * { visibility:hidden!important; } #recipe-card, #recipe-card * { visibility:visible!important; } #recipe-card { position:absolute!important; left:0!important; top:0!important; width:100%!important; border:none!important; border-radius:0!important; box-shadow:none!important; } .card-controls { display:none!important; } @page { margin:0; size:auto; } }"))));
   }(), toast && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "fixed",
