@@ -381,7 +381,160 @@ light: {
   navbg: "rgba(248,250,252,.98)", name: "🌞 Jasny"
 }
 };
-var PRODUCTS_DEFAULT = [];
+function baseProduct(id, name, emoji, kcal, protein, carbs, fat, category, state) {
+  return {
+    id: "base_" + id,
+    name: name,
+    emoji: emoji,
+    brand: "MatFit",
+    ean: null,
+    kcal: kcal,
+    protein: protein,
+    carbs: carbs,
+    fat: fat,
+    packageSize: null,
+    category: category,
+    state: state || "",
+    source: "matfit",
+    custom: false
+  };
+}
+var PRODUCT_CATEGORIES = [{
+  key: "all",
+  label: "Wszystkie"
+}, {
+  key: "own",
+  label: "Własne"
+}, {
+  key: "protein",
+  label: "Mięso i białko"
+}, {
+  key: "dairy",
+  label: "Nabiał"
+}, {
+  key: "carbs",
+  label: "Węglowodany"
+}, {
+  key: "fats",
+  label: "Tłuszcze"
+}, {
+  key: "vegetables",
+  label: "Warzywa"
+}, {
+  key: "fruit",
+  label: "Owoce"
+}];
+// Wartości orientacyjne na 100 g, dopasowane do typowych polskich etykiet.
+// Produkt markowy zawsze powinien korzystać z etykiety lub skanera EAN.
+var PRODUCTS_DEFAULT = [
+  baseProduct("chicken_breast_raw", "Pierś z kurczaka", "🍗", 99, 21.5, 0, 1.3, "protein", "surowa"),
+  baseProduct("chicken_breast_cooked", "Pierś z kurczaka", "🍗", 165, 31, 0, 3.6, "protein", "grillowana bez tłuszczu"),
+  baseProduct("chicken_thigh_skinless", "Udziec z kurczaka bez skóry", "🍗", 119, 19.7, 0, 4.7, "protein", "surowy"),
+  baseProduct("turkey_breast_raw", "Pierś z indyka", "🦃", 104, 23.4, 0, 1.2, "protein", "surowa"),
+  baseProduct("turkey_mince", "Mięso mielone z indyka", "🦃", 152, 20, 0, 8, "protein", "surowe, ok. 7–8% tłuszczu"),
+  baseProduct("pork_loin_raw", "Schab wieprzowy bez kości", "🥩", 129, 22.5, 0, 4.2, "protein", "surowy"),
+  baseProduct("pork_tenderloin", "Polędwiczka wieprzowa", "🥩", 120, 22, 0, 3.5, "protein", "surowa"),
+  baseProduct("beef_lean", "Wołowina chuda", "🥩", 137, 21, 0, 5.5, "protein", "surowa"),
+  baseProduct("beef_mince_5", "Wołowina mielona 5%", "🥩", 137, 21.4, 0, 5, "protein", "surowa"),
+  baseProduct("egg_whole", "Jajko kurze całe", "🥚", 143, 12.6, 0.7, 9.5, "protein", "surowe, bez skorupki"),
+  baseProduct("egg_white", "Białko jaja", "🥚", 43, 10.9, 0.7, 0.2, "protein", "płynne"),
+  baseProduct("tuna_water", "Tuńczyk w sosie własnym", "🐟", 116, 25.5, 0, 1, "protein", "po odsączeniu"),
+  baseProduct("cod_raw", "Dorsz", "🐟", 82, 18, 0, 0.7, "protein", "surowy"),
+  baseProduct("salmon_raw", "Łosoś atlantycki", "🐟", 208, 20.4, 0, 13.4, "protein", "surowy"),
+  baseProduct("mackerel_smoked", "Makrela wędzona", "🐟", 221, 20.7, 0, 15.5, "protein", "gotowa do spożycia"),
+  baseProduct("shrimp_cooked", "Krewetki", "🦐", 99, 24, 0.2, 0.3, "protein", "gotowane"),
+  baseProduct("tofu_natural", "Tofu naturalne", "🌱", 126, 12, 2.3, 7.5, "protein", "gotowe"),
+
+  baseProduct("skyr_natural", "Skyr naturalny", "🥣", 62, 11, 3.8, 0.2, "dairy", "typowa polska etykieta"),
+  baseProduct("greek_yogurt_0", "Jogurt typu greckiego 0%", "🥣", 59, 10.3, 3.6, 0.4, "dairy", "naturalny"),
+  baseProduct("yogurt_natural_2", "Jogurt naturalny 2%", "🥣", 60, 4.3, 5.2, 2, "dairy", "naturalny"),
+  baseProduct("kefir_2", "Kefir 2%", "🥛", 51, 3.4, 4.7, 2, "dairy", "naturalny"),
+  baseProduct("cottage_light", "Serek wiejski lekki", "🧀", 81, 11, 2.4, 3, "dairy", "gotowy"),
+  baseProduct("cottage_regular", "Serek wiejski", "🧀", 97, 11, 2, 5, "dairy", "klasyczny"),
+  baseProduct("quark_lean", "Twaróg chudy", "🧀", 99, 19.8, 3.5, 0.5, "dairy", "gotowy"),
+  baseProduct("quark_semi", "Twaróg półtłusty", "🧀", 133, 18.7, 3.7, 4.7, "dairy", "gotowy"),
+  baseProduct("milk_15", "Mleko 1,5%", "🥛", 47, 3.4, 4.8, 1.5, "dairy", "wartości na 100 ml"),
+  baseProduct("milk_2", "Mleko 2%", "🥛", 50, 3.4, 4.8, 2, "dairy", "wartości na 100 ml"),
+  baseProduct("mozzarella_light", "Mozzarella light", "🧀", 172, 24, 2, 8, "dairy", "typowa etykieta"),
+  baseProduct("gouda", "Ser Gouda", "🧀", 356, 25, 2.2, 27, "dairy", "pełnotłusty"),
+  baseProduct("wpc_80", "Odżywka białkowa WPC 80", "🥤", 390, 78, 8, 6, "dairy", "wartość orientacyjna — sprawdź etykietę"),
+  baseProduct("protein_pudding", "Pudding proteinowy", "🥣", 75, 10, 5.5, 1.5, "dairy", "wartość orientacyjna — sprawdź etykietę"),
+
+  baseProduct("rice_white_dry", "Ryż biały", "🍚", 350, 7, 78, 0.7, "carbs", "suchy"),
+  baseProduct("rice_basmati_dry", "Ryż basmati", "🍚", 354, 8.8, 77.7, 1, "carbs", "suchy"),
+  baseProduct("rice_white_cooked", "Ryż biały", "🍚", 130, 2.7, 28.2, 0.3, "carbs", "ugotowany"),
+  baseProduct("pasta_wheat_dry", "Makaron pszenny", "🍝", 359, 12.5, 72, 2, "carbs", "suchy"),
+  baseProduct("pasta_wheat_cooked", "Makaron pszenny", "🍝", 158, 5.8, 30.9, 0.9, "carbs", "ugotowany"),
+  baseProduct("pasta_wholegrain_dry", "Makaron pełnoziarnisty", "🍝", 350, 13, 66, 2.5, "carbs", "suchy"),
+  baseProduct("oats", "Płatki owsiane", "🥣", 370, 13, 60, 7, "carbs", "suche"),
+  baseProduct("rice_cereal", "Kleik ryżowy", "🥣", 360, 7, 79, 1, "carbs", "suchy"),
+  baseProduct("buckwheat_dry", "Kasza gryczana", "🌾", 336, 12.6, 69.3, 3.1, "carbs", "sucha"),
+  baseProduct("millet_dry", "Kasza jaglana", "🌾", 348, 10.5, 71.6, 2.9, "carbs", "sucha"),
+  baseProduct("couscous_dry", "Kuskus", "🌾", 376, 12.8, 77.4, 0.6, "carbs", "suchy"),
+  baseProduct("bread_wheat", "Chleb pszenny", "🍞", 247, 8.5, 49, 3.2, "carbs", "gotowy"),
+  baseProduct("bread_rye_whole", "Chleb żytni razowy", "🍞", 225, 6.5, 44, 2, "carbs", "gotowy"),
+  baseProduct("graham_roll", "Bułka grahamka", "🥖", 270, 9, 53, 2.5, "carbs", "gotowa"),
+  baseProduct("tortilla_wheat", "Tortilla pszenna", "🌯", 310, 8.5, 52, 8, "carbs", "wartość orientacyjna — sprawdź etykietę"),
+  baseProduct("potato_raw", "Ziemniaki", "🥔", 77, 2, 17, 0.1, "carbs", "surowe, obrane"),
+  baseProduct("sweet_potato_raw", "Bataty", "🍠", 86, 1.6, 20.1, 0.1, "carbs", "surowe, obrane"),
+  baseProduct("rice_cakes", "Wafle ryżowe", "🍘", 385, 8, 81, 3, "carbs", "naturalne"),
+  baseProduct("cornflakes", "Płatki kukurydziane", "🥣", 370, 7, 83, 1, "carbs", "bez dodatków"),
+  baseProduct("wheat_flour_450", "Mąka pszenna typ 450", "🌾", 347, 11, 72, 1.5, "carbs", "sucha"),
+  baseProduct("oat_flour", "Mąka owsiana", "🌾", 370, 13, 60, 7, "carbs", "sucha"),
+  baseProduct("lentils_red_dry", "Soczewica czerwona", "🫘", 350, 25, 54, 2, "carbs", "sucha"),
+  baseProduct("chickpeas_canned", "Ciecierzyca konserwowa", "🫘", 132, 7, 19, 2.2, "carbs", "po odsączeniu"),
+  baseProduct("kidney_beans_canned", "Fasola czerwona konserwowa", "🫘", 99, 6.7, 14, 0.5, "carbs", "po odsączeniu"),
+
+  baseProduct("olive_oil", "Oliwa z oliwek", "🫒", 884, 0, 0, 100, "fats", "wartości na 100 g"),
+  baseProduct("rapeseed_oil", "Olej rzepakowy", "🌻", 884, 0, 0, 100, "fats", "wartości na 100 g"),
+  baseProduct("butter_82", "Masło 82%", "🧈", 744, 0.7, 0.7, 82, "fats", "gotowe"),
+  baseProduct("peanut_butter", "Masło orzechowe 100%", "🥜", 620, 26, 12, 50, "fats", "bez dodatków"),
+  baseProduct("almonds", "Migdały", "🥜", 604, 20, 10, 52, "fats", "naturalne"),
+  baseProduct("walnuts", "Orzechy włoskie", "🥜", 654, 15, 7, 65, "fats", "naturalne"),
+  baseProduct("flaxseed", "Siemię lniane", "🌾", 534, 18.3, 1.6, 42.2, "fats", "suche"),
+  baseProduct("chia", "Nasiona chia", "🌾", 486, 16.5, 7.7, 30.7, "fats", "suche"),
+  baseProduct("avocado", "Awokado", "🥑", 160, 2, 8.5, 14.7, "fats", "miąższ"),
+
+  baseProduct("tomato", "Pomidor", "🍅", 18, 0.9, 3.9, 0.2, "vegetables", "surowy"),
+  baseProduct("cucumber", "Ogórek", "🥒", 15, 0.7, 3.6, 0.1, "vegetables", "surowy"),
+  baseProduct("pepper_red", "Papryka czerwona", "🫑", 31, 1, 6, 0.3, "vegetables", "surowa"),
+  baseProduct("zucchini", "Cukinia", "🥒", 17, 1.2, 3.1, 0.3, "vegetables", "surowa"),
+  baseProduct("broccoli", "Brokuł", "🥦", 34, 2.8, 4, 0.4, "vegetables", "surowy"),
+  baseProduct("cauliflower", "Kalafior", "🥦", 25, 1.9, 3, 0.3, "vegetables", "surowy"),
+  baseProduct("carrot", "Marchew", "🥕", 41, 0.9, 9.6, 0.2, "vegetables", "surowa"),
+  baseProduct("onion", "Cebula", "🧅", 40, 1.1, 9.3, 0.1, "vegetables", "surowa"),
+  baseProduct("spinach", "Szpinak", "🥬", 23, 2.9, 3.6, 0.4, "vegetables", "surowy"),
+  baseProduct("peas_frozen", "Groszek zielony", "🫛", 77, 5.2, 11, 0.4, "vegetables", "mrożony"),
+
+  baseProduct("banana", "Banan", "🍌", 89, 1.1, 22.8, 0.3, "fruit", "bez skórki"),
+  baseProduct("apple", "Jabłko", "🍎", 52, 0.3, 13.8, 0.2, "fruit", "ze skórką"),
+  baseProduct("strawberry", "Truskawki", "🍓", 32, 0.7, 7.7, 0.3, "fruit", "świeże"),
+  baseProduct("blueberry", "Borówki", "🫐", 57, 0.7, 14.5, 0.3, "fruit", "świeże"),
+  baseProduct("raspberry", "Maliny", "🫐", 52, 1.2, 11.9, 0.7, "fruit", "świeże"),
+  baseProduct("orange", "Pomarańcza", "🍊", 47, 0.9, 11.8, 0.1, "fruit", "bez skórki"),
+  baseProduct("kiwi", "Kiwi", "🥝", 61, 1.1, 14.7, 0.5, "fruit", "bez skórki"),
+  baseProduct("grapes", "Winogrona", "🍇", 69, 0.7, 18.1, 0.2, "fruit", "świeże")
+];
+function mergeProductCatalog(storedProducts) {
+  var baseIds = new Set(PRODUCTS_DEFAULT.map(function (product) {
+    return product.id;
+  }));
+  var seenIds = new Set();
+  var userProducts = (Array.isArray(storedProducts) ? storedProducts : []).filter(function (product) {
+    if (!product || !product.id || baseIds.has(product.id) || seenIds.has(product.id)) return false;
+    seenIds.add(product.id);
+    return true;
+  });
+  return userProducts.concat(PRODUCTS_DEFAULT);
+}
+function onlyUserProducts(products) {
+  var baseIds = new Set(PRODUCTS_DEFAULT.map(function (product) {
+    return product.id;
+  }));
+  return (Array.isArray(products) ? products : []).filter(function (product) {
+    return product && product.id && !baseIds.has(product.id);
+  });
+}
 var RECIPES_DEFAULT = [];
 var TODAY = new Date().toISOString().slice(0, 10);
 var DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
@@ -692,7 +845,7 @@ function Builder(_ref5) {
         fontSize: 13,
         color: T.text
       }
-    }, p === null || p === void 0 ? void 0 : p.emoji, " ", (p === null || p === void 0 ? void 0 : p.name) || "?"), /*#__PURE__*/React.createElement("input", {
+    }, p === null || p === void 0 ? void 0 : p.emoji, " ", (p === null || p === void 0 ? void 0 : p.name) || "?", p !== null && p !== void 0 && p.state ? " · " + p.state : ""), /*#__PURE__*/React.createElement("input", {
       value: item.grams,
       onChange: function onChange(e) {
         var g = parseFloat(e.target.value) || 0;
@@ -757,7 +910,7 @@ function Builder(_ref5) {
     return /*#__PURE__*/React.createElement("option", {
       key: p.id,
       value: p.id
-    }, p.name);
+    }, p.name, p.state ? " · " + p.state : "");
   })), /*#__PURE__*/React.createElement("input", {
     value: sg,
     onChange: function onChange(e) {
@@ -1187,8 +1340,18 @@ function App() {
     setRecipes = _useLS4[1];
   var _useLS5 = useLS("fb10_products", PRODUCTS_DEFAULT),
     _useLS6 = _slicedToArray(_useLS5, 2),
-    products = _useLS6[0],
-    setProducts = _useLS6[1];
+    storedProducts = _useLS6[0],
+    setStoredProducts = _useLS6[1];
+  var products = useMemo(function () {
+    return mergeProductCatalog(storedProducts);
+  }, [storedProducts]);
+  function setProducts(value) {
+    setStoredProducts(function (previousStored) {
+      var currentCatalog = mergeProductCatalog(previousStored);
+      var nextCatalog = typeof value === "function" ? value(currentCatalog) : value;
+      return onlyUserProducts(nextCatalog);
+    });
+  }
   var _useLS7 = useLS("fb10_planer", {}),
     _useLS8 = _slicedToArray(_useLS7, 2),
     planer = _useLS8[0],
@@ -1282,6 +1445,10 @@ function App() {
     _useState26 = _slicedToArray(_useState25, 2),
     prodSearch = _useState26[0],
     setProdSearch = _useState26[1];
+  var _useStateProductCategory = useState("all"),
+    _useStateProductCategory2 = _slicedToArray(_useStateProductCategory, 2),
+    productCategory = _useStateProductCategory2[0],
+    setProductCategory = _useStateProductCategory2[1];
   var _useState27 = useState(1),
     _useState28 = _slicedToArray(_useState27, 2),
     zDays = _useState28[0],
@@ -1972,9 +2139,12 @@ function App() {
   }
   function acceptScanResult() {
     if (!scanResult) return;
-    // Sprawdź duplikat po nazwie
+    // Produkt markowy rozpoznajemy po EAN. Sama nazwa może być taka sama jak produkt bazowy MatFit.
+    var scanEan = String(scanResult.ean || "").trim();
+    var scanBrand = String(scanResult.brand || "").trim().toLowerCase();
     var dup = products.find(function (p) {
-      return p.name.toLowerCase() === scanResult.name.toLowerCase();
+      if (scanEan) return String(p.ean || "").trim() === scanEan;
+      return p.name.toLowerCase() === scanResult.name.toLowerCase() && String(p.brand || "").trim().toLowerCase() === scanBrand;
     });
     if (dup) {
       setSelP(dup.id);
@@ -2184,9 +2354,22 @@ function App() {
   }
   var emMacro = calcMacro(emItems, products);
   var bMacro = calcMacro(bItems, products);
+  var productSearchNeedle = (prodSearch || "").trim().toLowerCase();
   var filtProd = products.filter(function (p) {
-    return p.name.toLowerCase().includes(prodSearch.toLowerCase()) || (p.brand || "").toLowerCase().includes(prodSearch.toLowerCase());
+    var categoryMatch = productCategory === "all" || productCategory === "own" && p.custom || p.category === productCategory;
+    if (!categoryMatch) return false;
+    if (!productSearchNeedle) return true;
+    var categoryLabel = (PRODUCT_CATEGORIES.find(function (category) {
+      return category.key === p.category;
+    }) || {}).label || "";
+    return [p.name, p.brand, p.state, categoryLabel].some(function (value) {
+      return String(value || "").toLowerCase().includes(productSearchNeedle);
+    });
   });
+  var userProductCount = products.filter(function (product) {
+    return product.custom;
+  }).length;
+  var baseProductCount = products.length - userProductCount;
   var tdee = calcTDEE(profile),
     bmr = Math.round(calcBMR(profile));
 
@@ -3087,6 +3270,20 @@ function App() {
     }, "Del"))));
   })), page === "produkty" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
+      fontWeight: 700,
+      fontSize: 18,
+      marginBottom: 4,
+      color: T.text
+    }
+  }, "Produkty"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      lineHeight: 1.45,
+      marginBottom: 10
+    }
+  }, "Wartości bazowe są orientacyjne na 100 g. Dla produktu markowego użyj etykiety lub skanera EAN."), /*#__PURE__*/React.createElement("div", {
+    style: {
       display: "flex",
       gap: 8,
       marginBottom: 12
@@ -3121,11 +3318,51 @@ function App() {
     })
   }, "+")), /*#__PURE__*/React.createElement("div", {
     style: {
+      display: "flex",
+      gap: 6,
+      overflowX: "auto",
+      paddingBottom: 7,
+      marginBottom: 4
+    }
+  }, PRODUCT_CATEGORIES.map(function (category) {
+    var active = productCategory === category.key;
+    return /*#__PURE__*/React.createElement("button", {
+      key: category.key,
+      onClick: function onClick() {
+        return setProductCategory(category.key);
+      },
+      style: {
+        flexShrink: 0,
+        border: "1px solid " + (active ? T.acc : T.border),
+        background: active ? T.acc : T.surf,
+        color: active ? safeTn === "light" ? "#fff" : "#000" : T.text2,
+        borderRadius: 100,
+        padding: "6px 9px",
+        fontSize: 10,
+        fontWeight: active ? 700 : 400,
+        cursor: "pointer"
+      }
+    }, category.label);
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
       fontSize: 11,
       color: T.text3,
       marginBottom: 10
     }
-  }, products.length, " produkt\xF3w"), filtProd.map(function (p) {
+  }, filtProd.length, " z ", products.length, " produktów · MatFit ", baseProductCount, " · własne ", userProductCount), filtProd.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: T.surf,
+      border: "1px solid " + T.border,
+      borderRadius: 12,
+      padding: 20,
+      textAlign: "center",
+      color: T.text3,
+      fontSize: 12
+    }
+  }, "Brak produktów pasujących do filtra."), filtProd.map(function (p) {
+    var productCategoryLabel = (PRODUCT_CATEGORIES.find(function (category) {
+      return category.key === p.category;
+    }) || {}).label || "Inne";
     return /*#__PURE__*/React.createElement("div", {
       key: p.id,
       style: {
@@ -3158,7 +3395,7 @@ function App() {
         color: T.text3,
         marginTop: 1
       }
-    }, p.brand && p.brand !== "—" ? p.brand : "na 100g"), /*#__PURE__*/React.createElement("div", {
+    }, p.custom ? (p.brand && p.brand !== "—" ? p.brand + " · " : "") + "własny · na 100 g" : productCategoryLabel + (p.state ? " · " + p.state : "") + " · MatFit · na 100 g"), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 5,
@@ -4971,8 +5208,11 @@ function App() {
     }),
     title: "Skanuj kod kreskowy"
   }, "\uD83D\uDCF7")), modalProdSearch.length > 0 && !selP && function () {
+    var modalSearchNeedle = modalProdSearch.toLowerCase();
     var hits = products.filter(function (p) {
-      return p.name.toLowerCase().includes(modalProdSearch.toLowerCase()) || (p.brand || "").toLowerCase().includes(modalProdSearch.toLowerCase());
+      return [p.name, p.brand, p.state].some(function (value) {
+        return String(value || "").toLowerCase().includes(modalSearchNeedle);
+      });
     }).slice(0, 8);
     if (!hits.length) return /*#__PURE__*/React.createElement("div", {
       style: {
@@ -4993,7 +5233,7 @@ function App() {
         key: p.id,
         onClick: function onClick() {
           setSelP(p.id);
-          setModalProdSearch(p.name + (p.brand && p.brand !== "—" ? " (" + p.brand + ")" : ""));
+          setModalProdSearch(p.name + (p.state ? " (" + p.state + ")" : p.brand && p.brand !== "—" ? " (" + p.brand + ")" : ""));
         },
         style: {
           padding: "10px 12px",
@@ -5009,7 +5249,7 @@ function App() {
           fontSize: 13,
           color: T.text
         }
-      }, p.emoji, " ", p.name, p.brand && p.brand !== "—" ? " · " + p.brand : ""), /*#__PURE__*/React.createElement("span", {
+      }, p.emoji, " ", p.name, p.state ? " · " + p.state : p.brand && p.brand !== "—" ? " · " + p.brand : ""), /*#__PURE__*/React.createElement("span", {
         style: {
           fontSize: 11,
           fontFamily: "monospace",

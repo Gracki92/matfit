@@ -12,7 +12,7 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [x] Historia pomiarów i wykresy.
 - [x] Woda v1: cel sugerowany lub własny, dolewki, cofanie i historia 7 dni.
 - [ ] Powiadomienia o wodzie (etap aplikacji Android).
-- [ ] Startowa baza produktów.
+- [x] Startowa baza produktów: 82 pozycje, kategorie i bezpieczne scalanie z produktami użytkownika.
 - [ ] Baza przepisów oraz dodawanie przepisu z zakładki Przepisy.
 - [ ] Generator kart PNG/PDF.
 - [ ] Backup i przywracanie danych.
