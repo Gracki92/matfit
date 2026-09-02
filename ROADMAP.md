@@ -7,10 +7,11 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [x] Procent kalorii może przekraczać 100%, pasek zatrzymuje się na 100%.
 - [x] Zwijanie i rozwijanie posiłków w planerze.
 - [x] Kcal i B/W/T posiłku pozostają widoczne po zwinięciu.
-- [ ] Dodawanie nowego produktu bezpośrednio z planera.
-- [ ] Cel sylwetkowy PRO i przewidywany finisz.
-- [ ] Historia pomiarów i wykresy.
-- [ ] Woda i przypomnienia.
+- [x] Dodawanie nowego produktu bezpośrednio z planera.
+- [x] Cel sylwetkowy PRO i przewidywany finisz (wersja DEV do testów).
+- [x] Historia pomiarów i wykresy.
+- [x] Woda v1: cel sugerowany lub własny, dolewki, cofanie i historia 7 dni.
+- [ ] Powiadomienia o wodzie (etap aplikacji Android).
 - [ ] Startowa baza produktów.
 - [ ] Baza przepisów oraz dodawanie przepisu z zakładki Przepisy.
 - [ ] Generator kart PNG/PDF.
