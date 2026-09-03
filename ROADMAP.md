@@ -10,6 +10,8 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [x] Dodawanie nowego produktu bezpośrednio z planera.
 - [x] Cel sylwetkowy PRO v2: adaptacyjna prognoza, przedział finiszu i wykres ekstrapolacji (wersja DEV do testów).
 - [x] Historia pomiarów, trendy, szacowana zmiana składu masy i korelacje z progami jakości danych.
+- [x] Automatyczny raport ostatnich 7 dni: średnie kcal, realizacja celu, masa, pas, tempo i zmiana prognozy finiszu.
+- [x] Ostrożna kalibracja TDEE po minimum 28 dniach i 70% dni z wpisanym jedzeniem; zmiana wyłącznie po akceptacji użytkownika.
 - [x] Woda v1: cel sugerowany lub własny, dolewki, cofanie i historia 7 dni.
 - [ ] Powiadomienia o wodzie (etap aplikacji Android).
 - [x] Startowa baza produktów: 82 pozycje, kategorie i bezpieczne scalanie z produktami użytkownika.
@@ -57,20 +59,22 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 Kolejność po zatwierdzeniu obecnego DEV:
 
-1. rozdzielenie „planu” od „faktycznie zjedzone” oraz szybkie odhaczanie posiłków — warunek wiarygodnej analityki;
-2. cotygodniowy check-in i kontrolowana rekomendacja korekty kalorii na podstawie trendu wagi, pasa i zgodności z planem;
+1. test raportu, prognozy i kalibracji TDEE na prawdziwej historii użytkownika;
+2. całościowy audyt produktu oraz makiety nowego interfejsu dla motywu Royal i Light — bez dokładania trzeciego niespójnego wyglądu;
 3. migracja pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania;
-4. aplikacja Android: tryb offline, powiadomienia, widget, Health Connect; Garmin po ustabilizowaniu warstwy aktywności;
-5. gotowe plany treningowe: dom bez sprzętu, gumy, hantle, siłownia, FBW, push–pull i inne;
-6. poziomy beginner, intermediate i advanced oraz pakiety funkcjonalne i mobilnościowe;
-7. profil treningowy, progresja obciążeń, historia rekordów i generator planów AI z ograniczeniami bezpieczeństwa;
-8. podsumowanie dnia i tygodnia, streak oparty na zachowaniu, raporty oraz eksport dla trenera/dietetyka;
-9. bezpieczny backend do zdjęć AI kart i skrócony format kart do social mediów;
-10. onboarding, dostępność, telemetria błędów, polityka prywatności i przygotowanie publikacji Google Play.
+4. wdrożenie zaakceptowanego interfejsu v2 na wspólnym systemie komponentów i tokenów obu motywów;
+5. aplikacja Android: tryb offline, powiadomienia, widget, Health Connect; Garmin po ustabilizowaniu warstwy aktywności;
+6. gotowe plany treningowe: dom bez sprzętu, gumy, hantle, siłownia, FBW, push–pull i inne;
+7. poziomy beginner, intermediate i advanced oraz pakiety funkcjonalne i mobilnościowe;
+8. profil treningowy, progresja obciążeń, historia rekordów i generator planów AI z ograniczeniami bezpieczeństwa;
+9. raporty i eksport dla trenera/dietetyka, streak oparty na zachowaniu zamiast sztucznego odhaczania;
+10. bezpieczny backend do zdjęć AI kart, format social, onboarding, dostępność, telemetria błędów, prywatność i Google Play.
 
 ## Zasady produktu
 
 - narzędzie przed funkcjami społecznościowymi;
+- posiłek dodany do planera oznacza posiłek zjedzony; gramaturę lub porcję można poprawić bez dodatkowego odhaczania;
+- BMR pozostaje wartością ze wzoru; trend może kalibrować TDEE i wynikający z niego cel kcal, nigdy automatycznie;
 - małe, testowalne etapy zamiast wielu równoległych zmian;
 - wersja DEV przed przeniesieniem na produkcję;
 - integracje treningowe i zdrowotne nie mogą udawać diagnozy medycznej;

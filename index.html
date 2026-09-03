@@ -1006,6 +1006,198 @@ function mfCorrelationLabel(value) {
   if (strength >= 0.3) return "słaba";
   return "bardzo słaba";
 }
+function mfBodyWeightEntries(bodyLog, endISO) {
+  return Object.entries(bodyLog || {}).filter(function (item) {
+    var weight = parseFloat(item[1] && item[1].weight);
+    return item[0] && (!endISO || item[0] <= endISO) && isFinite(weight) && weight > 0;
+  }).sort(function (a, b) {
+    return a[0].localeCompare(b[0]);
+  }).map(function (item) {
+    return {
+      date: item[0],
+      weight: parseFloat(item[1].weight)
+    };
+  });
+}
+function mfPlannerKcal(planer, date) {
+  var meals = planer && planer[date];
+  if (!Array.isArray(meals) || !meals.length) return null;
+  return meals.reduce(function (sum, meal) {
+    return sum + (parseFloat(meal && meal.kcal) || 0);
+  }, 0);
+}
+function mfAverage(values) {
+  var valid = (values || []).filter(function (value) {
+    return isFinite(value);
+  });
+  return valid.length ? valid.reduce(function (sum, value) {
+    return sum + value;
+  }, 0) / valid.length : null;
+}
+function mfWeeklySummary(planer, bodyLog, profile, dayTypes, endISO) {
+  var currentStart = mfShiftISO(endISO, -6);
+  var previousStart = mfShiftISO(endISO, -13);
+  var previousEnd = mfShiftISO(endISO, -7);
+  var currentDays = [];
+  var previousDays = [];
+  for (var dayIndex = 0; dayIndex < 7; dayIndex++) {
+    currentDays.push(mfShiftISO(currentStart, dayIndex));
+    previousDays.push(mfShiftISO(previousStart, dayIndex));
+  }
+  function periodNutrition(days) {
+    var rows = days.map(function (date) {
+      var kcal = mfPlannerKcal(planer, date);
+      if (kcal === null) return null;
+      var typeKey = dayTypes && dayTypes[date] || "training";
+      var multiplier = (DAY_TYPES.find(function (type) {
+        return type.key === typeKey;
+      }) || DAY_TYPES[0]).mul;
+      return {
+        kcal: kcal,
+        target: calcTargets(profile, multiplier).kcal
+      };
+    }).filter(Boolean);
+    return {
+      loggedDays: rows.length,
+      avgKcal: mfAverage(rows.map(function (row) {
+        return row.kcal;
+      })),
+      avgTarget: mfAverage(rows.map(function (row) {
+        return row.target;
+      }))
+    };
+  }
+  var currentNutrition = periodNutrition(currentDays);
+  var previousNutrition = periodNutrition(previousDays);
+  var weights = mfBodyWeightEntries(bodyLog, endISO);
+  var currentWeights = weights.filter(function (entry) {
+    return entry.date >= currentStart;
+  });
+  var previousWeights = weights.filter(function (entry) {
+    return entry.date >= previousStart && entry.date <= previousEnd;
+  });
+  var currentAverageWeight = mfAverage(currentWeights.map(function (entry) {
+    return entry.weight;
+  }));
+  var previousAverageWeight = mfAverage(previousWeights.map(function (entry) {
+    return entry.weight;
+  }));
+  var bodyEntries = Object.entries(bodyLog || {}).filter(function (item) {
+    return item[0] <= endISO && item[1] && Object.keys(item[1]).length;
+  }).sort(function (a, b) {
+    return a[0].localeCompare(b[0]);
+  });
+  function waistValue(item) {
+    return parseFloat(item && item[1] && (item[1].belly || item[1].waist));
+  }
+  var currentWaist = bodyEntries.filter(function (item) {
+    return item[0] >= currentStart && isFinite(waistValue(item)) && waistValue(item) > 0;
+  }).pop();
+  var previousWaist = bodyEntries.filter(function (item) {
+    return item[0] < currentStart && mfDaysBetween(item[0], currentStart) <= 28 && isFinite(waistValue(item)) && waistValue(item) > 0;
+  }).pop();
+  var trend = mfWeightTrend(weights, 42);
+  var priorWeights = weights.filter(function (entry) {
+    return entry.date <= previousEnd;
+  });
+  var priorTrend = mfWeightTrend(priorWeights, 42);
+  var targetWeight = parseFloat(profile && profile.targetWeight);
+  var latestWeight = weights.length ? weights[weights.length - 1] : null;
+  var priorLatestWeight = priorWeights.length ? priorWeights[priorWeights.length - 1] : null;
+  if (!(targetWeight > 0) && latestWeight && parseFloat(profile && profile.targetBf) > 0 && bodyEntries.length) {
+    var latestBodyEntry = bodyLog && bodyLog[latestWeight.date] || bodyEntries[bodyEntries.length - 1][1];
+    var currentBodyFat = parseFloat(latestBodyEntry && latestBodyEntry.bfManual) || calcNavyBodyFat(profile, latestBodyEntry);
+    var targetBodyFat = parseFloat(profile.targetBf);
+    if (currentBodyFat > 0 && targetBodyFat > 0 && targetBodyFat < 60) {
+      targetWeight = latestWeight.weight * (1 - currentBodyFat / 100) / (1 - targetBodyFat / 100);
+    }
+  }
+  var finishISO = null;
+  var finishShiftDays = null;
+  if (targetWeight > 0 && latestWeight && trend && trend.weekly && (targetWeight - latestWeight.weight) * trend.weekly > 0) {
+    var finishWeeks = Math.abs(targetWeight - latestWeight.weight) / Math.abs(trend.weekly);
+    if (finishWeeks <= 156) finishISO = mfShiftISO(endISO, finishWeeks * 7);
+  }
+  if (finishISO && priorLatestWeight && priorTrend && priorTrend.weekly && (targetWeight - priorLatestWeight.weight) * priorTrend.weekly > 0) {
+    var priorFinishWeeks = Math.abs(targetWeight - priorLatestWeight.weight) / Math.abs(priorTrend.weekly);
+    if (priorFinishWeeks <= 156) {
+      var priorFinishISO = mfShiftISO(previousEnd, priorFinishWeeks * 7);
+      finishShiftDays = mfDaysBetween(priorFinishISO, finishISO);
+    }
+  }
+  return {
+    from: currentStart,
+    to: endISO,
+    nutrition: currentNutrition,
+    previousNutrition: previousNutrition,
+    averageWeight: currentAverageWeight,
+    previousAverageWeight: previousAverageWeight,
+    weightCount: currentWeights.length,
+    previousWeightCount: previousWeights.length,
+    weeklyWeightChange: currentAverageWeight !== null && previousAverageWeight !== null ? currentAverageWeight - previousAverageWeight : null,
+    trend: trend,
+    waistChange: currentWaist && previousWaist ? waistValue(currentWaist) - waistValue(previousWaist) : null,
+    finishISO: finishISO,
+    finishShiftDays: finishShiftDays
+  };
+}
+function mfTdeeCalibration(planer, bodyLog, profile, endISO) {
+  var currentTdee = calcTDEE(profile);
+  var latestApplied = profile && profile.tdeeCalibrationAppliedAt;
+  var sinceApplied = latestApplied ? mfDaysBetween(latestApplied, endISO) : null;
+  var cooldownDays = sinceApplied !== null && sinceApplied >= 0 && sinceApplied < 28 ? 28 - sinceApplied : 0;
+  var allWeights = mfBodyWeightEntries(bodyLog, endISO);
+  var latestWeight = allWeights.length ? allWeights[allWeights.length - 1] : null;
+  var periodEnd = latestWeight ? latestWeight.date : endISO;
+  var periodStart = mfShiftISO(periodEnd, -28);
+  var periodWeights = allWeights.filter(function (entry) {
+    return entry.date >= periodStart && entry.date <= periodEnd;
+  });
+  var trend = mfWeightTrend(periodWeights, 42);
+  var loggedKcal = [];
+  for (var dayIndex = 1; dayIndex <= 28; dayIndex++) {
+    var kcal = mfPlannerKcal(planer, mfShiftISO(periodStart, dayIndex));
+    if (kcal !== null) loggedKcal.push(kcal);
+  }
+  var spanDays = periodWeights.length >= 2 ? mfDaysBetween(periodWeights[0].date, periodWeights[periodWeights.length - 1].date) : 0;
+  var coverage = loggedKcal.length / 28;
+  var stableEnough = !!(trend && (Math.abs(trend.weekly) <= 0.15 || trend.r2 >= 0.25));
+  var newDataSinceApplied = !latestApplied || mfDaysBetween(latestApplied, periodEnd) >= 28;
+  var dataReady = currentTdee > 0 && periodWeights.length >= 4 && spanDays >= 28 && coverage >= 0.7 && stableEnough && newDataSinceApplied;
+  var averageIntake = mfAverage(loggedKcal);
+  var observedTdee = dataReady && averageIntake !== null ? Math.round(averageIntake - trend.weekly * 7700 / 7) : null;
+  if (!(observedTdee >= 1200 && observedTdee <= 6000)) {
+    dataReady = false;
+    observedTdee = null;
+  }
+  var rawDifference = observedTdee !== null ? observedTdee - currentTdee : null;
+  var suggestedChange = 0;
+  if (dataReady && Math.abs(rawDifference) >= 100) {
+    suggestedChange = (rawDifference > 0 ? 1 : -1) * (Math.abs(rawDifference) >= 250 ? 150 : 100);
+  }
+  var suggestedTdee = dataReady ? Math.max(1200, Math.min(6000, currentTdee + suggestedChange)) : null;
+  var goalFactor = 1 + (parseFloat(profile && profile.tdeeAdjust) || 0) / 100;
+  return {
+    ready: dataReady,
+    currentTdee: currentTdee,
+    observedTdee: observedTdee,
+    suggestedChange: suggestedChange,
+    suggestedTdee: suggestedTdee,
+    currentGoalKcal: currentTdee ? Math.round(currentTdee * goalFactor) : null,
+    suggestedGoalKcal: suggestedTdee ? Math.round(suggestedTdee * goalFactor) : null,
+    averageIntake: averageIntake,
+    weightTrend: trend,
+    weightCount: periodWeights.length,
+    spanDays: spanDays,
+    loggedDays: loggedKcal.length,
+    coverage: coverage,
+    stableEnough: stableEnough,
+    newDataSinceApplied: newDataSinceApplied,
+    cooldownDays: cooldownDays,
+    periodStart: periodStart,
+    periodEnd: periodEnd
+  };
+}
 function calcTargets(pr) {
   var dayMul = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
   var tdee = calcTDEE(pr);
@@ -1746,7 +1938,8 @@ function App() {
       goalStartWeight: "",
       goalStartBf: "",
       goalStartDate: "",
-      tdeeManual: ""
+      tdeeManual: "",
+      tdeeCalibrationAppliedAt: ""
     }),
     _useLS0 = _slicedToArray(_useLS9, 2),
     profile = _useLS0[0],
@@ -2933,7 +3126,7 @@ function App() {
     return {
       app: "MatFit Pro",
       schemaVersion: 1,
-      version: 22,
+      version: 23,
       exportedAt: new Date().toISOString(),
       data: {
         theme: safeTn,
@@ -3158,7 +3351,8 @@ function App() {
       goalStartWeight: "",
       goalStartBf: "",
       goalStartDate: "",
-      tdeeManual: ""
+      tdeeManual: "",
+      tdeeCalibrationAppliedAt: ""
     };
     if (mode === "replace") {
       var safetyName = "matfit_kopia_ratunkowa_" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
@@ -3252,6 +3446,8 @@ function App() {
   var baseProductCount = products.length - userProductCount;
   var tdee = calcTDEE(profile),
     bmr = Math.round(calcBMR(profile));
+  var weeklySummary = mfWeeklySummary(planer, bodyLog, profile, dayTypes, TODAY);
+  var tdeeCalibration = mfTdeeCalibration(planer, bodyLog, profile, TODAY);
 
   // Selektor pory dnia
   function MealTimePicker(_ref12) {
@@ -3491,6 +3687,78 @@ function App() {
       padding: "12px 16px 8px"
     }
 }, page === "planer" && React.createElement(React.Fragment, null,
+  function () {
+    var nutrition = weeklySummary.nutrition;
+    var averageKcal = nutrition.avgKcal;
+    var caloriePercent = averageKcal !== null && nutrition.avgTarget ? Math.round(averageKcal / nutrition.avgTarget * 100) : null;
+    var weightChange = weeklySummary.weeklyWeightChange;
+    var pace = weeklySummary.trend && weeklySummary.trend.weekly;
+    var waistChange = weeklySummary.waistChange;
+    var metricCards = [[averageKcal !== null ? Math.round(averageKcal) : "—", "Śr. kcal", nutrition.loggedDays + "/7 dni"], [caloriePercent !== null ? caloriePercent + "%" : "—", "Cel kcal", nutrition.loggedDays ? "z wpisanych dni" : "brak wpisów"], [weeklySummary.averageWeight !== null ? weeklySummary.averageWeight.toFixed(1) + " kg" : "—", "Śr. waga", weeklySummary.weightCount + " pom."], [weightChange !== null ? (weightChange > 0 ? "+" : "") + weightChange.toFixed(1) + " kg" : "—", "vs poprzednie 7 dni", weeklySummary.previousWeightCount + " pom. wcześniej"], [pace ? (pace > 0 ? "+" : "") + pace.toFixed(2) + " kg" : "—", "Tempo / tydz.", weeklySummary.trend ? weeklySummary.trend.count + " pom. / " + weeklySummary.trend.spanDays + " dni" : "min. 3 pom. / 14 dni"], [waistChange !== null ? (waistChange > 0 ? "+" : "") + waistChange.toFixed(1) + " cm" : "—", "Zmiana pasa", waistChange !== null ? "ostatni vs wcześniejszy" : "dodaj pomiar pasa"]];
+    var finishText = weeklySummary.finishISO ? "Finisz przy obecnym trendzie: " + mfFormatDate(weeklySummary.finishISO) : "Ustaw cel i zbieraj pomiary, aby zobaczyć przewidywany finisz.";
+    if (weeklySummary.finishISO && weeklySummary.finishShiftDays !== null) {
+      var shift = weeklySummary.finishShiftDays;
+      finishText += Math.abs(shift) <= 3 ? " Termin stabilny względem poprzedniego tygodnia." : shift > 0 ? " To około " + Math.abs(shift) + " dni później niż tydzień temu." : " To około " + Math.abs(shift) + " dni wcześniej niż tydzień temu.";
+    }
+    return React.createElement("div", {
+      style: {
+        background: safeTn === "light" ? "linear-gradient(145deg, #f8fbff, #eef4ff)" : "linear-gradient(145deg, " + T.surf + ", " + T.surf2 + ")",
+        border: "1px solid " + T.acc + "66",
+        borderRadius: 16,
+        padding: 13,
+        marginBottom: 12,
+        boxShadow: safeTn === "light" ? "0 6px 18px rgba(37,99,235,0.09)" : "none"
+      }
+    }, React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 9 }
+    }, React.createElement("div", null, React.createElement("div", {
+      style: { fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: T.acc, fontWeight: 800 }
+    }, "AUTOMATYCZNY RAPORT"), React.createElement("div", {
+      style: { fontSize: 15, fontWeight: 850, color: T.text, marginTop: 2 }
+    }, "Ostatnie 7 dni")), React.createElement("span", {
+      style: { fontSize: 9, color: T.text3, textAlign: "right", lineHeight: 1.4 }
+    }, mfFormatShortDate(weeklySummary.from), "–", mfFormatShortDate(weeklySummary.to))), React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }
+    }, metricCards.map(function (metric) {
+      return React.createElement("div", {
+        key: metric[1],
+        style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 9, padding: "8px 5px", textAlign: "center", minWidth: 0 }
+      }, React.createElement("div", {
+        style: { fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: T.text, whiteSpace: "nowrap" }
+      }, metric[0]), React.createElement("div", {
+        style: { fontSize: 8, color: T.text2, marginTop: 3, lineHeight: 1.25 }
+      }, metric[1]), React.createElement("div", {
+        style: { fontSize: 7, color: T.text3, marginTop: 2, lineHeight: 1.2 }
+      }, metric[2]));
+    })), React.createElement("div", {
+      style: { fontSize: 9, color: T.text2, lineHeight: 1.45, marginTop: 8, padding: "7px 8px", borderRadius: 8, background: T.acc + "12" }
+    }, finishText), React.createElement("div", {
+      style: { marginTop: 8, borderTop: "1px solid " + T.border, paddingTop: 8 }
+    }, React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }
+    }, React.createElement("b", {
+      style: { fontSize: 10, color: T.text }
+    }, "Kalibracja TDEE · minimum 28 dni"), React.createElement("span", {
+      style: { fontSize: 8, color: tdeeCalibration.ready ? "#6aaa7a" : T.text3 }
+    }, tdeeCalibration.cooldownDays ? "ponownie za " + tdeeCalibration.cooldownDays + " dni" : tdeeCalibration.ready ? "dane gotowe" : "zbieranie danych")), tdeeCalibration.cooldownDays ? React.createElement("div", {
+      style: { fontSize: 9, color: T.text3, lineHeight: 1.45, marginTop: 5 }
+    }, "Ostatnią propozycję zastosowano ", mfFormatDate(profile.tdeeCalibrationAppliedAt), ". MatFit poczeka pełne 28 dni, zanim zaproponuje następną zmianę.") : tdeeCalibration.ready ? React.createElement(React.Fragment, null, React.createElement("div", {
+      style: { fontSize: 10, color: T.text2, lineHeight: 1.5, marginTop: 5 }
+    }, tdeeCalibration.suggestedChange === 0 ? "Obecne TDEE " + tdeeCalibration.currentTdee + " kcal pasuje do trendu. Bez zmian." : "Szacowane TDEE z trendu: " + tdeeCalibration.observedTdee + " kcal. Bezpieczna propozycja: " + tdeeCalibration.currentTdee + " → " + tdeeCalibration.suggestedTdee + " kcal. Cel dzienny zmieni się z około " + tdeeCalibration.currentGoalKcal + " na " + tdeeCalibration.suggestedGoalKcal + " kcal."), tdeeCalibration.suggestedChange !== 0 ? React.createElement("button", {
+      onClick: function onClick() {
+        setProfile(_objectSpread(_objectSpread({}, profile), {}, {
+          tdeeManual: String(tdeeCalibration.suggestedTdee),
+          tdeeCalibrationAppliedAt: TODAY
+        }));
+        toast_("Zastosowano skalibrowane TDEE");
+      },
+      style: _objectSpread(_objectSpread({}, btnA), {}, { width: "100%", marginTop: 7, padding: "9px 10px", fontSize: 11 })
+    }, "Zastosuj TDEE ", tdeeCalibration.suggestedTdee, " kcal") : null) : React.createElement("div", {
+      style: { fontSize: 9, color: T.text3, lineHeight: 1.5, marginTop: 5 }
+    }, "Do analizy: ", tdeeCalibration.loggedDays, "/20 dni z wpisanym jedzeniem · ", tdeeCalibration.weightCount, "/4 pomiary wagi · ", Math.min(tdeeCalibration.spanDays, 28), "/28 dni rozpiętości.", !tdeeCalibration.newDataSinceApplied ? " Potrzeba pełnych 28 dni nowych danych po ostatniej kalibracji." : tdeeCalibration.weightCount >= 4 && tdeeCalibration.spanDays >= 28 && tdeeCalibration.loggedDays >= 20 && !tdeeCalibration.stableEnough ? " Trend wagi jest jeszcze zbyt niestabilny." : "")), React.createElement("div", {
+      style: { fontSize: 8, color: T.text3, lineHeight: 1.4, marginTop: 7 }
+    }, "Wpis w planerze traktujemy jako faktycznie zjedzony. TDEE to całkowity wydatek energii — BMR pozostaje wyliczeniem podstawowej przemiany materii. MatFit nigdy nie zmienia celu bez Twojej zgody."));
+  }(),
   React.createElement("div", {
     style: {
       fontSize: 10,
@@ -5108,16 +5376,16 @@ function App() {
     style: { display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }
   }, /*#__PURE__*/React.createElement("input", {
     value: profile.tdeeManual || "",
-    onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: e.target.value })); },
+    onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: e.target.value, tdeeCalibrationAppliedAt: "" })); },
     type: "number", min: "1200", max: "6000", step: "10", placeholder: "np. 2900 kcal", style: inp
   }), profile.tdeeManual ? /*#__PURE__*/React.createElement("button", {
-    onClick: function onClick() { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: "" })); },
+    onClick: function onClick() { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { tdeeManual: "", tdeeCalibrationAppliedAt: "" })); },
     style: _objectSpread(_objectSpread({}, btnB), {}, { padding: "9px 10px" })
   }, "Wyczyść") : null), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 10, color: T.text3, lineHeight: 1.5, marginTop: 5 }
-  }, profile.tdeeManual ? "✓ Używamy Twojego skalibrowanego TDEE zamiast mnożnika aktywności." : "Wzór daje tylko punkt startowy: " + calcFormulaTDEE(profile) + " kcal. Jeśli masa przez 2–3 tygodnie stoi, średnie spożycie z tego okresu jest lepszym przybliżeniem TDEE.")), /*#__PURE__*/React.createElement(Lbl, {
+  }, profile.tdeeManual ? "✓ Używamy Twojego skalibrowanego TDEE zamiast mnożnika aktywności." : "Wzór daje tylko punkt startowy: " + calcFormulaTDEE(profile) + " kcal. Automatyczna analiza może zaproponować korektę dopiero po minimum 28 dniach wiarygodnych danych.")), /*#__PURE__*/React.createElement(Lbl, {
     T: T
-  }, "Korekta TDEE"), function () {
+  }, "Cel kalorii względem TDEE"), function () {
     var adj = profile.tdeeAdjust || 0;
     var tdee = calcTDEE(profile);
     var resultKcal = tdee ? Math.round(tdee * (1 + adj / 100)) : null;
@@ -5171,7 +5439,7 @@ function App() {
         fontSize: 11,
         color: T.text3
       }
-    }, adj <= -20 ? "Agresywna redukcja — uważaj na mięśnie" : adj < 0 ? "Lekki deficyt — rekompo / wolna redukcja" : adj === 0 ? "TDEE — utrzymanie wagi" : adj <= 15 ? "Lekka nadwyżka — budowanie masy" : "Agresywna nadwyżka"));
+    }, adj <= -20 ? "Agresywna redukcja — uważaj na mięśnie" : adj < 0 ? "Deficyt względem TDEE — redukcja" : adj === 0 ? "Cel równy TDEE — utrzymanie wagi" : adj <= 15 ? "Nadwyżka względem TDEE — budowanie masy" : "Agresywna nadwyżka"));
   }(), /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
