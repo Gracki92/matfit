@@ -356,8 +356,11 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 var _Recharts = Recharts,
+  ComposedChart = _Recharts.ComposedChart,
+  Area = _Recharts.Area,
   LineChart = _Recharts.LineChart,
   Line = _Recharts.Line,
+  ReferenceLine = _Recharts.ReferenceLine,
   XAxis = _Recharts.XAxis,
   YAxis = _Recharts.YAxis,
   CartesianGrid = _Recharts.CartesianGrid,
@@ -828,11 +831,21 @@ function getWeek() {
   }
   return days;
 }
-var STORAGE_PREFIX = window.location.pathname.indexOf("/dev/") !== -1 ? "matfit_dev_" : "";
+var STORAGE_PATH = window.location.pathname || "";
+var IS_DEV_STORAGE = STORAGE_PATH.indexOf("/dev/") !== -1 || STORAGE_PATH.indexOf("/matfit-dev/") !== -1 || /\/[0-9a-f]{40}\//i.test(STORAGE_PATH) || new URLSearchParams(window.location.search).get("env") === "dev";
+var STORAGE_PREFIX = IS_DEV_STORAGE ? "matfit_dev_" : "";
 function useLS(key, def) {
   var _useState = useState(function () {
       try {
-        var s = localStorage.getItem(STORAGE_PREFIX + key);
+        var storageKey = STORAGE_PREFIX + key;
+        var s = localStorage.getItem(storageKey);
+        if (!s && STORAGE_PREFIX) {
+          var productionSnapshot = localStorage.getItem(key);
+          if (productionSnapshot) {
+            localStorage.setItem(storageKey, productionSnapshot);
+            s = productionSnapshot;
+          }
+        }
         return s ? JSON.parse(s) : def;
       } catch (_unused) {
         return def;
@@ -909,6 +922,89 @@ function addDaysISO(days) {
   var d = new Date();
   d.setDate(d.getDate() + Math.max(0, Math.round(days)));
   return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
+}
+function mfDate(value) {
+  return new Date(String(value).slice(0, 10) + "T12:00:00");
+}
+function mfISODate(value) {
+  var d = value instanceof Date ? new Date(value) : mfDate(value);
+  var year = d.getFullYear();
+  var month = String(d.getMonth() + 1).padStart(2, "0");
+  var day = String(d.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+function mfShiftISO(value, days) {
+  var d = mfDate(value);
+  d.setDate(d.getDate() + Math.round(days || 0));
+  return mfISODate(d);
+}
+function mfDaysBetween(from, to) {
+  return Math.round((mfDate(to) - mfDate(from)) / 86400000);
+}
+function mfFormatDate(value) {
+  return mfDate(value).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
+}
+function mfFormatShortDate(value) {
+  return mfDate(value).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
+}
+function mfWeightTrend(entries) {
+  var maxDays = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 42;
+  var valid = (entries || []).filter(function (item) {
+    return item && item.date && isFinite(item.weight) && item.weight > 0;
+  }).sort(function (a, b) {
+    return a.date.localeCompare(b.date);
+  });
+  if (valid.length < 3) return null;
+  var endDate = valid[valid.length - 1].date;
+  var recent = valid.filter(function (item) {
+    return mfDaysBetween(item.date, endDate) <= maxDays;
+  });
+  if (recent.length < 3 || mfDaysBetween(recent[0].date, endDate) < 14) return null;
+  var start = recent[0].date;
+  var points = recent.map(function (item) {
+    return { x: mfDaysBetween(start, item.date), y: item.weight };
+  });
+  var n = points.length;
+  var sumX = points.reduce(function (sum, p) { return sum + p.x; }, 0);
+  var sumY = points.reduce(function (sum, p) { return sum + p.y; }, 0);
+  var meanX = sumX / n;
+  var meanY = sumY / n;
+  var numerator = points.reduce(function (sum, p) { return sum + (p.x - meanX) * (p.y - meanY); }, 0);
+  var denominator = points.reduce(function (sum, p) { return sum + Math.pow(p.x - meanX, 2); }, 0);
+  if (!denominator) return null;
+  var slope = numerator / denominator;
+  var intercept = meanY - slope * meanX;
+  var total = points.reduce(function (sum, p) { return sum + Math.pow(p.y - meanY, 2); }, 0);
+  var residual = points.reduce(function (sum, p) {
+    return sum + Math.pow(p.y - (intercept + slope * p.x), 2);
+  }, 0);
+  return {
+    weekly: slope * 7,
+    count: n,
+    spanDays: mfDaysBetween(start, endDate),
+    r2: total > 0 ? Math.max(0, Math.min(1, 1 - residual / total)) : 0,
+    residualKg: Math.sqrt(residual / n)
+  };
+}
+function mfPearson(pairs) {
+  var valid = (pairs || []).filter(function (pair) {
+    return pair && isFinite(pair[0]) && isFinite(pair[1]);
+  });
+  if (valid.length < 2) return null;
+  var meanX = valid.reduce(function (sum, pair) { return sum + pair[0]; }, 0) / valid.length;
+  var meanY = valid.reduce(function (sum, pair) { return sum + pair[1]; }, 0) / valid.length;
+  var numerator = valid.reduce(function (sum, pair) { return sum + (pair[0] - meanX) * (pair[1] - meanY); }, 0);
+  var dx = valid.reduce(function (sum, pair) { return sum + Math.pow(pair[0] - meanX, 2); }, 0);
+  var dy = valid.reduce(function (sum, pair) { return sum + Math.pow(pair[1] - meanY, 2); }, 0);
+  return dx > 0 && dy > 0 ? numerator / Math.sqrt(dx * dy) : null;
+}
+function mfCorrelationLabel(value) {
+  if (!isFinite(value)) return "brak wyraźnej zależności";
+  var strength = Math.abs(value);
+  if (strength >= 0.75) return "silna";
+  if (strength >= 0.5) return "umiarkowana";
+  if (strength >= 0.3) return "słaba";
+  return "bardzo słaba";
 }
 function calcTargets(pr) {
   var dayMul = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
@@ -1648,6 +1744,8 @@ function App() {
       targetWeight: "",
       targetBf: "",
       goalStartWeight: "",
+      goalStartBf: "",
+      goalStartDate: "",
       tdeeManual: ""
     }),
     _useLS0 = _slicedToArray(_useLS9, 2),
@@ -2835,7 +2933,7 @@ function App() {
     return {
       app: "MatFit Pro",
       schemaVersion: 1,
-      version: 21,
+      version: 22,
       exportedAt: new Date().toISOString(),
       data: {
         theme: safeTn,
@@ -3058,6 +3156,8 @@ function App() {
       targetWeight: "",
       targetBf: "",
       goalStartWeight: "",
+      goalStartBf: "",
+      goalStartDate: "",
       tdeeManual: ""
     };
     if (mode === "replace") {
@@ -4714,8 +4814,10 @@ function App() {
     var measures = latest ? latest[1] : {};
     var latestDate = latest ? new Date(latest[0] + "T12:00:00").toLocaleDateString("pl-PL") : null;
     var currentWeight = parseFloat(measures.weight) || parseFloat(profile.weight) || 0;
-    var targetWeight = parseFloat(profile.targetWeight) || 0;
-    var targetBf = parseFloat(profile.targetBf) || 0;
+    var targetWeightValue = parseFloat(profile.targetWeight);
+    var targetWeight = targetWeightValue >= 30 && targetWeightValue <= 300 ? targetWeightValue : 0;
+    var targetBfValue = parseFloat(profile.targetBf);
+    var targetBf = targetBfValue >= 3 && targetBfValue <= 50 ? targetBfValue : 0;
     var navyBf = calcNavyBodyFat(profile, measures) || 0;
     var manualBf = parseFloat(measures.bfManual) || 0;
     var currentBf = manualBf || navyBf || parseFloat(measures.bf) || 0;
@@ -4726,12 +4828,87 @@ function App() {
     var targetWeightWarning = targetWeight && bfAtTargetWeight > 0 && bfAtTargetWeight < minReasonableBf;
     var effectiveTargetWeight = targetWeight || weightAtTargetBf;
     var startWeight = parseFloat(profile.goalStartWeight) || currentWeight;
+    var startBf = parseFloat(profile.goalStartBf) || 0;
+    var goalStartDate = profile.goalStartDate || (latest ? latest[0] : TODAY);
     var delta = effectiveTargetWeight && currentWeight ? effectiveTargetWeight - currentWeight : 0;
     var calorieBalance = tdee ? TARGETS.kcal - tdee : 0;
     var directionOk = delta < 0 && calorieBalance < 0 || delta > 0 && calorieBalance > 0;
-    var weeklyRate = directionOk ? Math.abs(calorieBalance) * 7 / 7700 : 0;
-    var finishFast = weeklyRate >= 0.1 ? addDaysISO(Math.abs(delta) / (weeklyRate * 1.15) * 7) : null;
-    var finishSlow = weeklyRate >= 0.1 ? addDaysISO(Math.abs(delta) / (weeklyRate * 0.85) * 7) : null;
+    var theoreticalWeekly = directionOk ? Math.abs(calorieBalance) * 7 / 7700 : 0;
+    var goalWeightEntries = Object.entries(bodyLog || {}).filter(function (item) {
+      return item[0] <= TODAY && item[1] && isFinite(parseFloat(item[1].weight)) && parseFloat(item[1].weight) > 0;
+    }).map(function (item) {
+      return { date: item[0], weight: parseFloat(item[1].weight) };
+    }).sort(function (a, b) {
+      return a.date.localeCompare(b.date);
+    });
+    var weightTrend = mfWeightTrend(goalWeightEntries, 42);
+    var goalDirection = delta < 0 ? -1 : delta > 0 ? 1 : 0;
+    var observedDirectionOk = !!(weightTrend && goalDirection && weightTrend.weekly * goalDirection > 0 && Math.abs(weightTrend.weekly) >= 0.05);
+    var theoreticalSigned = goalDirection * theoreticalWeekly;
+    var observedShare = weightTrend && weightTrend.count >= 5 && weightTrend.spanDays >= 28 && weightTrend.r2 >= 0.35 ? 0.75 : 0.55;
+    var adaptiveSigned = observedDirectionOk ? directionOk ? weightTrend.weekly * observedShare + theoreticalSigned * (1 - observedShare) : weightTrend.weekly : directionOk ? theoreticalSigned : 0;
+    var maxWeeklyRate = currentWeight * (goalDirection < 0 ? 0.015 : 0.01);
+    var adaptiveWeekly = Math.abs(adaptiveSigned) >= 0.05 ? Math.min(Math.abs(adaptiveSigned), Math.max(0.2, maxWeeklyRate)) : 0;
+    var forecastMode = observedDirectionOk ? "adaptacyjna" : directionOk ? "teoretyczna" : "brak";
+    var forecastUncertainty = observedDirectionOk && weightTrend.count >= 5 && weightTrend.spanDays >= 28 ? 0.2 : 0.3;
+    var fastWeekly = adaptiveWeekly * (1 + forecastUncertainty);
+    var slowWeekly = adaptiveWeekly * (1 - forecastUncertainty);
+    var finishCentralDays = adaptiveWeekly ? Math.abs(delta) / adaptiveWeekly * 7 : 0;
+    var finishFastDays = fastWeekly ? Math.abs(delta) / fastWeekly * 7 : 0;
+    var finishSlowDays = slowWeekly ? Math.abs(delta) / slowWeekly * 7 : 0;
+    var finishCentralISO = adaptiveWeekly ? mfShiftISO(TODAY, finishCentralDays) : null;
+    var finishFastISO = adaptiveWeekly ? mfShiftISO(TODAY, finishFastDays) : null;
+    var finishSlowISO = adaptiveWeekly ? mfShiftISO(TODAY, finishSlowDays) : null;
+    var startFatMass = startWeight && startBf ? startWeight * startBf / 100 : 0;
+    var currentFatMass = currentWeight && currentBf ? currentWeight * currentBf / 100 : 0;
+    var goalFatChange = startFatMass && currentFatMass ? currentFatMass - startFatMass : null;
+    var goalOtherChange = goalFatChange !== null ? currentWeight - startWeight - goalFatChange : null;
+    var goalChartData = [];
+    if (effectiveTargetWeight && currentWeight) {
+      var chartActual = goalWeightEntries.filter(function (item) {
+        return mfDaysBetween(item.date, TODAY) <= 90;
+      });
+      chartActual.forEach(function (item) {
+        var rolling = chartActual.filter(function (candidate) {
+          var age = mfDaysBetween(candidate.date, item.date);
+          return age >= 0 && age <= 6;
+        });
+        var rollingWeight = rolling.reduce(function (sum, candidate) { return sum + candidate.weight; }, 0) / rolling.length;
+        goalChartData.push({ iso: item.date, label: mfFormatShortDate(item.date), actual: item.weight, trend: r2(rollingWeight) });
+      });
+      if (!goalChartData.length || goalChartData[goalChartData.length - 1].iso !== TODAY) {
+        goalChartData.push({ iso: TODAY, label: mfFormatShortDate(TODAY), actual: null, trend: currentWeight, forecast: currentWeight, range: [currentWeight, currentWeight] });
+      } else {
+        goalChartData[goalChartData.length - 1].forecast = currentWeight;
+        goalChartData[goalChartData.length - 1].range = [currentWeight, currentWeight];
+      }
+      if (adaptiveWeekly) {
+        var projectionLimit = Math.min(730, Math.max(7, Math.ceil(finishSlowDays / 7) * 7));
+        for (var projectionDay = 7; projectionDay <= projectionLimit; projectionDay += 7) {
+          var projectionWeeks = projectionDay / 7;
+          var capGoal = function capGoal(value) {
+            return goalDirection < 0 ? Math.max(effectiveTargetWeight, value) : Math.min(effectiveTargetWeight, value);
+          };
+          var centralWeight = capGoal(currentWeight + goalDirection * adaptiveWeekly * projectionWeeks);
+          var fastWeight = capGoal(currentWeight + goalDirection * fastWeekly * projectionWeeks);
+          var slowWeight = capGoal(currentWeight + goalDirection * slowWeekly * projectionWeeks);
+          var projectionISO = mfShiftISO(TODAY, projectionDay);
+          goalChartData.push({
+            iso: projectionISO,
+            label: mfFormatShortDate(projectionISO),
+            forecast: r2(centralWeight),
+            range: [r2(Math.min(fastWeight, slowWeight)), r2(Math.max(fastWeight, slowWeight))]
+          });
+        }
+      }
+    }
+    var goalChartValues = goalChartData.reduce(function (values, item) {
+      [item.actual, item.trend, item.forecast].forEach(function (value) { if (typeof value === "number" && isFinite(value)) values.push(value); });
+      if (Array.isArray(item.range)) values.push(item.range[0], item.range[1]);
+      return values;
+    }, effectiveTargetWeight ? [effectiveTargetWeight] : []);
+    var goalChartMin = goalChartValues.length ? Math.min.apply(Math, _toConsumableArray(goalChartValues)) - 0.8 : 0;
+    var goalChartMax = goalChartValues.length ? Math.max.apply(Math, _toConsumableArray(goalChartValues)) + 0.8 : 100;
     var progress = effectiveTargetWeight && startWeight !== effectiveTargetWeight ? Math.max(0, Math.min(100, Math.round((startWeight - currentWeight) / (startWeight - effectiveTargetWeight) * 100))) : 0;
     return /*#__PURE__*/React.createElement("div", {
       style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 14, padding: 14, marginBottom: 12 }
@@ -4760,12 +4937,34 @@ function App() {
       value: profile.targetWeight || "", type: "number", min: "30", max: "300", step: "0.1", placeholder: "np. 90", style: inp,
       onChange: function onChange(e) {
         var value = e.target.value;
-        return setProfile(_objectSpread(_objectSpread({}, profile), {}, { targetWeight: value, goalStartWeight: profile.goalStartWeight || (value ? String(currentWeight || "") : "") }));
+        return setProfile(_objectSpread(_objectSpread({}, profile), {}, {
+          targetWeight: value,
+          goalStartWeight: profile.goalStartWeight || (value ? String(currentWeight || "") : ""),
+          goalStartBf: profile.goalStartBf || (value && currentBf ? String(r2(currentBf)) : ""),
+          goalStartDate: profile.goalStartDate || (value ? latest ? latest[0] : TODAY : "")
+        }));
       }
     })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, { mt: 0, T: T }, "Docelowy BF%"), /*#__PURE__*/React.createElement("input", {
       value: profile.targetBf || "", type: "number", min: "3", max: "50", step: "0.1", placeholder: "np. 12", style: inp,
-      onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, { targetBf: e.target.value, goalStartWeight: profile.goalStartWeight || (e.target.value ? String(currentWeight || "") : "") })); }
-    }))), currentBf && (targetWeight || targetBf) ? /*#__PURE__*/React.createElement("div", {
+      onChange: function onChange(e) { return setProfile(_objectSpread(_objectSpread({}, profile), {}, {
+        targetBf: e.target.value,
+        goalStartWeight: profile.goalStartWeight || (e.target.value ? String(currentWeight || "") : ""),
+        goalStartBf: profile.goalStartBf || (e.target.value && currentBf ? String(r2(currentBf)) : ""),
+        goalStartDate: profile.goalStartDate || (e.target.value ? latest ? latest[0] : TODAY : "")
+      })); }
+    }))), (targetWeight || targetBf) && currentWeight ? /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 9, color: T.text3 }
+    }, /*#__PURE__*/React.createElement("span", null, "Punkt startowy: ", /*#__PURE__*/React.createElement("b", { style: { color: T.text2 } }, startWeight.toFixed(1), " kg"), profile.goalStartDate ? " · " + mfFormatDate(goalStartDate) : ""), /*#__PURE__*/React.createElement("button", {
+      onClick: function onClick() {
+        if (!window.confirm("Ustawić aktualny pomiar jako nowy punkt startowy celu?")) return;
+        setProfile(_objectSpread(_objectSpread({}, profile), {}, {
+          goalStartWeight: String(currentWeight),
+          goalStartBf: currentBf ? String(r2(currentBf)) : "",
+          goalStartDate: latest ? latest[0] : TODAY
+        }));
+      },
+      style: _objectSpread(_objectSpread({}, btnB), {}, { padding: "5px 8px", fontSize: 9, flexShrink: 0 })
+    }, "Ustaw od teraz")) : null, currentBf && (targetWeight || targetBf) ? /*#__PURE__*/React.createElement("div", {
       style: { marginTop: 10, background: T.acc + "12", borderRadius: 10, padding: 10, fontSize: 11, lineHeight: 1.6, color: T.text2 }
     }, targetBf && weightAtTargetBf ? /*#__PURE__*/React.createElement("div", null, "Przy ", /*#__PURE__*/React.createElement("b", { style: { color: T.acc } }, targetBf, "% BF"), " orientacyjna waga: ", /*#__PURE__*/React.createElement("b", { style: { color: T.text } }, weightAtTargetBf.toFixed(1), " kg")) : null, targetWeight && bfAtTargetWeight > 1 && bfAtTargetWeight < 60 ? /*#__PURE__*/React.createElement("div", null, "Przy wadze ", /*#__PURE__*/React.createElement("b", { style: { color: T.text } }, targetWeight, " kg"), " szacowany BF: ", /*#__PURE__*/React.createElement("b", { style: { color: targetWeightWarning ? T.acc2 : T.acc } }, bfAtTargetWeight.toFixed(1), "%")) : null, targetWeightWarning ? /*#__PURE__*/React.createElement("div", { style: { color: T.acc2, fontSize: 10, marginTop: 4, fontWeight: 700 } }, "⚠ Ten wynik byłby skrajnie niski. Zweryfikuj obwody albo załóż, że część spadku masy nie będzie samym tłuszczem.") : null, /*#__PURE__*/React.createElement("div", { style: { color: T.text3, fontSize: 10, marginTop: 3 } }, "Założenie: beztłuszczowa masa ciała pozostaje bez zmian. Rzeczywisty wynik może się różnić.")) : null, effectiveTargetWeight && currentWeight ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: { marginTop: 12, background: T.surf2, borderRadius: 10, padding: 11 }
@@ -4775,9 +4974,26 @@ function App() {
       style: { height: 7, borderRadius: 8, overflow: "hidden", background: T.border }
     }, /*#__PURE__*/React.createElement("div", { style: { width: progress + "%", height: "100%", background: T.acc, transition: "width .25s" } })), /*#__PURE__*/React.createElement("div", {
       style: { marginTop: 8, fontSize: 11, color: T.text3, lineHeight: 1.5 }
-    }, "Do celu: ", /*#__PURE__*/React.createElement("b", { style: { color: T.text } }, Math.abs(delta).toFixed(1), " kg"), " • Aktualny BF: ", currentBf.toFixed(1), "%")), /*#__PURE__*/React.createElement("div", {
-      style: { marginTop: 8, borderRadius: 10, padding: "10px 11px", background: directionOk && finishFast ? T.acc + "18" : T.acc2 + "14", fontSize: 11, lineHeight: 1.55, color: T.text2 }
-    }, directionOk && finishFast ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", { style: { color: T.acc } }, "Przewidywany finisz: ", finishFast, " – ", finishSlow), /*#__PURE__*/React.createElement("div", { style: { color: T.text3 } }, "Tempo teoretyczne: ok. ", weeklyRate.toFixed(2), " kg/tydz. Zakres później skoryguje historia pomiarów.")) : delta === 0 ? "Cel osiągnięty — dobra robota." : "Ustaw korektę TDEE zgodną z celem: deficyt przy redukcji albo nadwyżkę przy budowie masy.")) : /*#__PURE__*/React.createElement("div", {
+    }, "Do celu: ", /*#__PURE__*/React.createElement("b", { style: { color: T.text } }, Math.abs(delta).toFixed(1), " kg"), currentBf ? " • Aktualny BF: " + currentBf.toFixed(1) + "%" : ""), goalFatChange !== null ? /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 8, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }
+    }, [[currentWeight - startWeight, "Masa", "kg", T.text2], [goalFatChange, "Tłuszcz*", "kg", "#7daa6e"], [goalOtherChange, "Pozostałe*", "kg", "#8fa3c4"]].map(function (item) {
+      var value = item[0], label = item[1], unit = item[2], color = item[3];
+      return /*#__PURE__*/React.createElement("div", { key: label, style: { background: T.surf, borderRadius: 8, padding: "7px 4px", textAlign: "center" } }, /*#__PURE__*/React.createElement("div", { style: { fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: color } }, value > 0 ? "+" : "", value.toFixed(1), " ", unit), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, marginTop: 2 } }, label));
+    }), /*#__PURE__*/React.createElement("div", { style: { gridColumn: "1 / -1", fontSize: 8, lineHeight: 1.35, color: T.text3 } }, "*Szacunek z BF. „Pozostałe” obejmuje m.in. wodę, glikogen i masę beztłuszczową — nie oznacza automatycznie utraty mięśni.")) : null), /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 8, borderRadius: 10, padding: "10px 11px", background: adaptiveWeekly ? T.acc + "18" : T.acc2 + "14", fontSize: 11, lineHeight: 1.55, color: T.text2 }
+    }, adaptiveWeekly ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("b", { style: { color: T.acc } }, "Przewidywany finisz: ", mfFormatDate(finishFastISO), " – ", mfFormatDate(finishSlowISO)), /*#__PURE__*/React.createElement("div", { style: { color: T.text2 } }, "Najbardziej prawdopodobnie: ", /*#__PURE__*/React.createElement("b", null, mfFormatDate(finishCentralISO))), /*#__PURE__*/React.createElement("div", { style: { color: T.text3, marginTop: 3 } }, forecastMode === "adaptacyjna" ? "Prognoza adaptacyjna: " + adaptiveWeekly.toFixed(2) + " kg/tydz. · trend pomiarów " + Math.abs(weightTrend.weekly).toFixed(2) + " kg/tydz. · " + weightTrend.count + " wpisy / " + weightTrend.spanDays + " dni." : "Prognoza teoretyczna: " + adaptiveWeekly.toFixed(2) + " kg/tydz. Dodaj min. 3 pomiary przez 14 dni, aby MatFit skalibrował ją rzeczywistym trendem."), /*#__PURE__*/React.createElement("div", { style: { color: T.text3, fontSize: 9, marginTop: 4 } }, "7700 kcal/kg to punkt startowy, nie obietnica. Zakres uwzględnia typowe odchylenia i zmienia się wraz z danymi.")) : delta === 0 ? "Cel osiągnięty — dobra robota." : "Brak wiarygodnej prognozy. Ustaw deficyt/nadwyżkę zgodną z celem albo dodaj co najmniej 3 pomiary w ciągu 14 dni."), adaptiveWeekly && goalChartData.length > 1 ? /*#__PURE__*/React.createElement("div", {
+      style: { marginTop: 10, background: T.surf2, borderRadius: 10, padding: "9px 6px 4px" }
+    }, /*#__PURE__*/React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 5px 5px" } }, /*#__PURE__*/React.createElement("b", { style: { fontSize: 10, color: T.text2 } }, "Prognoza masy"), /*#__PURE__*/React.createElement("span", { style: { fontSize: 8, color: T.text3 } }, "linia przerywana = prognoza")), /*#__PURE__*/React.createElement(ResponsiveContainer, {
+      width: "100%", height: 190
+    }, /*#__PURE__*/React.createElement(ComposedChart, {
+      data: goalChartData, margin: { top: 5, right: 8, left: -8, bottom: 3 }
+    }, /*#__PURE__*/React.createElement(CartesianGrid, { strokeDasharray: "3 3", stroke: T.border }), /*#__PURE__*/React.createElement(XAxis, { dataKey: "label", tick: { fontSize: 8, fill: T.text3 }, interval: "preserveStartEnd" }), /*#__PURE__*/React.createElement(YAxis, { domain: [goalChartMin, goalChartMax], tick: { fontSize: 8, fill: T.text3 }, width: 38 }), /*#__PURE__*/React.createElement(Tooltip, {
+      contentStyle: { background: T.surf2, border: "1px solid " + T.border, borderRadius: 8, fontSize: 10 },
+      formatter: function formatter(value, name) {
+        if (Array.isArray(value)) return [value[0].toFixed(1) + "–" + value[1].toFixed(1) + " kg", "Zakres"];
+        return [Number(value).toFixed(1) + " kg", name];
+      }
+    }), /*#__PURE__*/React.createElement(Area, { type: "monotone", dataKey: "range", name: "Zakres", stroke: "none", fill: T.acc, fillOpacity: 0.12, connectNulls: true, isAnimationActive: false }), /*#__PURE__*/React.createElement(ReferenceLine, { y: effectiveTargetWeight, stroke: T.acc2, strokeDasharray: "4 3", label: { value: "cel", fill: T.acc2, fontSize: 8 } }), /*#__PURE__*/React.createElement(Line, { type: "monotone", dataKey: "actual", name: "Pomiar", stroke: "#8fa3c4", strokeWidth: 2, dot: { r: 3 }, connectNulls: true, isAnimationActive: false }), /*#__PURE__*/React.createElement(Line, { type: "monotone", dataKey: "trend", name: "Średnia 7 dni", stroke: "#7daa6e", strokeWidth: 2, dot: false, connectNulls: true, isAnimationActive: false }), /*#__PURE__*/React.createElement(Line, { type: "monotone", dataKey: "forecast", name: "Prognoza", stroke: T.acc, strokeWidth: 2, strokeDasharray: "5 4", dot: false, connectNulls: true, isAnimationActive: false })))) : null) : /*#__PURE__*/React.createElement("div", {
       style: { marginTop: 10, fontSize: 11, color: T.text3, lineHeight: 1.5 }
     }, currentBf ? "Ustaw wagę docelową albo docelowy BF%. Finisz policzymy z TDEE oraz deficytu lub nadwyżki." : "Najpierw dodaj komplet pomiarów — bez nich nie będziemy udawać, że znamy Twój BF%."));
   }(), /*#__PURE__*/React.createElement("div", {
@@ -5668,6 +5884,37 @@ function App() {
     var formData = Object.keys(bodyForm).length > 0 ? _objectSpread(_objectSpread({}, selectedEntry), bodyForm) : selectedEntry;
     var autoNavyBF = calcNavyBodyFat(profile, formData);
     function saveEntry() {
+      var editableKeys = ["weight", "bfManual"].concat(MEASURES.map(function (measure) { return measure.key; }));
+      var hasMeasurement = editableKeys.some(function (key) {
+        return formData[key] !== undefined && formData[key] !== "";
+      });
+      if (!hasMeasurement) {
+        toast_("Wpisz przynajmniej jeden pomiar");
+        return;
+      }
+      var limits = {
+        weight: [30, 350, "waga"],
+        bfManual: [2, 60, "BF"],
+        neck: [15, 100, "szyja"],
+        chest: [30, 250, "klatka"],
+        waist: [30, 250, "talia"],
+        belly: [30, 250, "pas"],
+        hips: [30, 250, "biodra"],
+        bicep: [10, 100, "biceps"],
+        forearm: [10, 80, "przedramię"],
+        thigh: [20, 150, "udo"],
+        calf: [15, 100, "łydka"]
+      };
+      var invalidKey = editableKeys.find(function (key) {
+        if (formData[key] === undefined || formData[key] === "") return false;
+        var value = parseFloat(formData[key]);
+        var range = limits[key] || [1, 300, key];
+        return !isFinite(value) || value < range[0] || value > range[1];
+      });
+      if (invalidKey) {
+        toast_("Sprawdź pole: " + limits[invalidKey][2]);
+        return;
+      }
       var entry = _objectSpread(_objectSpread({}, formData), {}, {
         date: bodyDate
       });
@@ -5676,6 +5923,10 @@ function App() {
       setBodyLog(function (prev) {
         return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, bodyDate, entry));
       });
+      var latestExistingDate = Object.keys(bodyLog || {}).sort().pop();
+      if (entry.weight && (!latestExistingDate || bodyDate >= latestExistingDate)) {
+        setProfile(_objectSpread(_objectSpread({}, profile), {}, { weight: String(entry.weight) }));
+      }
       setBodyForm({});
       setBodyDate(TODAY);
       toast_(bodyLog[bodyDate] ? "Pomiar zaktualizowany!" : "Pomiar zapisany!");
@@ -5754,6 +6005,18 @@ function App() {
         value: entryBf(e)
       };
     });
+    var fatMassData = Object.entries(bodyLog).filter(function (item) {
+      return parseFloat(item[1] && item[1].weight) > 0 && entryBf(item[1]) > 0;
+    }).sort(function (a, b) {
+      return a[0].localeCompare(b[0]);
+    }).map(function (item) {
+      var weight = parseFloat(item[1].weight);
+      var bf = entryBf(item[1]);
+      return {
+        date: new Date(item[0] + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" }),
+        value: r2(weight * bf / 100)
+      };
+    });
     var activeMeasure = MEASURES.find(function (m) {
       return m.key === activeChart;
     }) || MEASURES[0];
@@ -5779,6 +6042,97 @@ function App() {
         value: parseFloat(e[activeChart])
       };
     });
+    var bodySpanDays = firstBody && latestBody ? mfDaysBetween(firstBody[0], latestBody[0]) : 0;
+    var compositionEntries = sortedBodyEntries.filter(function (item) {
+      return parseFloat(item[1].weight) > 0 && entryBf(item[1]) > 0;
+    });
+    var firstComposition = compositionEntries.length ? compositionEntries[0] : null;
+    var latestComposition = compositionEntries.length ? compositionEntries[compositionEntries.length - 1] : null;
+    var compositionSpanDays = firstComposition && latestComposition ? mfDaysBetween(firstComposition[0], latestComposition[0]) : 0;
+    var firstWeight = firstComposition ? parseFloat(firstComposition[1].weight) : 0;
+    var latestWeight = latestComposition ? parseFloat(latestComposition[1].weight) : 0;
+    var firstBf = firstComposition ? entryBf(firstComposition[1]) : 0;
+    var latestBf = latestComposition ? entryBf(latestComposition[1]) : 0;
+    var bodyCompositionReady = compositionEntries.length >= 2 && compositionSpanDays >= 7 && firstWeight > 0 && latestWeight > 0 && firstBf > 0 && latestBf > 0;
+    var totalBodyChange = bodyCompositionReady ? latestWeight - firstWeight : null;
+    var fatMassStart = bodyCompositionReady ? firstWeight * firstBf / 100 : null;
+    var fatMassLatest = bodyCompositionReady ? latestWeight * latestBf / 100 : null;
+    var fatMassChange = bodyCompositionReady ? fatMassLatest - fatMassStart : null;
+    var otherMassChange = bodyCompositionReady ? totalBodyChange - fatMassChange : null;
+    var bodyCompositionConfidence = bodyCompositionReady && firstComposition[1].bfManual && latestComposition[1].bfManual ? "średnia" : "orientacyjna";
+    function bodyMetric(entry, key) {
+      if (key === "bf") return entryBf(entry);
+      if (key === "belly") return parseFloat(entry && (entry.belly || entry.waist));
+      return parseFloat(entry && entry[key]);
+    }
+    function bodyCorrelation(keyX, keyY) {
+      var points = sortedBodyEntries.map(function (item) {
+        return { date: item[0], pair: [bodyMetric(item[1], keyX), bodyMetric(item[1], keyY)] };
+      }).filter(function (point) {
+        return isFinite(point.pair[0]) && point.pair[0] > 0 && isFinite(point.pair[1]) && point.pair[1] > 0;
+      });
+      var pairSpan = points.length >= 2 ? mfDaysBetween(points[0].date, points[points.length - 1].date) : 0;
+      var pairs = points.map(function (point) { return point.pair; });
+      return { value: mfPearson(pairs), count: pairs.length, spanDays: pairSpan, ready: pairs.length >= 6 && pairSpan >= 42 };
+    }
+    var weightWaistCorrelation = bodyCorrelation("weight", "belly");
+    var weightBfCorrelation = bodyCorrelation("weight", "bf");
+    var waistBfCorrelation = bodyCorrelation("belly", "bf");
+    var energyPairs = [];
+    if (tdee > 0 && sortedBodyEntries.length >= 2) {
+      for (var intervalIndex = 1; intervalIndex < sortedBodyEntries.length; intervalIndex++) {
+        var intervalStart = sortedBodyEntries[intervalIndex - 1];
+        var intervalEnd = sortedBodyEntries[intervalIndex];
+        var intervalDays = mfDaysBetween(intervalStart[0], intervalEnd[0]);
+        var intervalStartWeight = parseFloat(intervalStart[1].weight);
+        var intervalEndWeight = parseFloat(intervalEnd[1].weight);
+        if (!intervalStartWeight || !intervalEndWeight || intervalDays < 3 || intervalDays > 35) continue;
+        var intervalDeficit = 0;
+        var loggedDays = 0;
+        for (var intervalDay = 1; intervalDay <= intervalDays; intervalDay++) {
+          var intervalDate = mfShiftISO(intervalStart[0], intervalDay);
+          var intervalMeals = planer[intervalDate];
+          if (!Array.isArray(intervalMeals) || !intervalMeals.length) continue;
+          var intervalKcal = intervalMeals.reduce(function (sum, meal) {
+            return sum + (parseFloat(meal.kcal) || 0);
+          }, 0);
+          var intervalDayType = dayTypes[intervalDate] || "training";
+          var intervalMultiplier = (DAY_TYPES.find(function (type) { return type.key === intervalDayType; }) || DAY_TYPES[0]).mul;
+          intervalDeficit += tdee * intervalMultiplier - intervalKcal;
+          loggedDays++;
+        }
+        var intervalCoverage = loggedDays / intervalDays;
+        if (intervalCoverage >= 0.7) {
+          energyPairs.push([intervalDeficit / loggedDays, (intervalStartWeight - intervalEndWeight) * 7 / intervalDays]);
+        }
+      }
+    }
+    var energyCorrelation = {
+      value: mfPearson(energyPairs),
+      count: energyPairs.length,
+      ready: energyPairs.length >= 4 && bodySpanDays >= 42
+    };
+    var correlationCards = [{
+      title: "Waga ↔ pas",
+      result: weightWaistCorrelation,
+      required: 6,
+      hint: "Czy spadek masy idzie w parze ze zmianą obwodu pasa."
+    }, {
+      title: "Waga ↔ BF",
+      result: weightBfCorrelation,
+      required: 6,
+      hint: "Zależność masy ciała i szacowanego poziomu tłuszczu."
+    }, {
+      title: "Pas ↔ BF",
+      result: waistBfCorrelation,
+      required: 6,
+      hint: "Pomaga ocenić, czy trend BF zgadza się z obwodami."
+    }, {
+      title: "Deficyt ↔ tempo",
+      result: energyCorrelation,
+      required: 4,
+      hint: "Na podstawie wpisanych kcal; wymagane ≥70% dni między pomiarami."
+    }];
     function miniChart(data, color, unit) {
       if (data.length < 1) return /*#__PURE__*/React.createElement("div", {
         style: {
@@ -5896,7 +6250,18 @@ function App() {
         var fmt = function fmt(v) { return v === null ? "—" : (v > 0 ? "+" : "") + v.toFixed(1); };
         return /*#__PURE__*/React.createElement("div", { key: key, style: { background: T.surf2, borderRadius: 8, padding: "8px 5px", textAlign: "center" } }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, color: T.text3 } }, label), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "monospace", fontSize: 16, fontWeight: 800, color: color, margin: "2px 0" } }, value.toFixed(1), unit), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, lineHeight: 1.4 } }, "poprz.: ", fmt(prevDelta), /*#__PURE__*/React.createElement("br"), "start: ", fmt(startDelta)));
       })));
-    }(), /*#__PURE__*/React.createElement("div", {
+    }(), latestBody ? /*#__PURE__*/React.createElement("div", {
+      style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 14, padding: 12, marginBottom: 10 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }
+    }, /*#__PURE__*/React.createElement("b", { style: { fontSize: 12, color: T.text } }, "Skład zmiany masy"), /*#__PURE__*/React.createElement("span", { style: { fontSize: 8, color: T.text3 } }, bodyCompositionReady ? bodyCompositionConfidence + " wiarygodność" : "potrzeba więcej danych")), bodyCompositionReady ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }
+    }, [[totalBodyChange, "Masa łącznie", "#8fa3c4"], [fatMassChange, "Tłuszcz — szac.", "#7daa6e"], [otherMassChange, "Pozostała masa*", "#c4a45a"]].map(function (item) {
+      var value = item[0], label = item[1], color = item[2];
+      return /*#__PURE__*/React.createElement("div", { key: label, style: { background: T.surf2, borderRadius: 8, padding: "8px 4px", textAlign: "center" } }, /*#__PURE__*/React.createElement("div", { style: { fontFamily: "monospace", fontWeight: 800, fontSize: 15, color: color } }, value > 0 ? "+" : "", value.toFixed(1), " kg"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, marginTop: 3, lineHeight: 1.2 } }, label));
+    })), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, lineHeight: 1.4, marginTop: 7 } }, mfFormatDate(firstComposition[0]), " → ", mfFormatDate(latestComposition[0]), ". *To nie jest „utrata mięśni”: ta wartość obejmuje wodę, glikogen i całą masę beztłuszczową. BF z obwodów lub wagi jest szacunkiem, dlatego patrzymy na trend.")) : /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 10, color: T.text3, lineHeight: 1.45, background: T.surf2, borderRadius: 8, padding: 9 }
+    }, "Dodaj co najmniej dwa kompletne pomiary w odstępie 7 dni: waga + BF ręczny albo waga, pas i szyja", profile.gender === "f" ? " + biodra" : "", ". Wtedy MatFit oszacuje zmianę tłuszczu bez udawania laboratoryjnej dokładności.")) : null, /*#__PURE__*/React.createElement("div", {
       style: {
         background: T.surf,
         border: "1px solid " + T.border,
@@ -5941,7 +6306,10 @@ function App() {
         });
       },
       type: "number",
+      min: "30",
+      max: "350",
       step: "0.1",
+      inputMode: "decimal",
       placeholder: "\u2014",
       style: _objectSpread(_objectSpread({}, inp), {}, {
         padding: "6px 8px",
@@ -6007,7 +6375,10 @@ function App() {
             });
           },
           type: "number",
+          min: "10",
+          max: "250",
           step: "0.1",
+          inputMode: "decimal",
           placeholder: "\u2014",
           style: _objectSpread(_objectSpread({}, inp), {}, {
             padding: "6px 8px",
@@ -6066,7 +6437,19 @@ function App() {
         color: T.text2,
         marginBottom: 8
       }
-    }, "\uD83D\uDCCA BF%"), miniChart(bfData, "#7daa6e", "%")), circumData.length > 0 && /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCCA BF%"), miniChart(bfData, "#7daa6e", "%")), fatMassData.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.surf,
+        border: "1px solid " + T.border,
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 12, fontWeight: 700, color: T.text2, marginBottom: 3 }
+    }, "🟢 Szacowana masa tłuszczowa (kg)"), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 8, color: T.text3, marginBottom: 8, lineHeight: 1.35 }
+    }, "Wyliczenie: masa ciała × BF%. To trend orientacyjny, nie pomiar DEXA."), miniChart(fatMassData, "#6aab8e", "kg")), circumData.length > 0 && /*#__PURE__*/React.createElement("div", {
       style: {
         background: T.surf,
         border: "1px solid " + T.border,
@@ -6105,7 +6488,29 @@ function App() {
           fontWeight: activeChart === m.key ? 700 : 400
         }
       }, m.label);
-    })), miniChart(circumData, activeMeasure.color, "cm")), Object.keys(bodyLog).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    })), miniChart(circumData, activeMeasure.color, "cm")), sortedBodyEntries.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 14, padding: 12, marginBottom: 10 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }
+    }, /*#__PURE__*/React.createElement("b", { style: { fontSize: 12, color: T.text } }, "🔎 Analiza zależności"), /*#__PURE__*/React.createElement("span", { style: { fontSize: 8, color: T.text3 } }, "minimum 4–6 serii / 42 dni")), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 9, color: T.text3, lineHeight: 1.4, marginBottom: 8 }
+    }, "MatFit odblokowuje wynik dopiero przy wystarczającej historii. Dzięki temu pojedynczy skok wody nie zostaje ogłoszony odkryciem naukowym."), /*#__PURE__*/React.createElement("div", {
+      style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }
+    }, correlationCards.map(function (card) {
+      var result = card.result;
+      var valueReady = result.ready && typeof result.value === "number" && isFinite(result.value);
+      var signedValue = valueReady ? (result.value > 0 ? "+" : "") + result.value.toFixed(2) : "";
+      return /*#__PURE__*/React.createElement("div", {
+        key: card.title,
+        style: { background: T.surf2, borderRadius: 9, padding: 9, minHeight: 80 }
+      }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: T.text2 } }, card.title), valueReady ? /*#__PURE__*/React.createElement("div", {
+        style: { fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: T.acc, margin: "5px 0 3px" }
+      }, "r ", signedValue, " · ", mfCorrelationLabel(result.value)) : /*#__PURE__*/React.createElement("div", {
+        style: { fontSize: 9, fontWeight: 700, color: T.acc2, margin: "5px 0 3px" }
+      }, result.ready ? "Brak zróżnicowania danych" : result.count + "/" + card.required + " wymaganych serii"), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, lineHeight: 1.35 } }, card.hint));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 8, color: T.text3, marginTop: 7, lineHeight: 1.35 }
+    }, "Współczynnik r opisuje współwystępowanie zmian, nie dowodzi przyczyny. Deficyt jest liczony z obecnego TDEE i dni z wpisanym jedzeniem.")), Object.keys(bodyLog).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         textTransform: "uppercase",
