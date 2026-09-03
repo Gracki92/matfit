@@ -18,13 +18,14 @@ Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `ma
 - [ ] Zdjęcia AI do kart przez bezpieczny backend (bez klucza API w HTML).
 - [ ] Osobny skrócony format karty do social mediów.
 - [x] Backup/Restore PRO: pełna, wersjonowana kopia danych; podgląd zawartości; scalanie lub zastąpienie; automatyczna kopia ratunkowa; zgodność ze starszym formatem i walidacja pliku.
+- [x] Skaner EAN v1: aparat lub kod ręczny, walidacja GTIN, lokalna baza i Open Food Facts, poprawianie danych, ręczne dodanie oraz ochrona przed duplikatami.
 - [ ] Przygotowanie wydania Android / Google Play.
 
 ## Elastyczne przepisy
 
 Wersja v1 działa w DEV i czeka na testy przed przeniesieniem na produkcję.
 
-- [x] suwak liczby porcji;
+- [x] suwak liczby porcji, także ułamkowej od 0,10 ze skokiem 0,05 (np. 20%, 35% lub 90% porcji);
 - [x] zmiana docelowej gramatury całego przepisu;
 - [x] niezależna edycja gramatury każdego składnika;
 - [x] ustawienie docelowej ilości białka;
