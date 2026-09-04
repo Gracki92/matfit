@@ -1,0 +1,14 @@
+{
+  "name": "matfit-pro",
+  "version": "0.25.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check-project.mjs && node --test",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

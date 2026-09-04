@@ -35,6 +35,16 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Dodawanie własnego produktu, zapis danych i licznik katalogu przeszły test końcowy bez błędów konsoli.
 - [ ] W UI v2 nadać wszystkim klikalnym elementom semantykę przycisku, obsługę klawiatury, widoczny fokus i etykiety dla czytników ekranu.
 
+## Migracja React — etap 1
+
+- [x] Wydzielić działający kod aplikacji z ponadmegabajtowego `index.html` bez zmiany zachowania i kluczy localStorage.
+- [x] Przenieść style, kod aplikacji oraz przypięte biblioteki do osobnych katalogów `assets`, `src` i `vendor`.
+- [x] Dodać kontrolę integralności projektu i testy krytycznej logiki planera uruchamiane przez `npm run check`.
+- [x] Dodać powtarzalny build statyczny do katalogu `dist` bez pobierania zależności z sieci.
+- [x] Poprawić manifest i service worker tak, aby działały z adresem DEV umieszczonym w podkatalogu oraz aktualizowały cache.
+- [x] Zachować poprzedni plik `app.jsx` wyłącznie w katalogu `legacy`, poza paczką produkcyjną.
+- [ ] Wydzielać kolejne domeny z `src/app.js` do testowalnych modułów: daty, odżywianie, planer, backup i katalog produktów.
+
 ## UI v2.1 — powłoka aplikacji
 
 - [x] Wspólny system wizualny dla motywów Royal i Light: poprawiony kontrast, paleta makro, powierzchnie, obramowania i stany aktywne.
@@ -145,7 +155,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [ ] Przetestować cały obecny DEV na prawdziwych danych: planer, elastyczne porcje, raport 7-dniowy, cel sylwetkowy, prognozę i kalibrację TDEE.
 - [x] Wykonać pierwszy całościowy audyt braków, błędów, dostępności oraz wygody najważniejszych ścieżek użytkownika.
 - [x] Wdrożyć pierwszą iterację nowego interfejsu dla motywów Royal i Light oraz wspólnej, responsywnej powłoki komponentów.
-- [ ] Przenieść aplikację z pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania.
+- [ ] Dokończyć rozpoczętą migrację do modułowego projektu React; etap 1 ma już testy, wersjonowanie danych i proces budowania.
 - [ ] Dodać onboarding dopasowujący widok do celu, diety, poziomu zaawansowania i preferowanego zakresu danych.
 
 ### 2. Nutrition Data v2 i duża baza produktów
