@@ -43,8 +43,17 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Semantyczna nawigacja, wskaźnik realizacji kalorii, modal jako dialog oraz etykiety wyszukiwarki i filtrów.
 - [x] Obsługa klawiatury dla rozwijania przepisów; czytelne przyciski edycji i usuwania pozycji planera.
 - [x] Test siedmiu modułów i obu motywów na niezmiennym adresie commita bez błędów aplikacji.
-- [ ] Ujednolicić wewnętrzne karty, nagłówki, typografię i stany puste we wszystkich siedmiu modułach.
+- [x] Ujednolicić wewnętrzne karty, nagłówki, typografię i stany puste we wszystkich siedmiu modułach.
 - [ ] Dokończyć pełny audyt WCAG: kolejność fokusu, wszystkie kontrolki ikonowe, komunikaty live region i test czytnikiem ekranu.
+
+## UI v2.2 — wnętrze modułów
+
+- [x] Jeden komponent nagłówka strony z tytułem, kontekstem i opisem dla Profilu, Pomiarów, Wody, Planera, Przepisów, Produktów i Zakupów.
+- [x] Wspólny system kart sekcji i kart list: promienie, subtelne cienie, odstępy oraz zachowanie w motywach Royal i Light.
+- [x] Czytelniejsze filtry jako przewijane chipy z większym polem dotyku i stanem `aria-pressed`.
+- [x] Pełne stany puste dla przepisów, produktów, zakupów i pierwszego pomiaru, z wyjaśnieniem następnego kroku.
+- [x] Spójniejsza hierarchia typografii i responsywny układ nagłówków na telefonie oraz komputerze.
+- [ ] Dopracować komunikaty systemowe jako live region i wykonać test czytnikiem ekranu.
 
 ## Elastyczne przepisy
 
