@@ -55,6 +55,16 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Spójniejsza hierarchia typografii i responsywny układ nagłówków na telefonie oraz komputerze.
 - [ ] Dopracować komunikaty systemowe jako live region i wykonać test czytnikiem ekranu.
 
+## UI v2.3 — dostępność klawiatury
+
+- [x] Klikane dni planera, poziomy aktywności, pozycje listy zakupów, historia wody i wyniki wyszukiwania są semantycznymi przyciskami.
+- [x] Stany wyboru przekazują `aria-pressed`, a kontrolki ikonowe otrzymały jednoznaczne etykiety.
+- [x] Zmiana głównego modułu przenosi fokus do treści, dzięki czemu użytkownik klawiatury nie wraca za każdym razem przez całą nawigację.
+- [x] Standardowe okna modalne przejmują i zamykają pętlę fokusu, obsługują Escape oraz oddają fokus po zamknięciu.
+- [x] Skaner EAN i karta przepisu mają semantykę dialogu, obsługę Escape i opisane przyciski zamknięcia.
+- [x] Komunikaty typu toast działają jako uprzejmy live region dla technologii asystujących.
+- [ ] Wykonać końcowy test kolejności fokusu i czytnika ekranu na docelowym telefonie przed wydaniem produkcyjnym.
+
 ## Elastyczne przepisy
 
 Wersja v1 działa w DEV i czeka na testy przed przeniesieniem na produkcję.

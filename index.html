@@ -642,7 +642,8 @@ var _React = React,
   useState = _React.useState,
   useMemo = _React.useMemo,
   useCallback = _React.useCallback,
-  useRef = _React.useRef;
+  useRef = _React.useRef,
+  useEffect = _React.useEffect;
 
 function normalizeBarcode(value) {
   return String(value || "").replace(/\D/g, "");
@@ -1652,7 +1653,9 @@ function Builder(_ref5) {
         fontSize: 11,
         color: T.text3
       }
-    }, "g"), /*#__PURE__*/React.createElement("span", {
+    }, "g"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Usuń składnik " + ((p === null || p === void 0 ? void 0 : p.name) || "z przepisu"),
       onClick: function onClick() {
         return setItems(function (prev) {
           return prev.filter(function (_, j) {
@@ -1663,9 +1666,14 @@ function Builder(_ref5) {
       style: {
         color: T.text3,
         cursor: "pointer",
-        fontSize: 17
+        fontSize: 17,
+        width: 36,
+        height: 36,
+        border: "none",
+        borderRadius: 8,
+        background: "transparent"
       }
-    }, "x"));
+    }, "×"));
   }), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
@@ -1713,6 +1721,47 @@ function Modal(_ref6) {
     onClose = _ref6.onClose,
     children = _ref6.children,
     T = _ref6.T;
+  var panelRef = useRef(null);
+  useEffect(function () {
+    var previousFocus = document.activeElement;
+    var panel = panelRef.current;
+    var focusTimer = setTimeout(function () {
+      if (!panel) return;
+      var preferred = panel.querySelector("[autofocus], input:not([type='hidden']), select, textarea, button");
+      (preferred || panel).focus();
+    }, 0);
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panel) return;
+      var focusable = Array.prototype.slice.call(panel.querySelectorAll("button:not([disabled]), input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])")).filter(function (element) {
+        return element.offsetParent !== null;
+      });
+      if (!focusable.length) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return function () {
+      clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+    };
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
     onClick: onClose,
     className: "mf-modal-backdrop",
@@ -1727,6 +1776,8 @@ function Modal(_ref6) {
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    ref: panelRef,
+    tabIndex: -1,
     onClick: function onClick(e) {
       return e.stopPropagation();
     },
@@ -1884,6 +1935,7 @@ function ScanModal(_ref9) {
     setEanError = _useState12[1];
   var scannerRef = useRef(null);
   var cameraRequestedRef = useRef(false);
+  var scanPanelRef = useRef(null);
   function startCamera() {
     setCameraError("");
     cameraRequestedRef.current = true;
@@ -1952,7 +2004,27 @@ function ScanModal(_ref9) {
     }
     setCameraActive(false);
   }
+  useEffect(function () {
+    var previousFocus = document.activeElement;
+    var timer = setTimeout(function () {
+      if (scanPanelRef.current) scanPanelRef.current.focus();
+    }, 0);
+    function handleScanKeys(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        stopCamera();
+        onClose();
+      }
+    }
+    document.addEventListener("keydown", handleScanKeys);
+    return function () {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleScanKeys);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+    };
+  }, []);
   return /*#__PURE__*/React.createElement("div", {
+    role: "presentation",
     onClick: function onClick() {
       stopCamera();
       onClose();
@@ -1967,6 +2039,11 @@ function ScanModal(_ref9) {
       justifyContent: "center"
     }
   }, /*#__PURE__*/React.createElement("div", {
+    ref: scanPanelRef,
+    tabIndex: -1,
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "mf-scan-title",
     onClick: function onClick(e) {
       return e.stopPropagation();
     },
@@ -1991,7 +2068,11 @@ function ScanModal(_ref9) {
       alignItems: "center",
       color: T.text
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\uD83D\uDCF7 Skanuj kod EAN"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    id: "mf-scan-title"
+  }, "\uD83D\uDCF7 Skanuj kod EAN"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-label": "Zamknij skaner kodu EAN",
     onClick: function onClick() {
       stopCamera();
       onClose();
@@ -1999,7 +2080,12 @@ function ScanModal(_ref9) {
     style: {
       cursor: "pointer",
       color: T.text2,
-      fontSize: 22
+      fontSize: 22,
+      border: "none",
+      borderRadius: 8,
+      background: "transparent",
+      width: 42,
+      height: 42
     }
   }, "\u2715")), !scanResult && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     id: "qr-reader",
@@ -2218,6 +2304,13 @@ function App() {
     _useState12 = _slicedToArray(_useState11, 2),
     page = _useState12[0],
     setPage = _useState12[1];
+  function navigateToPage(nextPage) {
+    setPage(nextPage);
+    setTimeout(function () {
+      var main = document.getElementById("mf-main");
+      if (main) main.focus();
+    }, 0);
+  }
   var _useLSRecipes = useLS("fb10_recipes", []),
     _useLSRecipes2 = _slicedToArray(_useLSRecipes, 2),
     storedRecipes = _useLSRecipes2[0],
@@ -2322,6 +2415,26 @@ function App() {
     _useState18 = _slicedToArray(_useState17, 2),
     modal = _useState18[0],
     setModal = _useState18[1];
+  useEffect(function () {
+    if (modal !== "recipeCard") return undefined;
+    var previousFocus = document.activeElement;
+    var timer = setTimeout(function () {
+      var cardDialog = document.querySelector('[role="dialog"][aria-label^="Karta przepisu"]');
+      if (cardDialog) cardDialog.focus();
+    }, 0);
+    function closeRecipeCard(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setModal(null);
+      }
+    }
+    document.addEventListener("keydown", closeRecipeCard);
+    return function () {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", closeRecipeCard);
+      if (previousFocus && previousFocus.focus) previousFocus.focus();
+    };
+  }, [modal]);
   var _useState19 = useState(""),
     _useState20 = _slicedToArray(_useState19, 2),
     toast = _useState20[0],
@@ -4012,7 +4125,7 @@ function App() {
       className: "mf-nav-tab",
       "aria-current": page === id ? "page" : undefined,
       onClick: function onClick() {
-        return setPage(id);
+        return navigateToPage(id);
       },
       style: {
         flex: "1 1 0",
@@ -4149,6 +4262,8 @@ function App() {
     }
   },
     React.createElement("button", {
+      type: "button",
+      "aria-label": "Poprzedni tydzień",
       onClick: function () {
         setWeekOffset(function (w) {
           return w - 1;
@@ -4171,8 +4286,11 @@ function App() {
       var isSel = k === selectedDay;
       var isToday = k === TODAY;
 
-      return React.createElement("div", {
+      return React.createElement("button", {
         key: k,
+        type: "button",
+        "aria-label": (isToday ? "Dzisiaj, " : "") + d.toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" }),
+        "aria-pressed": isSel,
         onClick: function () {
           setSelectedDay(k);
         },
@@ -4181,7 +4299,11 @@ function App() {
           flexDirection: "column",
           alignItems: "center",
           cursor: "pointer",
-          padding: "2px 3px"
+          padding: "2px 3px",
+          border: "none",
+          background: "transparent",
+          color: "inherit",
+          borderRadius: 12
         }
       },
         React.createElement("div", {
@@ -4212,6 +4334,8 @@ function App() {
     }),
 
     React.createElement("button", {
+      type: "button",
+      "aria-label": "Następny tydzień",
       onClick: function () {
         setWeekOffset(function (w) {
           return w + 1;
@@ -4295,6 +4419,9 @@ function App() {
     }, DAY_TYPES.map(function (dt) {
       return /*#__PURE__*/React.createElement("button", {
         key: dt.key,
+        type: "button",
+        "aria-pressed": (dayTypes[key] || "training") === dt.key,
+        "aria-label": dt.label + ": " + dt.desc,
         onClick: function onClick() {
           return setDayTypes(function (prev) {
             return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, key, dt.key));
@@ -4313,6 +4440,8 @@ function App() {
         }
       }, dt.label.split(" ")[0]);
     })), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Kopiuj posiłki z tego dnia",
       onClick: function onClick() {
         setCpFrom(key);
         setCpTo(TODAY);
@@ -4328,6 +4457,8 @@ function App() {
         color: T.text3
       }
     }, "📄"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Udostępnij podsumowanie dnia",
       onClick: function onClick() {
         return shareDay(key);
       },
@@ -4630,16 +4761,12 @@ function App() {
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
       className: "mf-list-card",
-      onClick: function onClick() {
-        return setExpanded(exp ? null : r.id);
-      },
       style: {
         background: T.surf,
         border: "1px solid " + (exp ? T.acc : T.border),
         borderRadius: 14,
         marginBottom: 10,
-        overflow: "hidden",
-        cursor: "pointer"
+        overflow: "hidden"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5310,7 +5437,7 @@ function App() {
       copy: "Dodaj posiłki do planera w wybranym zakresie, a składniki pojawią się tutaj automatycznie.",
       action: /*#__PURE__*/React.createElement("button", {
         type: "button",
-        onClick: function onClick() { return setPage("planer"); },
+        onClick: function onClick() { return navigateToPage("planer"); },
         style: btnA
       }, "Przejdź do planera"),
       T: T
@@ -5324,9 +5451,12 @@ function App() {
         packageSize = _ref20$.packageSize;
       var chk = zChecked[id] || false;
       var pkgs = packageSize ? Math.ceil(qty / packageSize) : null;
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/React.createElement("button", {
         key: id,
+        type: "button",
         className: "mf-list-card mf-shopping-item",
+        "aria-pressed": chk,
+        "aria-label": (chk ? "Odznacz " : "Oznacz jako kupione ") + name + ", " + Math.round(qty) + " gramów",
         onClick: function onClick() {
           return setZChecked(_objectSpread(_objectSpread({}, zChecked), {}, _defineProperty({}, id, !chk)));
         },
@@ -5340,7 +5470,10 @@ function App() {
           borderRadius: 10,
           marginBottom: 6,
           cursor: "pointer",
-          opacity: chk ? 0.4 : 1
+          opacity: chk ? 0.55 : 1,
+          width: "100%",
+          color: "inherit",
+          textAlign: "left"
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
@@ -5577,7 +5710,7 @@ function App() {
     }, currentBf.toFixed(1), "%")) : /*#__PURE__*/React.createElement("div", {
       style: { background: T.acc2 + "14", border: "1px solid " + T.acc2 + "55", borderRadius: 10, padding: 10, marginBottom: 10, fontSize: 11, lineHeight: 1.5, color: T.text2 }
     }, "Do obliczenia BF metodą Navy potrzebujemy datowanego pomiaru: wagi, pasa, szyi", profile.gender === "f" ? " i bioder" : "", ".", /*#__PURE__*/React.createElement("button", {
-      onClick: function onClick() { return setPage("pomiary"); },
+      onClick: function onClick() { return navigateToPage("pomiary"); },
       style: _objectSpread(_objectSpread({}, btnB), {}, { width: "100%", marginTop: 8, padding: "8px" })
     }, "+ Dodaj pomiar")), /*#__PURE__*/React.createElement("div", {
       style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }
@@ -5721,8 +5854,10 @@ function App() {
       marginBottom: 8
     }
   }, ACTIVITY.map(function (a) {
-    return /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/React.createElement("button", {
       key: a.key,
+      type: "button",
+      "aria-pressed": profile.activity === a.key,
       onClick: function onClick() {
         return setProfile(_objectSpread(_objectSpread({}, profile), {}, {
           activity: a.key
@@ -5733,7 +5868,9 @@ function App() {
         borderRadius: 10,
         border: "1px solid " + (profile.activity === a.key ? T.acc : T.border),
         background: profile.activity === a.key ? T.acc + "22" : "transparent",
-        cursor: "pointer"
+        cursor: "pointer",
+        width: "100%",
+        textAlign: "left"
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6400,14 +6537,23 @@ function App() {
       }
     }, "Ostatnie 7 dni"), waterHistory.map(function (day) {
       var dayPct = day.target > 0 ? Math.round(day.total / day.target * 100) : 0;
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/React.createElement("button", {
         key: day.key,
+        type: "button",
+        "aria-pressed": day.key === waterDate,
+        "aria-label": day.label + ": " + day.total + " z " + day.target + " mililitrów, " + dayPct + " procent",
         onClick: function onClick() {
           return setWaterDate(day.key);
         },
         style: {
           padding: "8px 0",
           borderBottom: day.key === waterHistory[waterHistory.length - 1].key ? "none" : "1px solid " + T.border,
+          borderTop: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          background: "transparent",
+          color: "inherit",
+          width: "100%",
           cursor: "pointer"
         }
       }, /*#__PURE__*/React.createElement("div", {
@@ -7275,7 +7421,7 @@ function App() {
       "aria-label": id === "pomiary" ? "Pomiary" : id === "produkty" ? "Produkty" : label,
       "aria-current": page === id ? "page" : undefined,
       onClick: function onClick() {
-        return setPage(id);
+        return navigateToPage(id);
       },
       style: {
         display: "flex",
@@ -7328,6 +7474,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("input", {
     value: modalProdSearch,
+    "aria-label": "Szukaj produktu do posiłku",
     onChange: function onChange(e) {
       setModalProdSearch(e.target.value);
       setSelP("");
@@ -7338,6 +7485,8 @@ function App() {
     }),
     autoFocus: true
   }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-label": "Skanuj kod kreskowy produktu",
     onClick: function onClick() {
       setScanResult(null);
       setScanError("");
@@ -7372,8 +7521,9 @@ function App() {
         marginTop: 4
       }
     }, hits.map(function (p, i) {
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/React.createElement("button", {
         key: p.id,
+        type: "button",
         onClick: function onClick() {
           setSelP(p.id);
           setModalProdSearch(p.name + (p.state ? " (" + p.state + ")" : p.brand && p.brand !== "—" ? " (" + p.brand + ")" : ""));
@@ -7385,7 +7535,13 @@ function App() {
           background: T.surf2,
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          width: "100%",
+          borderTop: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          color: "inherit",
+          textAlign: "left"
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -7491,6 +7647,7 @@ function App() {
     }
   }, /*#__PURE__*/React.createElement("input", {
     value: modalProdSearch,
+    "aria-label": "Szukaj przepisu do planera",
     onChange: function onChange(e) {
       setModalProdSearch(e.target.value);
       setSelRId("");
@@ -7505,6 +7662,9 @@ function App() {
     style: inp,
     autoFocus: true
   }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-label": showRecipeList ? "Zwiń listę przepisów" : "Rozwiń listę przepisów",
+    "aria-expanded": showRecipeList,
     onClick: function onClick() {
       return setShowRecipeList(function (v) {
         return !v;
@@ -7566,8 +7726,10 @@ function App() {
       var m = recipeM(r);
       var selected = selRId === String(r.id);
       var fav = isFav(r.id);
-      return /*#__PURE__*/React.createElement("div", {
+      return /*#__PURE__*/React.createElement("button", {
         key: String(r.id),
+        type: "button",
+        "aria-pressed": selected,
         onClick: function onClick() {
           setSelRId(selected ? "" : String(r.id));
           setSelRPortions("1");
@@ -7583,7 +7745,13 @@ function App() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: 8
+          gap: 8,
+          width: "100%",
+          borderTop: "none",
+          borderLeft: "none",
+          borderRight: "none",
+          color: "inherit",
+          textAlign: "left"
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -8449,6 +8617,7 @@ function App() {
     var ingredients = r.ingredients || [];
     var steps = r.steps || [];
     return /*#__PURE__*/React.createElement("div", {
+      role: "presentation",
       onClick: function onClick() {
         return setModal(null);
       },
@@ -8462,6 +8631,10 @@ function App() {
         justifyContent: "center"
       }
     }, /*#__PURE__*/React.createElement("div", {
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": "Karta przepisu " + r.name,
+      tabIndex: -1,
       onClick: function onClick(e) {
         return e.stopPropagation();
       },
@@ -8499,6 +8672,8 @@ function App() {
         color: "#17202a"
       }
     }, "Karta MatFit"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Zamknij kartę przepisu",
       onClick: function onClick() {
         return setModal(null);
       },
@@ -8523,6 +8698,8 @@ function App() {
       var active = cardStyle === key;
       return /*#__PURE__*/React.createElement("button", {
         key: key,
+        type: "button",
+        "aria-pressed": active,
         onClick: function onClick() {
           return setCardStyle(key);
         },
@@ -9028,6 +9205,9 @@ function App() {
       }
     }, sweet ? "SWEET" : "SAVORY"))), /*#__PURE__*/React.createElement("style", null, "@media print { body * { visibility:hidden!important; } #recipe-card, #recipe-card * { visibility:visible!important; } #recipe-card { position:absolute!important; left:0!important; top:0!important; width:100%!important; border:none!important; border-radius:0!important; box-shadow:none!important; } .card-controls { display:none!important; } @page { margin:0; size:auto; } }"))));
   }(), toast && /*#__PURE__*/React.createElement("div", {
+    role: "status",
+    "aria-live": "polite",
+    "aria-atomic": "true",
     style: {
       position: "fixed",
       bottom: 76,
