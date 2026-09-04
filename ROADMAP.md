@@ -35,6 +35,17 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Dodawanie własnego produktu, zapis danych i licznik katalogu przeszły test końcowy bez błędów konsoli.
 - [ ] W UI v2 nadać wszystkim klikalnym elementom semantykę przycisku, obsługę klawiatury, widoczny fokus i etykiety dla czytników ekranu.
 
+## UI v2.1 — powłoka aplikacji
+
+- [x] Wspólny system wizualny dla motywów Royal i Light: poprawiony kontrast, paleta makro, powierzchnie, obramowania i stany aktywne.
+- [x] Responsywny układ: mobilny dolny dock oraz szeroka nawigacja i przestrzeń robocza na komputerze bez poziomego przewijania.
+- [x] Nowy nagłówek marki, karta dziennego celu, widoczny fokus i obsługa powiększania strony przez użytkownika.
+- [x] Semantyczna nawigacja, wskaźnik realizacji kalorii, modal jako dialog oraz etykiety wyszukiwarki i filtrów.
+- [x] Obsługa klawiatury dla rozwijania przepisów; czytelne przyciski edycji i usuwania pozycji planera.
+- [x] Test siedmiu modułów i obu motywów na niezmiennym adresie commita bez błędów aplikacji.
+- [ ] Ujednolicić wewnętrzne karty, nagłówki, typografię i stany puste we wszystkich siedmiu modułach.
+- [ ] Dokończyć pełny audyt WCAG: kolejność fokusu, wszystkie kontrolki ikonowe, komunikaty live region i test czytnikiem ekranu.
+
 ## Elastyczne przepisy
 
 Wersja v1 działa w DEV i czeka na testy przed przeniesieniem na produkcję.
@@ -73,7 +84,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 - [ ] Przetestować cały obecny DEV na prawdziwych danych: planer, elastyczne porcje, raport 7-dniowy, cel sylwetkowy, prognozę i kalibrację TDEE.
 - [x] Wykonać pierwszy całościowy audyt braków, błędów, dostępności oraz wygody najważniejszych ścieżek użytkownika.
-- [ ] Przygotować makiety nowego interfejsu dla motywów Royal i Light oraz jeden wspólny system komponentów.
+- [x] Wdrożyć pierwszą iterację nowego interfejsu dla motywów Royal i Light oraz wspólnej, responsywnej powłoki komponentów.
 - [ ] Przenieść aplikację z pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania.
 - [ ] Dodać onboarding dopasowujący widok do celu, diety, poziomu zaawansowania i preferowanego zakresu danych.
 
