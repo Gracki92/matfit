@@ -97,6 +97,18 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] zgodność nowych danych celu z istniejącym localStorage i Backup/Restore PRO;
 - [x] oddzielna przestrzeń danych DEV z jednorazowym, bezpiecznym skopiowaniem dotychczasowych danych do testów.
 
+## Nutrition Data v2.0 — wartości rozszerzone
+
+- [x] Model produktu obsługuje opcjonalnie: „w tym cukry”, błonnik, kwasy tłuszczowe nasycone i sól na 100 g.
+- [x] Brak wartości pozostaje brakiem danych; aplikacja nigdy nie zamienia pustego pola na fałszywe zero.
+- [x] Ręczne dodawanie produktu zawiera pola rozszerzone i waliduje relacje: cukry ≤ węglowodany oraz tłuszcze nasycone ≤ tłuszcze ogółem.
+- [x] Skaner EAN pobiera dostępne wartości rozszerzone z Open Food Facts, pokazuje kompletność 0–4 i zachowuje źródło oraz datę pobrania.
+- [x] Rozszerzone wartości przeliczają się wraz z gramaturą, porcją, wariantem przepisu i ręczną korektą posiłku.
+- [x] Użytkownik może jednym przełącznikiem pokazać lub ukryć szczegóły w planerze, podsumowaniu dnia, przepisach i produktach.
+- [x] Stare produkty, posiłki, kopie zapasowe i dane localStorage pozostają zgodne bez wymuszonej migracji.
+- [ ] Uzupełnić szczegółowe wartości w ręcznie zweryfikowanej bazie podstawowych produktów.
+- [ ] Dodać średnie 7- i 30-dniowe, cele dla błonnika oraz świadome alerty dla soli i tłuszczów nasyconych.
+
 ## Strategia produktu — backlog zarządu
 
 ### 1. Domknięcie fundamentu
@@ -115,8 +127,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [ ] Przed integracją każdego zewnętrznego źródła wykonać audyt licencji; nie kopiować ani nie scrapować bazy konkurencji.
 - [ ] Zapisywać pochodzenie produktu, datę ostatniej weryfikacji, kompletność danych i poziom zaufania do wartości.
 - [ ] Scalać duplikaty po EAN oraz umożliwić zgłoszenie i poprawienie błędnych danych bez nadpisywania pewnych danych niezweryfikowaną wersją.
-- [ ] Rozbudować model wartości odżywczych. Domyślnie: kcal oraz B/W/T; opcjonalnie: **w tym cukry, błonnik, kwasy tłuszczowe nasycone i sól**.
-- [ ] Traktować „w tym cukry” jako część węglowodanów, a nie czwarte makro „C”; rozróżniać cukry ogółem od cukrów dodanych tylko wtedy, gdy źródło faktycznie to podaje.
+- [x] Rozbudować model wartości odżywczych. Domyślnie: kcal oraz B/W/T; opcjonalnie: **w tym cukry, błonnik, kwasy tłuszczowe nasycone i sól**.
+- [x] Traktować „w tym cukry” jako część węglowodanów, a nie czwarte makro „C”; rozróżniać cukry ogółem od cukrów dodanych tylko wtedy, gdy źródło faktycznie to podaje.
 - [ ] Dodać opcjonalny widok mikroelementów: sód, potas, wapń, żelazo, magnez oraz wybrane witaminy. Brak danych ma oznaczać „brak danych”, nigdy zero.
 - [ ] Pokazywać mikroelementy przede wszystkim jako średnią 7- lub 30-dniową, aby widok pomagał ocenić dietę, a nie zmuszał do codziennego polowania na każdy miligram.
 - [ ] Rozszerzyć skaner o OCR etykiety żywieniowej, aby można było dodać produkt, którego nie ma jeszcze w katalogu.

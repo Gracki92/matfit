@@ -1138,25 +1138,120 @@ function useLS(key, def) {
   }, [key]);
   return [v, set];
 }
+var NUTRITION_DETAIL_FIELDS = [{
+  key: "sugars",
+  label: "w tym cukry"
+}, {
+  key: "fiber",
+  label: "błonnik"
+}, {
+  key: "saturatedFat",
+  label: "tł. nasycone"
+}, {
+  key: "salt",
+  label: "sól"
+}];
+function optionalNutritionNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  var parsed = parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+function nutritionDetailCompleteness(source) {
+  return NUTRITION_DETAIL_FIELDS.filter(function (field) {
+    return optionalNutritionNumber(source && source[field.key]) !== null;
+  }).length;
+}
+function scaledNutritionDetails(source, factor) {
+  return NUTRITION_DETAIL_FIELDS.reduce(function (details, field) {
+    var value = optionalNutritionNumber(source && source[field.key]);
+    details[field.key] = value === null ? null : r2(value * factor);
+    return details;
+  }, {});
+}
 function calcMacro(ings, prods) {
-  return (ings || []).reduce(function (a, item) {
+  var total = {
+    kcal: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    sugars: 0,
+    fiber: 0,
+    saturatedFat: 0,
+    salt: 0
+  };
+  var known = {
+    sugars: true,
+    fiber: true,
+    saturatedFat: true,
+    salt: true
+  };
+  var matched = 0;
+  (ings || []).forEach(function (item) {
     var p = prods.find(function (x) {
       return x.id === item.productId;
     });
-    if (!p) return a;
-    var f = item.grams / 100;
-    return {
-      kcal: a.kcal + p.kcal * f,
-      protein: a.protein + p.protein * f,
-      carbs: a.carbs + p.carbs * f,
-      fat: a.fat + p.fat * f
-    };
+    if (!p) {
+      NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+        known[field.key] = false;
+      });
+      return;
+    }
+    matched++;
+    var f = (parseFloat(item.grams) || 0) / 100;
+    total.kcal += (parseFloat(p.kcal) || 0) * f;
+    total.protein += (parseFloat(p.protein) || 0) * f;
+    total.carbs += (parseFloat(p.carbs) || 0) * f;
+    total.fat += (parseFloat(p.fat) || 0) * f;
+    NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+      var value = optionalNutritionNumber(p[field.key]);
+      if (value === null) known[field.key] = false;else total[field.key] += value * f;
+    });
+  });
+  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+    if (!matched || !known[field.key]) total[field.key] = null;
+  });
+  return total;
+}
+function completeMealNutrition(meal, products) {
+  if (meal && Array.isArray(meal.items) && meal.items.length) {
+    var allProductsAvailable = meal.items.every(function (item) {
+      return products.some(function (product) {
+        return product.id === item.productId;
+      });
+    });
+    if (allProductsAvailable) return calcMacro(meal.items, products);
+  }
+  return _objectSpread({
+    kcal: parseFloat(meal && meal.kcal) || 0,
+    protein: parseFloat(meal && meal.protein) || 0,
+    carbs: parseFloat(meal && meal.carbs) || 0,
+    fat: parseFloat(meal && meal.fat) || 0
+  }, scaledNutritionDetails(meal, 1));
+}
+function sumMealNutrition(meals, products) {
+  var rows = (meals || []).map(function (meal) {
+    return completeMealNutrition(meal, products);
+  });
+  var total = rows.reduce(function (sum, row) {
+    sum.kcal += row.kcal;
+    sum.protein += row.protein;
+    sum.carbs += row.carbs;
+    sum.fat += row.fat;
+    return sum;
   }, {
     kcal: 0,
     protein: 0,
     carbs: 0,
     fat: 0
   });
+  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+    total[field.key] = rows.length && rows.every(function (row) {
+      return optionalNutritionNumber(row[field.key]) !== null;
+    }) ? rows.reduce(function (sum, row) {
+      return sum + row[field.key];
+    }, 0) : null;
+  });
+  return total;
 }
 function r2(n) {
   return Math.round(n * 10) / 10;
@@ -1516,8 +1611,13 @@ function MG(_ref) {
     protein = _ref.protein,
     carbs = _ref.carbs,
     fat = _ref.fat,
+    sugars = _ref.sugars,
+    fiber = _ref.fiber,
+    saturatedFat = _ref.saturatedFat,
+    salt = _ref.salt,
+    showDetails = _ref.showDetails,
     T = _ref.T;
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr 1fr 1fr",
@@ -1551,7 +1651,49 @@ function MG(_ref) {
         marginTop: 2
       }
     }, l));
+  })), showDetails && /*#__PURE__*/React.createElement(NutritionDetails, {
+    sugars: sugars,
+    fiber: fiber,
+    saturatedFat: saturatedFat,
+    salt: salt,
+    T: T
   }));
+}
+function NutritionDetails(_refNutritionDetails) {
+  var T = _refNutritionDetails.T;
+  var knownRows = NUTRITION_DETAIL_FIELDS.map(function (field) {
+    return {
+      key: field.key,
+      label: field.label,
+      value: optionalNutritionNumber(_refNutritionDetails[field.key])
+    };
+  }).filter(function (row) {
+    return row.value !== null;
+  });
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 5,
+      margin: "-2px 0 9px"
+    }
+  }, knownRows.length ? knownRows.map(function (row) {
+    return /*#__PURE__*/React.createElement("span", {
+      key: row.key,
+      style: {
+        background: T.surf2,
+        border: "1px solid " + T.border,
+        borderRadius: 999,
+        padding: "4px 7px",
+        fontSize: 10,
+        color: T.text2
+      }
+    }, row.label, " ", /*#__PURE__*/React.createElement("strong", {
+      style: { color: T.text, fontFamily: "monospace" }
+    }, r2(row.value), " g"));
+  }) : /*#__PURE__*/React.createElement("span", {
+    style: { fontSize: 10, color: T.text3 }
+  }, "Brak szczegółowych danych — nie liczymy ich jako zera."));
 }
 
 // Podgląd makro dla wybranego produktu — wyodrębniony komponent zamiast IIFE
@@ -1559,6 +1701,7 @@ function ProdPreview(_ref4) {
   var selP = _ref4.selP,
     selG = _ref4.selG,
     products = _ref4.products,
+    showDetails = _ref4.showDetails,
     T = _ref4.T;
   if (!selP || !selG) return null;
   var p = products.find(function (x) {
@@ -1572,6 +1715,11 @@ function ProdPreview(_ref4) {
     protein: p.protein * f,
     carbs: p.carbs * f,
     fat: p.fat * f,
+    sugars: scaledNutritionDetails(p, f).sugars,
+    fiber: scaledNutritionDetails(p, f).fiber,
+    saturatedFat: scaledNutritionDetails(p, f).saturatedFat,
+    salt: scaledNutritionDetails(p, f).salt,
+    showDetails: showDetails,
     T: T
   });
 }
@@ -2230,14 +2378,20 @@ function ScanModal(_ref9) {
         marginTop: 1
       }
     }, l));
-  }))), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement(NutritionDetails, {
+    sugars: scanResult.sugars,
+    fiber: scanResult.fiber,
+    saturatedFat: scanResult.saturatedFat,
+    salt: scanResult.salt,
+    T: T
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       color: T.text3,
       lineHeight: 1.4,
       marginBottom: 10
     }
-  }, scanResult.source === "local" ? "Produkt zapisany wcześniej w MatFit." : "Dane: Open Food Facts. Sprawdź etykietę — baza społecznościowa może zawierać braki."), /*#__PURE__*/React.createElement("div", {
+  }, scanResult.source === "local" ? "Produkt zapisany wcześniej w MatFit. Szczegóły: " + nutritionDetailCompleteness(scanResult) + "/4." : "Dane: Open Food Facts · szczegóły " + nutritionDetailCompleteness(scanResult) + "/4. Sprawdź etykietę — baza społecznościowa może zawierać braki."), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -2343,6 +2497,10 @@ function App() {
       return onlyUserProducts(nextCatalog);
     });
   }
+  var _useLSNutritionDetails = useLS("fb10_nutrition_details", false),
+    _useLSNutritionDetails2 = _slicedToArray(_useLSNutritionDetails, 2),
+    showNutritionDetails = _useLSNutritionDetails2[0],
+    setShowNutritionDetails = _useLSNutritionDetails2[1];
   var _useLS7 = useLS("fb10_planer", {}),
     _useLS8 = _slicedToArray(_useLS7, 2),
     planer = _useLS8[0],
@@ -2567,6 +2725,10 @@ function App() {
       protein: "",
       carbs: "",
       fat: "",
+      sugars: "",
+      fiber: "",
+      saturatedFat: "",
+      salt: "",
       packageSize: ""
     }),
     _useState60 = _slicedToArray(_useState59, 2),
@@ -2742,6 +2904,10 @@ function App() {
           protein: m.protein,
           carbs: m.carbs,
           fat: m.fat,
+          sugars: m.sugars,
+          fiber: m.fiber,
+          saturatedFat: m.saturatedFat,
+          salt: m.salt,
           grams: m.grams,
           items: m.items
         };
@@ -2825,19 +2991,7 @@ function App() {
   
   var selectedKey = mfISODate(selectedDate);
   var todayMeals = planer[TODAY] || [];
-  var eaten = todayMeals.reduce(function (a, m) {
-    return {
-      kcal: a.kcal + m.kcal,
-      protein: a.protein + (m.protein || 0),
-      carbs: a.carbs + (m.carbs || 0),
-      fat: a.fat + (m.fat || 0)
-    };
-  }, {
-    kcal: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0
-  });
+  var eaten = sumMealNutrition(todayMeals, products);
   var pct = Math.round(eaten.kcal / TARGETS.kcal * 100);
   var pctBar = Math.min(pct, 100);
   var inp = {
@@ -3040,6 +3194,10 @@ function App() {
       protein: r2(p.protein * f),
       carbs: r2(p.carbs * f),
       fat: r2(p.fat * f),
+      sugars: scaledNutritionDetails(p, f).sugars,
+      fiber: scaledNutritionDetails(p, f).fiber,
+      saturatedFat: scaledNutritionDetails(p, f).saturatedFat,
+      salt: scaledNutritionDetails(p, f).salt,
       items: [{
         productId: selP,
         grams: g
@@ -3087,6 +3245,10 @@ function App() {
       protein: r2(mealMacro.protein),
       carbs: r2(mealMacro.carbs),
       fat: r2(mealMacro.fat),
+      sugars: mealMacro.sugars === null ? null : r2(mealMacro.sugars),
+      fiber: mealMacro.fiber === null ? null : r2(mealMacro.fiber),
+      saturatedFat: mealMacro.saturatedFat === null ? null : r2(mealMacro.saturatedFat),
+      salt: mealMacro.salt === null ? null : r2(mealMacro.salt),
       items: scaledItems
     };
     setPlaner(function (prev) {
@@ -3132,6 +3294,10 @@ function App() {
       protein: r2(mealMacro.protein),
       carbs: r2(mealMacro.carbs),
       fat: r2(mealMacro.fat),
+      sugars: mealMacro.sugars === null ? null : r2(mealMacro.sugars),
+      fiber: mealMacro.fiber === null ? null : r2(mealMacro.fiber),
+      saturatedFat: mealMacro.saturatedFat === null ? null : r2(mealMacro.saturatedFat),
+      salt: mealMacro.salt === null ? null : r2(mealMacro.salt),
       items: scaledItems
     };
     setPlaner(function (prev) {
@@ -3172,7 +3338,11 @@ function App() {
         kcal: Math.round(m.kcal),
         protein: r2(m.protein),
         carbs: r2(m.carbs),
-        fat: r2(m.fat)
+        fat: r2(m.fat),
+        sugars: m.sugars === null ? null : r2(m.sugars),
+        fiber: m.fiber === null ? null : r2(m.fiber),
+        saturatedFat: m.saturatedFat === null ? null : r2(m.saturatedFat),
+        salt: m.salt === null ? null : r2(m.salt)
       });
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, emKey, day));
     });
@@ -3272,6 +3442,10 @@ function App() {
       protein: r2(m.protein),
       carbs: r2(m.carbs),
       fat: r2(m.fat),
+      sugars: m.sugars === null ? null : r2(m.sugars),
+      fiber: m.fiber === null ? null : r2(m.fiber),
+      saturatedFat: m.saturatedFat === null ? null : r2(m.saturatedFat),
+      salt: m.salt === null ? null : r2(m.salt),
       ingredients: _toConsumableArray(bItems),
       steps: rf.steps.split("\n").filter(function (s) {
         return s.trim();
@@ -3316,6 +3490,10 @@ function App() {
         protein: r2(m.protein * factor),
         carbs: r2(m.carbs * factor),
         fat: r2(m.fat * factor),
+        sugars: m.sugars === null ? null : r2(m.sugars * factor),
+        fiber: m.fiber === null ? null : r2(m.fiber * factor),
+        saturatedFat: m.saturatedFat === null ? null : r2(m.saturatedFat * factor),
+        salt: m.salt === null ? null : r2(m.salt * factor),
         items: bItems.map(function (item) {
           return _objectSpread(_objectSpread({}, item), {}, {
             grams: rGram((parseFloat(item.grams) || 0) * factor)
@@ -3410,8 +3588,14 @@ function App() {
         var parsed = parseFloat(value);
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
       }
+      function optionalNutrient(value) {
+        return optionalNutritionNumber(value);
+      }
       var kcal = nutrient(nutrients["energy-kcal_100g"]);
       if (!kcal) kcal = nutrient(nutrients.energy_100g) / 4.184;
+      var salt = optionalNutrient(nutrients.salt_100g);
+      var sodium = optionalNutrient(nutrients.sodium_100g);
+      if (salt === null && sodium !== null) salt = sodium * 2.5;
       setScanResult({
         name: product.product_name_pl || product.product_name || "Produkt " + ean,
         brand: product.brands || "",
@@ -3419,9 +3603,15 @@ function App() {
         protein: r2(nutrient(nutrients.proteins_100g)),
         carbs: r2(nutrient(nutrients.carbohydrates_100g)),
         fat: r2(nutrient(nutrients.fat_100g)),
+        sugars: optionalNutrient(nutrients.sugars_100g) === null ? null : r2(optionalNutrient(nutrients.sugars_100g)),
+        fiber: optionalNutrient(nutrients.fiber_100g) === null ? null : r2(optionalNutrient(nutrients.fiber_100g)),
+        saturatedFat: optionalNutrient(nutrients["saturated-fat_100g"]) === null ? null : r2(optionalNutrient(nutrients["saturated-fat_100g"])),
+        salt: salt === null ? null : r2(salt),
         packageSize: nutrient(product.product_quantity) || null,
         ean: ean,
-        source: "openfoodfacts"
+        source: "openfoodfacts",
+        nutritionSource: "Open Food Facts",
+        lastVerified: mfISODate(new Date())
       });
     }).catch(function (error) {
       setScanError(error && error.name === "AbortError" ? "Wyszukiwanie trwało zbyt długo. Spróbuj ponownie lub dodaj produkt ręcznie." : "Brak połączenia z bazą produktów. Spróbuj ponownie lub dodaj produkt ręcznie.");
@@ -3472,6 +3662,10 @@ function App() {
       protein: source.protein === undefined ? "" : source.protein,
       carbs: source.carbs === undefined ? "" : source.carbs,
       fat: source.fat === undefined ? "" : source.fat,
+      sugars: source.sugars === null || source.sugars === undefined ? "" : source.sugars,
+      fiber: source.fiber === null || source.fiber === undefined ? "" : source.fiber,
+      saturatedFat: source.saturatedFat === null || source.saturatedFat === undefined ? "" : source.saturatedFat,
+      salt: source.salt === null || source.salt === undefined ? "" : source.salt,
       packageSize: source.packageSize || ""
     });
     setScanResult(null);
@@ -3494,6 +3688,27 @@ function App() {
       toast_("Produkt z tym kodem już istnieje");
       return;
     }
+    var optionalValues = NUTRITION_DETAIL_FIELDS.reduce(function (values, field) {
+      values[field.key] = optionalNutritionNumber(pf[field.key]);
+      return values;
+    }, {});
+    var hasInvalidOptional = NUTRITION_DETAIL_FIELDS.some(function (field) {
+      return pf[field.key] !== "" && optionalValues[field.key] === null;
+    });
+    if (hasInvalidOptional) {
+      toast_("Szczegółowe wartości muszą być liczbą równą lub większą od zera");
+      return;
+    }
+    var carbs = parseFloat(pf.carbs) || 0;
+    var fat = parseFloat(pf.fat) || 0;
+    if (optionalValues.sugars !== null && optionalValues.sugars > carbs) {
+      toast_("Cukry nie mogą być większe niż wszystkie węglowodany");
+      return;
+    }
+    if (optionalValues.saturatedFat !== null && optionalValues.saturatedFat > fat) {
+      toast_("Tłuszcze nasycone nie mogą być większe niż wszystkie tłuszcze");
+      return;
+    }
     var returnToPlanner = modal === "newProdFromPlanner";
     var newProd = _objectSpread(_objectSpread({}, pf), {}, {
       id: "u" + Date.now(),
@@ -3502,9 +3717,15 @@ function App() {
       ean: normalizedEan || null,
       kcal: parseFloat(pf.kcal) || 0,
       protein: parseFloat(pf.protein) || 0,
-      carbs: parseFloat(pf.carbs) || 0,
-      fat: parseFloat(pf.fat) || 0,
+      carbs: carbs,
+      fat: fat,
+      sugars: optionalValues.sugars,
+      fiber: optionalValues.fiber,
+      saturatedFat: optionalValues.saturatedFat,
+      salt: optionalValues.salt,
       packageSize: parseFloat(pf.packageSize) || null,
+      nutritionSource: "Dane użytkownika / etykieta",
+      lastVerified: TODAY,
       custom: true
     });
     setProducts(function (prev) {
@@ -3519,6 +3740,10 @@ function App() {
       protein: "",
       carbs: "",
       fat: "",
+      sugars: "",
+      fiber: "",
+      saturatedFat: "",
+      salt: "",
       packageSize: ""
     });
     if (returnToPlanner) {
@@ -4105,7 +4330,13 @@ function App() {
         marginTop: 2
       }
     }, l));
-  }))), /*#__PURE__*/React.createElement("nav", {
+  })), showNutritionDetails && /*#__PURE__*/React.createElement(NutritionDetails, {
+    sugars: eaten.sugars,
+    fiber: eaten.fiber,
+    saturatedFat: eaten.saturatedFat,
+    salt: eaten.salt,
+    T: T
+  })), /*#__PURE__*/React.createElement("nav", {
     className: "mf-topnav",
     "aria-label": "Główna nawigacja",
     style: {
@@ -4153,6 +4384,18 @@ function App() {
     eyebrow: "Twój tydzień",
     title: "Planer posiłków",
     subtitle: "Zaplanuj dzień, wpisuj faktycznie zjedzone porcje i obserwuj realizację celu.",
+    action: React.createElement("button", {
+      type: "button",
+      "aria-pressed": !!showNutritionDetails,
+      onClick: function onClick() {
+        return setShowNutritionDetails(!showNutritionDetails);
+      },
+      style: _objectSpread(_objectSpread({}, btnB), {}, {
+        padding: "8px 10px",
+        fontSize: 10,
+        whiteSpace: "nowrap"
+      })
+    }, showNutritionDetails ? "Mniej danych" : "Cukry, błonnik +"),
     T: T
   }),
   function () {
@@ -4562,6 +4805,7 @@ function App() {
           background: T.surf2
         }
       }, "B " + mealProtein + "g • W " + mealCarbs + "g • T " + mealFat + "g"), isMealCollapsed ? null : grouped[mt.key].map(function (m) {
+        var fullMealNutrition = completeMealNutrition(m, products);
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
           style: {
@@ -4602,7 +4846,13 @@ function App() {
             marginTop: 2,
             fontFamily: "monospace"
           }
-        }, m.kcal, " kcal  B:", m.protein, "g  W:", m.carbs, "g  T:", m.fat, "g")), /*#__PURE__*/React.createElement("span", {
+        }, m.kcal, " kcal  B:", m.protein, "g  W:", m.carbs, "g  T:", m.fat, "g"), showNutritionDetails && /*#__PURE__*/React.createElement(NutritionDetails, {
+          sugars: fullMealNutrition.sugars,
+          fiber: fullMealNutrition.fiber,
+          saturatedFat: fullMealNutrition.saturatedFat,
+          salt: fullMealNutrition.salt,
+          T: T
+        })), /*#__PURE__*/React.createElement("span", {
           style: {
             fontSize: 12,
             color: T.acc
@@ -4926,6 +5176,11 @@ function App() {
       protein: m.protein,
       carbs: m.carbs,
       fat: m.fat,
+      sugars: m.sugars,
+      fiber: m.fiber,
+      saturatedFat: m.saturatedFat,
+      salt: m.salt,
+      showDetails: showNutritionDetails,
       T: T
     }), /*#__PURE__*/React.createElement("div", {
       style: {
@@ -5213,6 +5468,18 @@ function App() {
     eyebrow: "Baza żywności",
     title: "Produkty",
     subtitle: "Wartości bazowe są orientacyjne na 100 g. Dla produktu markowego użyj etykiety lub skanera EAN.",
+    action: /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-pressed": !!showNutritionDetails,
+      onClick: function onClick() {
+        return setShowNutritionDetails(!showNutritionDetails);
+      },
+      style: _objectSpread(_objectSpread({}, btnB), {}, {
+        padding: "8px 10px",
+        fontSize: 10,
+        whiteSpace: "nowrap"
+      })
+    }, showNutritionDetails ? "Ukryj szczegóły" : "Pokaż szczegóły"),
     T: T
   }), /*#__PURE__*/React.createElement("div", {
     className: "mf-toolbar",
@@ -5244,6 +5511,10 @@ function App() {
         protein: "",
         carbs: "",
         fat: "",
+        sugars: "",
+        fiber: "",
+        saturatedFat: "",
+        salt: "",
         packageSize: ""
       });
       setModal("newProd");
@@ -5354,7 +5625,15 @@ function App() {
           color: c
         }
       }, t);
-    }))), p.custom && /*#__PURE__*/React.createElement("button", {
+    })), showNutritionDetails && /*#__PURE__*/React.createElement(NutritionDetails, {
+      sugars: p.sugars,
+      fiber: p.fiber,
+      saturatedFat: p.saturatedFat,
+      salt: p.salt,
+      T: T
+    }), showNutritionDetails && /*#__PURE__*/React.createElement("div", {
+      style: { fontSize: 9, color: T.text3, marginTop: -4 }
+    }, "Szczegóły ", nutritionDetailCompleteness(p), "/4", p.nutritionSource ? " · " + p.nutritionSource : "", p.lastVerified ? " · sprawdzono " + p.lastVerified : "")), p.custom && /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": "Usuń produkt " + p.name,
       onClick: function onClick() {
@@ -7567,6 +7846,10 @@ function App() {
         protein: "",
         carbs: "",
         fat: "",
+        sugars: "",
+        fiber: "",
+        saturatedFat: "",
+        salt: "",
         packageSize: ""
       });
       setModal("newProdFromPlanner");
@@ -7600,6 +7883,7 @@ function App() {
     selP: selP,
     selG: selG,
     products: products,
+    showDetails: showNutritionDetails,
     T: T
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7834,6 +8118,11 @@ function App() {
     protein: selectedRecipeMacro.protein,
     carbs: selectedRecipeMacro.carbs,
     fat: selectedRecipeMacro.fat,
+    sugars: selectedRecipeMacro.sugars,
+    fiber: selectedRecipeMacro.fiber,
+    saturatedFat: selectedRecipeMacro.saturatedFat,
+    salt: selectedRecipeMacro.salt,
+    showDetails: showNutritionDetails,
     T: T
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7928,6 +8217,11 @@ function App() {
     protein: selectedRecipeMacro.protein,
     carbs: selectedRecipeMacro.carbs,
     fat: selectedRecipeMacro.fat,
+    sugars: selectedRecipeMacro.sugars,
+    fiber: selectedRecipeMacro.fiber,
+    saturatedFat: selectedRecipeMacro.saturatedFat,
+    salt: selectedRecipeMacro.salt,
+    showDetails: showNutritionDetails,
     T: T
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -7965,6 +8259,11 @@ function App() {
     protein: emMacro.protein,
     carbs: emMacro.carbs,
     fat: emMacro.fat,
+    sugars: emMacro.sugars,
+    fiber: emMacro.fiber,
+    saturatedFat: emMacro.saturatedFat,
+    salt: emMacro.salt,
+    showDetails: showNutritionDetails,
     T: T
   }), emItems.length > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: function onClick() {
@@ -8131,6 +8430,11 @@ function App() {
     protein: bMacro.protein,
     carbs: bMacro.carbs,
     fat: bMacro.fat,
+    sugars: bMacro.sugars,
+    fiber: bMacro.fiber,
+    saturatedFat: bMacro.saturatedFat,
+    salt: bMacro.salt,
+    showDetails: showNutritionDetails,
     T: T
   })), /*#__PURE__*/React.createElement(Lbl, {
     T: T
@@ -8237,7 +8541,7 @@ function App() {
       gridTemplateColumns: "1fr 1fr",
       gap: 8
     }
-  }, [["Kcal", "kcal"], ["Białko (g)", "protein"], ["Węgle (g)", "carbs"], ["Tłuszcze (g)", "fat"]].map(function (_ref63) {
+  }, [["Kcal", "kcal"], ["Białko (g)", "protein"], ["Węglowodany (g)", "carbs"], ["Tłuszcze (g)", "fat"]].map(function (_ref63) {
     var _ref64 = _slicedToArray(_ref63, 2),
       l = _ref64[0],
       k = _ref64[1];
@@ -8252,7 +8556,45 @@ function App() {
         return setPf(_objectSpread(_objectSpread({}, pf), {}, _defineProperty({}, k, e.target.value)));
       },
       type: "number",
+      min: "0",
+      step: "0.01",
       placeholder: "0",
+      style: inp
+    }));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: T.text3,
+      margin: "14px 0 3px",
+      textTransform: "uppercase",
+      letterSpacing: 0.8
+    }
+  }, "Dane dodatkowe na 100 g — opcjonalne"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 10, color: T.text3, lineHeight: 1.45, marginBottom: 8 }
+  }, "Zostaw puste, jeśli etykieta ich nie podaje. Pusta wartość oznacza brak danych, nie zero."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8
+    }
+  }, [["w tym cukry (g)", "sugars"], ["Błonnik (g)", "fiber"], ["Tł. nasycone (g)", "saturatedFat"], ["Sól (g)", "salt"]].map(function (_refNutritionInput) {
+    var _refNutritionInput2 = _slicedToArray(_refNutritionInput, 2),
+      label = _refNutritionInput2[0],
+      key = _refNutritionInput2[1];
+    return /*#__PURE__*/React.createElement("div", {
+      key: key
+    }, /*#__PURE__*/React.createElement(Lbl, {
+      mt: 0,
+      T: T
+    }, label), /*#__PURE__*/React.createElement("input", {
+      value: pf[key] === null || pf[key] === undefined ? "" : pf[key],
+      onChange: function onChange(e) {
+        return setPf(_objectSpread(_objectSpread({}, pf), {}, _defineProperty({}, key, e.target.value)));
+      },
+      type: "number",
+      min: "0",
+      step: "0.01",
+      placeholder: "brak danych",
       style: inp
     }));
   })), /*#__PURE__*/React.createElement(Lbl, {
@@ -9053,7 +9395,18 @@ function App() {
           marginTop: 2
         }
       }, label));
-    })), /*#__PURE__*/React.createElement("div", {
+    })), showNutritionDetails && /*#__PURE__*/React.createElement(NutritionDetails, {
+      sugars: m.sugars,
+      fiber: m.fiber,
+      saturatedFat: m.saturatedFat,
+      salt: m.salt,
+      T: {
+        surf2: theme.panel,
+        border: theme.line,
+        text2: theme.muted,
+        text: theme.dark
+      }
+    }), /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 7,
         background: theme.dark,
