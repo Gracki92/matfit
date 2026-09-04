@@ -106,9 +106,10 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Rozszerzone wartości przeliczają się wraz z gramaturą, porcją, wariantem przepisu i ręczną korektą posiłku.
 - [x] Użytkownik może jednym przełącznikiem pokazać lub ukryć szczegóły w planerze, podsumowaniu dnia, przepisach i produktach.
 - [x] Stare produkty, posiłki, kopie zapasowe i dane localStorage pozostają zgodne bez wymuszonej migracji.
-- [ ] Uzupełnić szczegółowe wartości w ręcznie zweryfikowanej bazie podstawowych produktów.
+- [x] Uzupełnić szczegółowe wartości referencyjne 73 z 82 produktów bazowych na podstawie konkretnych rekordów USDA FoodData Central SR Legacy; 60 produktów ma komplet 4/4, a brak pomiaru nadal pozostaje brakiem danych.
+- [x] Zachować puste szczegóły dla 9 produktów silnie zależnych od marki lub procesu produkcji (m.in. skyr, WPC, pudding i makrela wędzona), zamiast przedstawiać średnią jako pewną wartość etykietową.
 
-## Nutrition Data v2.1 — analiza 7 dni
+## Nutrition Data v2.1 — analiza 7/30 dni
 
 - [x] Dodać 7-dniowe średnie błonnika, soli, tłuszczów nasyconych i cukrów ogółem z wpisanych dni.
 - [x] Liczyć pokrycie osobno dla każdego składnika, ważone energią posiłków, aby brak danych nie udawał zera.
@@ -116,7 +117,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Oceniać cel lub limit dopiero od 90% pokrycia danych.
 - [x] Przyjąć punkty odniesienia dla zdrowych dorosłych: błonnik co najmniej 25 g, sól poniżej 5 g i tłuszcze nasycone do 10% energii.
 - [x] Nie nadawać limitu cukrom ogółem, ponieważ nie są tym samym co cukry wolne.
-- [ ] Dodać widok 30-dniowy po uzupełnieniu zweryfikowanych danych większej części katalogu.
+- [x] Dodać przełączany widok 7- i 30-dniowy po uzupełnieniu zweryfikowanych danych większej części katalogu.
+- [x] Dodać średnie białko oraz procent realizacji średniego celu wyliczanego z profilu i typu każdego wpisanego dnia.
 
 ## Strategia produktu — backlog zarządu
 

@@ -673,7 +673,86 @@ light: {
   navbg: "rgba(247,250,255,.92)", name: "☀️ Jasny"
 }
 };
+// Szczegółowe wartości referencyjne na 100 g: [cukry, błonnik, tł. nasycone, sól, FDC ID].
+// Źródło: USDA FoodData Central, SR Legacy. Sól = sód x 2,5; brak pomiaru pozostaje null.
+// Produkty zależne od marki (np. skyr, WPC, pudding) celowo nie dostają wartości „na oko”.
+var BASE_PRODUCT_NUTRITION = {
+  chicken_breast_raw: [0, 0, 0.563, 0.113, 171077],
+  chicken_breast_cooked: [0, 0, 1.01, 0.185, 171477],
+  chicken_thigh_skinless: [0, 0, 1.097, 0.237, 173627],
+  turkey_breast_raw: [0, 0, 0.344, 0.185, 174515],
+  turkey_mince: [0, 0, 2.17, 0.172, 172850],
+  pork_loin_raw: [0, 0, 0.801, 0.217, 168263],
+  pork_tenderloin: [0, 0, 0.698, 0.133, 168249],
+  beef_lean: [0, 0, 1.508, 0.14, 174055],
+  beef_mince_5: [0, 0, 2.182, 0.165, 171790],
+  egg_whole: [0.37, 0, 3.126, 0.355, 171287],
+  egg_white: [0.7, 0, 0, 0.415, 172183],
+  tuna_water: [0, 0, 0.211, 0.618, 173709],
+  cod_raw: [0, 0, 0.131, 0.135, 171955],
+  salmon_raw: [0, 0, 3.05, 0.147, 175167],
+  shrimp_cooked: [null, null, 0.056, 0.278, 175180],
+  tofu_natural: [0.62, 0.3, 0.691, 0.018, 172476],
+  greek_yogurt_0: [3.24, 0, 0.117, 0.09, 170894],
+  yogurt_natural_2: [null, 0, 1, 0.175, 170886],
+  cottage_light: [null, 0, 1.235, 0.77, 172182],
+  cottage_regular: [null, 0, 1.718, 0.787, 172179],
+  milk_2: [null, 0, 1.257, 0.117, 171267],
+  gouda: [null, 0, 17.614, 2.047, 171241],
+  rice_white_dry: [0.12, 1.3, 0.18, 0.013, 169756],
+  rice_basmati_dry: [0.12, 1.3, 0.18, 0.013, 169756],
+  rice_white_cooked: [0.05, 0.4, 0.077, 0.003, 169757],
+  pasta_wheat_dry: [2.67, 3.2, 0.277, 0.015, 169736],
+  pasta_wheat_cooked: [0.56, 1.8, 0.176, 0.003, 168928],
+  pasta_wholegrain_dry: [2.74, 9.2, 0.428, 0.015, 169738],
+  oats: [null, 10.6, 1.217, 0.005, 169705],
+  rice_cereal: [0.3, 0.7, 0.136, 0.015, 173900],
+  buckwheat_dry: [null, 10.3, 0.591, 0.028, 170685],
+  millet_dry: [null, 8.5, 0.723, 0.013, 169702],
+  couscous_dry: [null, 5, 0.117, 0.025, 169699],
+  bread_wheat: [5.67, 2.7, 0.698, 1.225, 174924],
+  bread_rye_whole: [3.85, 5.8, 0.626, 1.508, 172684],
+  graham_roll: [8.46, 7.5, 0.836, 1.302, 172794],
+  tortilla_wheat: [null, 3.3, 1.745, 1.195, 173242],
+  potato_raw: [0.82, 2.1, 0.025, 0.015, 170026],
+  sweet_potato_raw: [4.18, 3, 0.018, 0.138, 168482],
+  rice_cakes: [0.88, 4.2, 0.57, 0.065, 170250],
+  cornflakes: [7.84, 2.7, 0.227, 1.427, 174648],
+  wheat_flour_450: [0.27, 2.7, 0.155, 0.005, 168894],
+  oat_flour: [null, 10.6, 1.217, 0.005, 169705],
+  lentils_red_dry: [2.03, 10.7, 0.154, 0.015, 172420],
+  chickpeas_canned: [4.01, 6.4, 0.214, 0.615, 173800],
+  kidney_beans_canned: [1.85, 4.3, 0.141, 0.74, 173741],
+  olive_oil: [0, 0, 13.808, 0.005, 171413],
+  rapeseed_oil: [0, 0, 7.365, 0, 172336],
+  butter_82: [0.06, 0, 50.489, 0.028, 173430],
+  peanut_butter: [10.49, 5, 10.325, 0.043, 172470],
+  almonds: [4.35, 12.5, 3.802, 0.003, 170567],
+  walnuts: [2.61, 6.7, 6.126, 0.005, 170187],
+  flaxseed: [1.55, 27.3, 3.663, 0.075, 169414],
+  chia: [null, 34.4, 3.33, 0.04, 170554],
+  avocado: [0.66, 6.7, 2.126, 0.018, 171705],
+  tomato: [2.63, 1.2, 0.028, 0.013, 170457],
+  cucumber: [1.67, 0.5, 0.037, 0.005, 168409],
+  pepper_red: [4.2, 2.1, 0.059, 0.01, 170108],
+  zucchini: [2.5, 1, 0.084, 0.02, 169291],
+  broccoli: [1.7, 2.6, 0.114, 0.083, 170379],
+  cauliflower: [1.91, 2, 0.13, 0.075, 169986],
+  carrot: [4.74, 2.8, 0.032, 0.172, 170393],
+  onion: [4.24, 1.7, 0.042, 0.01, 170000],
+  spinach: [0.42, 2.2, 0.063, 0.198, 168462],
+  peas_frozen: [5, 4.5, 0.066, 0.27, 170016],
+  banana: [12.23, 2.6, 0.112, 0.003, 173944],
+  apple: [10.39, 2.4, 0.028, 0.003, 171688],
+  strawberry: [4.89, 2, 0.015, 0.003, 167762],
+  blueberry: [9.96, 2.4, 0.028, 0.003, 171711],
+  raspberry: [4.42, 6.5, 0.019, 0.003, 167755],
+  orange: [9.35, 2.4, 0.015, 0, 169097],
+  kiwi: [8.99, 3, 0.029, 0.007, 168153],
+  grapes: [15.48, 0.9, 0.054, 0.005, 174683]
+};
 function baseProduct(id, name, emoji, kcal, protein, carbs, fat, category, state) {
+  var details = BASE_PRODUCT_NUTRITION[id] || null;
   return {
     id: "base_" + id,
     name: name,
@@ -684,10 +763,17 @@ function baseProduct(id, name, emoji, kcal, protein, carbs, fat, category, state
     protein: protein,
     carbs: carbs,
     fat: fat,
+    sugars: details ? details[0] : null,
+    fiber: details ? details[1] : null,
+    saturatedFat: details ? details[2] : null,
+    salt: details ? details[3] : null,
     packageSize: null,
     category: category,
     state: state || "",
     source: "matfit",
+    nutritionSource: details ? "USDA FoodData Central · SR Legacy 2018" : null,
+    nutritionRef: details ? "FDC " + details[4] : null,
+    lastVerified: details ? "2026-09-04" : null,
     custom: false
   };
 }
@@ -1253,11 +1339,14 @@ function sumMealNutrition(meals, products) {
   });
   return total;
 }
-function nutritionPeriodSummary(planer, products, endISO, days) {
+function nutritionPeriodSummary(planer, products, endISO, days, profile, dayTypes) {
   var dates = [];
   for (var index = days - 1; index >= 0; index--) dates.push(mfShiftISO(endISO, -index));
   var loggedDays = 0;
   var totalKcal = 0;
+  var totalProtein = 0;
+  var totalProteinTarget = 0;
+  var proteinTargetDays = 0;
   var totals = {};
   var knownKcal = {};
   NUTRITION_DETAIL_FIELDS.forEach(function (field) {
@@ -1268,10 +1357,19 @@ function nutritionPeriodSummary(planer, products, endISO, days) {
     var meals = Array.isArray(planer && planer[date]) ? planer[date] : [];
     if (!meals.length) return;
     loggedDays++;
+    if (profile) {
+      var dayType = dayTypes && dayTypes[date] || "training";
+      var dayMultiplier = (DAY_TYPES.find(function (option) {
+        return option.key === dayType;
+      }) || DAY_TYPES[0]).mul;
+      totalProteinTarget += calcTargets(profile, dayMultiplier).protein;
+      proteinTargetDays++;
+    }
     meals.forEach(function (meal) {
       var nutrition = completeMealNutrition(meal, products);
       var mealKcal = Math.max(0, parseFloat(nutrition.kcal) || 0);
       totalKcal += mealKcal;
+      totalProtein += Math.max(0, parseFloat(nutrition.protein) || 0);
       NUTRITION_DETAIL_FIELDS.forEach(function (field) {
         var value = optionalNutritionNumber(nutrition[field.key]);
         if (value === null) return;
@@ -1297,6 +1395,9 @@ function nutritionPeriodSummary(planer, products, endISO, days) {
     loggedDays: loggedDays,
     totalKcal: totalKcal,
     avgKcal: loggedDays ? totalKcal / loggedDays : null,
+    totalProtein: totalProtein,
+    avgProtein: loggedDays ? totalProtein / loggedDays : null,
+    avgProteinTarget: proteinTargetDays ? totalProteinTarget / proteinTargetDays : null,
     details: details
   };
 }
@@ -1745,10 +1846,24 @@ function NutritionDetails(_refNutritionDetails) {
 function ExtendedNutritionReport(_refExtendedNutritionReport) {
   var summary = _refExtendedNutritionReport.summary,
     targetKcal = _refExtendedNutritionReport.targetKcal,
+    periodDays = _refExtendedNutritionReport.periodDays,
+    onPeriodChange = _refExtendedNutritionReport.onPeriodChange,
     T = _refExtendedNutritionReport.T;
   var details = summary.details;
   var saturatedReference = Math.max(1, Math.round(((summary.avgKcal || targetKcal || 2000) * 0.1 / 9) * 10) / 10);
   var cards = [{
+    key: "protein",
+    label: "Białko",
+    reference: summary.avgProteinTarget ? "cel śr. " + Math.round(summary.avgProteinTarget) + " g" : "cel z profilu",
+    limit: summary.avgProteinTarget,
+    direction: "min",
+    primary: true,
+    row: {
+      average: summary.avgProtein,
+      coverage: summary.loggedDays ? 1 : 0,
+      coveragePct: summary.loggedDays ? 100 : 0
+    }
+  }, {
     key: "fiber",
     label: "Błonnik",
     reference: "cel ≥25 g",
@@ -1780,7 +1895,7 @@ function ExtendedNutritionReport(_refExtendedNutritionReport) {
   }
   return /*#__PURE__*/React.createElement("section", {
     className: "mf-section-card",
-    "aria-label": "Średnie rozszerzone wartości odżywcze z siedmiu dni",
+    "aria-label": "Średnie wartości odżywcze z " + periodDays + " dni",
     style: {
       background: T.surf,
       border: "1px solid " + T.border,
@@ -1789,19 +1904,45 @@ function ExtendedNutritionReport(_refExtendedNutritionReport) {
       marginBottom: 12
     }
   }, /*#__PURE__*/React.createElement("div", {
-    style: { display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 9 }
+    style: { display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 9 }
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 9, color: T.acc, textTransform: "uppercase", letterSpacing: 1.1, fontWeight: 800 }
-  }, "ODŻYWIANIE · 7 DNI"), /*#__PURE__*/React.createElement("div", {
+  }, "ODŻYWIANIE · ", periodDays, " DNI"), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 15, color: T.text, fontWeight: 800, marginTop: 2 }
-  }, "Średnia z wpisanych dni")), /*#__PURE__*/React.createElement("span", {
+  }, "Średnia z wpisanych dni")), /*#__PURE__*/React.createElement("div", {
+    style: { display: "grid", justifyItems: "end", gap: 5 }
+  }, /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 9, color: T.text3, textAlign: "right", lineHeight: 1.4 }
-  }, summary.loggedDays, "/7 dni z jedzeniem")), /*#__PURE__*/React.createElement("div", {
+  }, summary.loggedDays, "/", periodDays, " dni z jedzeniem"), /*#__PURE__*/React.createElement("div", {
+    role: "group",
+    "aria-label": "Zakres analizy odżywiania",
+    style: { display: "flex", gap: 3, padding: 3, borderRadius: 9, background: T.surf2, border: "1px solid " + T.border }
+  }, [7, 30].map(function (days) {
+    var active = periodDays === days;
+    return /*#__PURE__*/React.createElement("button", {
+      key: days,
+      type: "button",
+      "aria-pressed": active,
+      onClick: function onClick() { return onPeriodChange(days); },
+      style: {
+        border: "1px solid " + (active ? T.acc : "transparent"),
+        borderRadius: 7,
+        background: active ? T.acc + "22" : "transparent",
+        color: active ? T.acc : T.text3,
+        padding: "4px 7px",
+        minHeight: 28,
+        fontSize: 9,
+        fontWeight: active ? 800 : 600,
+        cursor: "pointer"
+      }
+    }, days, " dni");
+  })))), /*#__PURE__*/React.createElement("div", {
     style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }
   }, cards.map(function (card) {
-    var row = details[card.key];
+    var row = card.row || details[card.key];
     var enough = row.average !== null;
-    var partial = enough && row.coveragePct < 100;
+    var partial = !card.primary && enough && row.coveragePct < 100;
+    var badge = card.primary && summary.avgProteinTarget && enough ? Math.round(row.average / summary.avgProteinTarget * 100) + "% celu" : row.coveragePct + "% danych";
     return /*#__PURE__*/React.createElement("div", {
       key: card.key,
       style: { background: T.surf2, border: "1px solid " + T.border, borderRadius: 10, padding: "9px 8px", minWidth: 0 }
@@ -1811,14 +1952,19 @@ function ExtendedNutritionReport(_refExtendedNutritionReport) {
       style: { color: cardColor(card, row), fontFamily: "monospace", fontSize: 14 }
     }, enough ? (partial ? "min. " : "") + r2(row.average) + " g" : "—"), /*#__PURE__*/React.createElement("span", {
       style: { color: T.text3, fontSize: 8, whiteSpace: "nowrap" }
-    }, row.coveragePct, "% danych")), /*#__PURE__*/React.createElement("div", {
+    }, badge)), /*#__PURE__*/React.createElement("div", {
       style: { color: T.text, fontSize: 10, fontWeight: 700, marginTop: 3 }
     }, card.label), /*#__PURE__*/React.createElement("div", {
       style: { color: T.text3, fontSize: 8, marginTop: 2 }
-    }, enough ? card.reference : "Potrzeba ≥70% pokrycia"));
+    }, enough ? card.reference : card.primary ? "Dodaj jedzenie do planera" : "Potrzeba ≥70% pokrycia"));
   })), /*#__PURE__*/React.createElement("div", {
     style: { fontSize: 9, lineHeight: 1.45, color: T.text3, marginTop: 8 }
-  }, "Cukry ogółem obejmują też naturalne cukry z owoców i nabiału, dlatego nie porównujemy ich z limitem cukrów wolnych. Ocena celu lub limitu pojawia się dopiero przy ≥90% pokrycia danych. Punkty odniesienia dla zdrowych dorosłych: ", /*#__PURE__*/React.createElement("a", {
+  }, "Białko porównujemy ze średnim celem zapisanym w profilu i typami wpisanych dni. Cukry ogółem obejmują też naturalne cukry z owoców i nabiału, dlatego nie porównujemy ich z limitem cukrów wolnych. Ocena pozostałych celów lub limitów pojawia się dopiero przy ≥90% pokrycia danych. Dane produktów referencyjnych: ", /*#__PURE__*/React.createElement("a", {
+    href: "https://fdc.nal.usda.gov/data-documentation.html",
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: { color: T.acc }
+  }, "USDA FoodData Central"), ". Punkty odniesienia dla zdrowych dorosłych: ", /*#__PURE__*/React.createElement("a", {
     href: "https://www.efsa.europa.eu/en/press/news/nda100326",
     target: "_blank",
     rel: "noopener noreferrer",
@@ -2636,6 +2782,10 @@ function App() {
     _useLSNutritionDetails2 = _slicedToArray(_useLSNutritionDetails, 2),
     showNutritionDetails = _useLSNutritionDetails2[0],
     setShowNutritionDetails = _useLSNutritionDetails2[1];
+  var _useStateNutritionPeriod = useState(7),
+    _useStateNutritionPeriod2 = _slicedToArray(_useStateNutritionPeriod, 2),
+    nutritionPeriodDays = _useStateNutritionPeriod2[0],
+    setNutritionPeriodDays = _useStateNutritionPeriod2[1];
   var _useLS7 = useLS("fb10_planer", {}),
     _useLS8 = _slicedToArray(_useLS7, 2),
     planer = _useLS8[0],
@@ -3127,7 +3277,7 @@ function App() {
   var selectedKey = mfISODate(selectedDate);
   var todayMeals = planer[TODAY] || [];
   var eaten = sumMealNutrition(todayMeals, products);
-  var sevenDayNutrition = nutritionPeriodSummary(planer, products, TODAY, 7);
+  var periodNutrition = nutritionPeriodSummary(planer, products, TODAY, nutritionPeriodDays, profile, dayTypes);
   var pct = Math.round(eaten.kcal / TARGETS.kcal * 100);
   var pctBar = Math.min(pct, 100);
   var inp = {
@@ -4531,7 +4681,7 @@ function App() {
         fontSize: 10,
         whiteSpace: "nowrap"
       })
-    }, showNutritionDetails ? "Mniej danych" : "Cukry, błonnik +"),
+    }, showNutritionDetails ? "Ukryj analizę" : "Analiza 7/30 dni"),
     T: T
   }),
   function () {
@@ -4608,8 +4758,10 @@ function App() {
     }, "Wpis w planerze traktujemy jako faktycznie zjedzony. TDEE to całkowity wydatek energii — BMR pozostaje wyliczeniem podstawowej przemiany materii. MatFit nigdy nie zmienia celu bez Twojej zgody."));
   }(),
   showNutritionDetails && React.createElement(ExtendedNutritionReport, {
-    summary: sevenDayNutrition,
+    summary: periodNutrition,
     targetKcal: TARGETS.kcal,
+    periodDays: nutritionPeriodDays,
+    onPeriodChange: setNutritionPeriodDays,
     T: T
   }),
   React.createElement("div", {
@@ -5774,7 +5926,7 @@ function App() {
       T: T
     }), showNutritionDetails && /*#__PURE__*/React.createElement("div", {
       style: { fontSize: 9, color: T.text3, marginTop: -4 }
-    }, "Szczegóły ", nutritionDetailCompleteness(p), "/4", p.nutritionSource ? " · " + p.nutritionSource : "", p.lastVerified ? " · sprawdzono " + p.lastVerified : "")), p.custom && /*#__PURE__*/React.createElement("button", {
+    }, "Szczegóły ", nutritionDetailCompleteness(p), "/4", p.nutritionSource ? " · " + p.nutritionSource : "", p.nutritionRef ? " · " + p.nutritionRef : "", p.lastVerified ? " · sprawdzono " + p.lastVerified : "")), p.custom && /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": "Usuń produkt " + p.name,
       onClick: function onClick() {
