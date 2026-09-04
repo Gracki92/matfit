@@ -171,6 +171,104 @@
     .mf-meal-toggle{width:100%;border:0;text-align:left;font:inherit;}
     .mf-meal-row-action{border:0;background:transparent;text-align:left;color:inherit;cursor:pointer;}
     .mf-danger-icon{border:0;background:transparent;cursor:pointer;min-width:42px;min-height:42px;}
+    .mf-page-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      margin:2px 0 18px;
+    }
+    .mf-page-copy{min-width:0;}
+    .mf-page-eyebrow{
+      margin-bottom:5px;
+      color:var(--mf-accent);
+      font-size:11px;
+      font-weight:850;
+      letter-spacing:.13em;
+      line-height:1.2;
+      text-transform:uppercase;
+    }
+    .mf-page-title{
+      color:inherit;
+      font-size:clamp(24px,5vw,32px);
+      font-weight:900;
+      letter-spacing:-.035em;
+      line-height:1.05;
+    }
+    .mf-page-subtitle{
+      max-width:620px;
+      margin-top:7px;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .mf-page-action{flex:0 0 auto;}
+    .mf-toolbar{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      margin-bottom:12px;
+    }
+    .mf-toolbar > :first-child{min-width:0;}
+    .mf-chip-row{
+      display:flex;
+      gap:7px;
+      margin-bottom:12px;
+      padding:1px 1px 8px;
+      overflow-x:auto;
+      scrollbar-width:thin;
+    }
+    .mf-chip{
+      min-height:38px;
+      flex:0 0 auto;
+      border-radius:999px!important;
+      padding:8px 12px!important;
+      font-size:12px!important;
+      font-weight:700!important;
+    }
+    .mf-section-card,
+    .mf-list-card{
+      box-shadow:0 10px 34px rgba(2,6,23,.07);
+      transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+    }
+    .mf-section-card{border-radius:18px!important;}
+    .mf-list-card{border-radius:16px!important;}
+    .mf-list-card:hover{box-shadow:0 14px 38px rgba(2,6,23,.11);}
+    .mf-section-title{
+      font-size:15px!important;
+      font-weight:800!important;
+      letter-spacing:-.01em;
+      line-height:1.25;
+    }
+    .mf-empty-state{
+      display:grid;
+      justify-items:center;
+      gap:7px;
+      margin:8px 0 14px;
+      padding:34px 20px;
+      border:1px dashed color-mix(in srgb,var(--mf-accent) 35%,transparent);
+      border-radius:18px;
+      text-align:center;
+    }
+    .mf-empty-icon{
+      display:grid;
+      place-items:center;
+      width:48px;
+      height:48px;
+      margin-bottom:2px;
+      border-radius:16px;
+      background:var(--mf-glow);
+      color:var(--mf-accent);
+      font-size:23px;
+    }
+    .mf-empty-title{font-size:15px;font-weight:850;line-height:1.3;}
+    .mf-empty-copy{max-width:390px;font-size:12px;line-height:1.5;}
+    .mf-empty-action{margin-top:5px;}
+    .mf-count-line{margin:-2px 0 12px;font-size:12px!important;line-height:1.45;}
+    .mf-shopping-item{min-height:54px;}
+    .mf-page-head button,.mf-toolbar button{min-height:42px;}
+    .mf-measure-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+    .mf-shell[data-theme="light"] .mf-section-card,
+    .mf-shell[data-theme="light"] .mf-list-card{box-shadow:0 10px 30px rgba(37,99,235,.07);}
     @media (min-width:760px){
       .mf-topbar{padding-top:8px!important;}
       .mf-topnav{display:flex!important;}
@@ -179,6 +277,14 @@
       .mf-daily-card{padding:18px!important;}
       .mf-modal-backdrop{align-items:center!important;padding:24px;}
       .mf-modal-panel{max-height:88vh!important;border-radius:24px!important;padding-bottom:32px!important;}
+      .mf-measure-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:560px){
+      .mf-page-head{align-items:flex-start;margin-bottom:15px;}
+      .mf-page-title{font-size:25px;}
+      .mf-page-subtitle{font-size:12px;}
+      .mf-page-action .mf-action-label{display:none;}
+      .mf-toolbar{align-items:stretch;}
     }
     @media (max-width:420px){
       .mf-bottom-label{font-size:9px;}
@@ -1702,6 +1808,49 @@ function Lbl(_ref8) {
       marginTop: mt || 10
     }
   }, children);
+}
+function PageHeader(_refPageHeader) {
+  var eyebrow = _refPageHeader.eyebrow,
+    title = _refPageHeader.title,
+    subtitle = _refPageHeader.subtitle,
+    action = _refPageHeader.action,
+    T = _refPageHeader.T;
+  return /*#__PURE__*/React.createElement("header", {
+    className: "mf-page-head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mf-page-copy"
+  }, eyebrow && /*#__PURE__*/React.createElement("div", {
+    className: "mf-page-eyebrow"
+  }, eyebrow), /*#__PURE__*/React.createElement("h1", {
+    className: "mf-page-title",
+    style: { color: T.text }
+  }, title), subtitle && /*#__PURE__*/React.createElement("p", {
+    className: "mf-page-subtitle",
+    style: { color: T.text2 }
+  }, subtitle)), action && /*#__PURE__*/React.createElement("div", {
+    className: "mf-page-action"
+  }, action));
+}
+function EmptyState(_refEmptyState) {
+  var icon = _refEmptyState.icon,
+    title = _refEmptyState.title,
+    copy = _refEmptyState.copy,
+    action = _refEmptyState.action,
+    T = _refEmptyState.T;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mf-empty-state",
+    style: { background: T.surf, color: T.text }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mf-empty-icon",
+    "aria-hidden": "true"
+  }, icon || "·"), /*#__PURE__*/React.createElement("div", {
+    className: "mf-empty-title"
+  }, title), copy && /*#__PURE__*/React.createElement("div", {
+    className: "mf-empty-copy",
+    style: { color: T.text2 }
+  }, copy), action && /*#__PURE__*/React.createElement("div", {
+    className: "mf-empty-action"
+  }, action));
 }
 function ScanModal(_ref9) {
   var T = _ref9.T,
@@ -3887,6 +4036,12 @@ function App() {
       padding: "12px 16px 8px"
     }
 }, page === "planer" && React.createElement(React.Fragment, null,
+  React.createElement(PageHeader, {
+    eyebrow: "Twój tydzień",
+    title: "Planer posiłków",
+    subtitle: "Zaplanuj dzień, wpisuj faktycznie zjedzone porcje i obserwuj realizację celu.",
+    T: T
+  }),
   function () {
     var nutrition = weeklySummary.nutrition;
     var averageKcal = nutrition.avgKcal;
@@ -3901,6 +4056,7 @@ function App() {
       finishText += Math.abs(shift) <= 3 ? " Termin stabilny względem poprzedniego tygodnia." : shift > 0 ? " To około " + Math.abs(shift) + " dni później niż tydzień temu." : " To około " + Math.abs(shift) + " dni wcześniej niż tydzień temu.";
     }
     return React.createElement("div", {
+      className: "mf-section-card",
       style: {
         background: safeTn === "light" ? "linear-gradient(145deg, #f8fbff, #eef4ff)" : "linear-gradient(145deg, " + T.surf + ", " + T.surf2 + ")",
         border: "1px solid " + T.acc + "66",
@@ -4381,46 +4537,29 @@ function App() {
         fontWeight: 700
       })
     }, "+ Przepis")));
-  })), page === "przepisy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 18,
-      color: T.text
-    }
-  }, "Przepisy"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: T.text3,
-      marginTop: 2
-    }
-  }, recipes.length, " w bazie · makro liczone ze składników")), /*#__PURE__*/React.createElement("button", {
-    onClick: openNR,
-    style: _objectSpread(_objectSpread({}, btnA), {}, {
-      padding: "9px 12px",
-      whiteSpace: "nowrap"
-    })
-  }, "+ Nowy")), /*#__PURE__*/React.createElement("input", {
+  })), page === "przepisy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+    eyebrow: "Twoja kuchnia",
+    title: "Przepisy",
+    subtitle: recipes.length + " w bazie · makro liczone bezpośrednio ze składników",
+    action: /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: openNR,
+      style: _objectSpread(_objectSpread({}, btnA), {}, {
+        padding: "10px 13px",
+        whiteSpace: "nowrap"
+      })
+    }, "+ ", /*#__PURE__*/React.createElement("span", { className: "mf-action-label" }, "Nowy przepis")),
+    T: T
+  }), /*#__PURE__*/React.createElement("input", {
     value: recipeSearch,
     onChange: function onChange(e) {
       return setRecipeSearch(e.target.value);
     },
     placeholder: "Szukaj przepisu...",
     "aria-label": "Szukaj przepisu",
-    style: _objectSpread(_objectSpread({}, inp), {}, {
-      marginBottom: 8
-    })
+    style: _objectSpread({}, inp)
   }), /*#__PURE__*/React.createElement("div", {
+    className: "mf-chip-row",
     style: {
       display: "flex",
       gap: 6,
@@ -4436,6 +4575,7 @@ function App() {
     return /*#__PURE__*/React.createElement("button", {
       key: key,
       type: "button",
+      className: "mf-chip",
       "aria-pressed": active,
       onClick: function onClick() {
         return setRecipeCategory(key);
@@ -4455,14 +4595,12 @@ function App() {
     var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
     var q = recipeSearch.trim().toLowerCase();
     return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
-  }).length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: "center",
-      padding: "28px 12px",
-      color: T.text3,
-      fontSize: 12
-    }
-  }, "Brak przepisów dla wybranego filtra."), recipes.filter(function (r) {
+  }).length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
+    icon: "◇",
+    title: "Nie znaleźliśmy takiego przepisu",
+    copy: "Zmień kategorię albo skróć wyszukiwaną frazę.",
+    T: T
+  }), recipes.filter(function (r) {
     var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
     var q = recipeSearch.trim().toLowerCase();
     return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
@@ -4491,6 +4629,7 @@ function App() {
       isCustomized = !!variant;
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
+      className: "mf-list-card",
       onClick: function onClick() {
         return setExpanded(exp ? null : r.id);
       },
@@ -4943,21 +5082,13 @@ function App() {
         padding: "10px 14px"
       })
     }, "Usuń"))));
-  })), page === "produkty" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 18,
-      marginBottom: 4,
-      color: T.text
-    }
-  }, "Produkty"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: T.text3,
-      lineHeight: 1.45,
-      marginBottom: 10
-    }
-  }, "Wartości bazowe są orientacyjne na 100 g. Dla produktu markowego użyj etykiety lub skanera EAN."), /*#__PURE__*/React.createElement("div", {
+  })), page === "produkty" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+    eyebrow: "Baza żywności",
+    title: "Produkty",
+    subtitle: "Wartości bazowe są orientacyjne na 100 g. Dla produktu markowego użyj etykiety lub skanera EAN.",
+    T: T
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mf-toolbar",
     style: {
       display: "flex",
       gap: 8,
@@ -4995,6 +5126,7 @@ function App() {
       flexShrink: 0
     })
   }, "+")), /*#__PURE__*/React.createElement("div", {
+    className: "mf-chip-row",
     style: {
       display: "flex",
       gap: 6,
@@ -5007,6 +5139,7 @@ function App() {
     return /*#__PURE__*/React.createElement("button", {
       key: category.key,
       type: "button",
+      className: "mf-chip",
       "aria-pressed": active,
       onClick: function onClick() {
         return setProductCategory(category.key);
@@ -5024,27 +5157,24 @@ function App() {
       }
     }, category.label);
   })), /*#__PURE__*/React.createElement("div", {
+    className: "mf-count-line",
     style: {
       fontSize: 11,
       color: T.text3,
       marginBottom: 10
     }
-  }, filtProd.length, " z ", products.length, " produktów · MatFit ", baseProductCount, " · własne ", userProductCount), filtProd.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: T.surf,
-      border: "1px solid " + T.border,
-      borderRadius: 12,
-      padding: 20,
-      textAlign: "center",
-      color: T.text3,
-      fontSize: 12
-    }
-  }, "Brak produktów pasujących do filtra."), filtProd.map(function (p) {
+  }, filtProd.length, " z ", products.length, " produktów · MatFit ", baseProductCount, " · własne ", userProductCount), filtProd.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
+    icon: "▤",
+    title: "Brak pasujących produktów",
+    copy: "Wybierz inną kategorię, zmień wyszukiwanie albo dodaj własny produkt.",
+    T: T
+  }), filtProd.map(function (p) {
     var productCategoryLabel = (PRODUCT_CATEGORIES.find(function (category) {
       return category.key === p.category;
     }) || {}).label || "Inne";
     return /*#__PURE__*/React.createElement("div", {
       key: p.id,
+      className: "mf-list-card",
       style: {
         background: T.surf,
         border: "1px solid " + T.border,
@@ -5113,14 +5243,13 @@ function App() {
         color: T.text3
       }
     }, "Del"));
-  })), page === "zakupy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 18,
-      marginBottom: 12,
-      color: T.text
-    }
-  }, "Lista zakup\xF3w"), /*#__PURE__*/React.createElement("div", {
+  })), page === "zakupy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+    eyebrow: "Z planu na listę",
+    title: "Lista zakupów",
+    subtitle: "MatFit sumuje składniki z wybranego zakresu i przelicza potrzebne opakowania.",
+    T: T
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mf-chip-row",
     style: {
       display: "flex",
       gap: 8,
@@ -5129,6 +5258,8 @@ function App() {
   }, [1, 3, 7].map(function (d) {
     return /*#__PURE__*/React.createElement("button", {
       key: d,
+      className: "mf-chip",
+      "aria-pressed": zDays === d,
       onClick: function onClick() {
         return setZDays(d);
       },
@@ -5173,21 +5304,17 @@ function App() {
     })
   }, "Reset")), function () {
     var items = getIngMap(zDays);
-    if (!items.length) return /*#__PURE__*/React.createElement("div", {
-      style: {
-        textAlign: "center",
-        padding: "40px 0",
-        color: T.text3
-      }
-    }, "Brak posi\u0142k\xF3w. ", /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: T.acc,
-        cursor: "pointer"
-      },
-      onClick: function onClick() {
-        return setPage("planer");
-      }
-    }, "Id\u017A do planera"));
+    if (!items.length) return /*#__PURE__*/React.createElement(EmptyState, {
+      icon: "✓",
+      title: "Lista jest jeszcze pusta",
+      copy: "Dodaj posiłki do planera w wybranym zakresie, a składniki pojawią się tutaj automatycznie.",
+      action: /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() { return setPage("planer"); },
+        style: btnA
+      }, "Przejdź do planera"),
+      T: T
+    });
     return /*#__PURE__*/React.createElement(React.Fragment, null, items.map(function (_ref19) {
       var _ref20 = _slicedToArray(_ref19, 2),
         id = _ref20[0],
@@ -5199,6 +5326,7 @@ function App() {
       var pkgs = packageSize ? Math.ceil(qty / packageSize) : null;
       return /*#__PURE__*/React.createElement("div", {
         key: id,
+        className: "mf-list-card mf-shopping-item",
         onClick: function onClick() {
           return setZChecked(_objectSpread(_objectSpread({}, zChecked), {}, _defineProperty({}, id, !chk)));
         },
@@ -5261,14 +5389,13 @@ function App() {
         }
       }, Math.round(qty), "g")));
     }));
-  }()), page === "profil" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 18,
-      marginBottom: 12,
-      color: T.text
-    }
-  }, "Profil"), bmr > 0 && /*#__PURE__*/React.createElement("div", {
+  }()), page === "profil" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+    eyebrow: "Ustawienia i cel",
+    title: "Twój profil",
+    subtitle: "Tutaj MatFit wylicza zapotrzebowanie, makro i bezpieczną prognozę celu na podstawie Twoich danych.",
+    T: T
+  }), bmr > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mf-section-card",
     style: {
       background: T.surf,
       border: "1px solid " + T.acc,
@@ -5431,6 +5558,7 @@ function App() {
     var goalChartMax = goalChartValues.length ? Math.max.apply(Math, _toConsumableArray(goalChartValues)) + 0.8 : 100;
     var progress = effectiveTargetWeight && startWeight !== effectiveTargetWeight ? Math.max(0, Math.min(100, Math.round((startWeight - currentWeight) / (startWeight - effectiveTargetWeight) * 100))) : 0;
     return /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: { background: T.surf, border: "1px solid " + T.border, borderRadius: 14, padding: 14, marginBottom: 12 }
     }, /*#__PURE__*/React.createElement("div", {
       style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }
@@ -6036,14 +6164,13 @@ function App() {
       marginBottom: 5
     };
 
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 18,
-        marginBottom: 12,
-        color: T.text
-      }
-    }, "💧 Woda"), /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+      eyebrow: "Codzienny nawyk",
+      title: "Nawodnienie",
+      subtitle: "Dodawaj wodę jednym ruchem i dopasuj cel do masy ciała, treningu oraz temperatury.",
+      T: T
+    }), /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: _objectSpread(_objectSpread({}, sectionCard), {}, {
         borderColor: T.acc
       })
@@ -6157,6 +6284,7 @@ function App() {
         fontWeight: 500
       })
     }, "+ Dodaj"))), /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: sectionCard
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6261,6 +6389,7 @@ function App() {
         marginTop: 8
       }
     }, "To orientacyjna sugestia, nie zalecenie medyczne. Potrzeby zależą też m.in. od jedzenia, zdrowia, pogody i intensywności wysiłku.")), /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: sectionCard
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6317,6 +6446,7 @@ function App() {
         }
       })));
     })), waterEntries.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: sectionCard
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -6736,17 +6866,21 @@ function App() {
         }
       })));
     }
-    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontWeight: 700,
-        fontSize: 18,
-        marginBottom: 12,
-        color: T.text
-      }
-    }, "\uD83D\uDCCA Body Tracker"), latestBody && function () {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
+      eyebrow: "Postęp bez zgadywania",
+      title: "Pomiary ciała",
+      subtitle: "Zapisuj wagę i obwody. MatFit pokaże trend, skład zmiany masy oraz ostrożne korelacje.",
+      T: T
+    }), !latestBody && /*#__PURE__*/React.createElement(EmptyState, {
+      icon: "↗",
+      title: "Zacznij od pierwszego pomiaru",
+      copy: "Wpisz przynajmniej wagę. Pas i szyja pozwolą dodatkowo śledzić orientacyjny BF oraz masę tłuszczową.",
+      T: T
+    }), latestBody && function () {
       var latestEntry = latestBody[1];
       var metrics = [["weight", "Waga", "kg", "#8fa3c4"], ["belly", "Pas", "cm", "#c4a45a"], ["bf", "BF", "%", "#7daa6e"]];
       return /*#__PURE__*/React.createElement("div", {
+        className: "mf-section-card",
         style: { background: T.surf, border: "1px solid " + T.acc, borderRadius: 14, padding: 12, marginBottom: 10 }
       }, /*#__PURE__*/React.createElement("div", {
         style: { display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center" }
@@ -6773,6 +6907,7 @@ function App() {
     })), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, lineHeight: 1.4, marginTop: 7 } }, mfFormatDate(firstComposition[0]), " → ", mfFormatDate(latestComposition[0]), ". *To nie jest „utrata mięśni”: ta wartość obejmuje wodę, glikogen i całą masę beztłuszczową. BF z obwodów lub wagi jest szacunkiem, dlatego patrzymy na trend.")) : /*#__PURE__*/React.createElement("div", {
       style: { fontSize: 10, color: T.text3, lineHeight: 1.45, background: T.surf2, borderRadius: 8, padding: 9 }
     }, "Dodaj co najmniej dwa kompletne pomiary w odstępie 7 dni: waga + BF ręczny albo waga, pas i szyja", profile.gender === "f" ? " + biodra" : "", ". Wtedy MatFit oszacuje zmianę tłuszczu bez udawania laboratoryjnej dokładności.")) : null, /*#__PURE__*/React.createElement("div", {
+      className: "mf-section-card",
       style: {
         background: T.surf,
         border: "1px solid " + T.border,
