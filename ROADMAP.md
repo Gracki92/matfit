@@ -14,7 +14,7 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Ostrożna kalibracja TDEE po minimum 28 dniach i 70% dni z wpisanym jedzeniem; zmiana wyłącznie po akceptacji użytkownika.
 - [x] Woda v1: cel sugerowany lub własny, dolewki, cofanie i historia 7 dni.
 - [ ] Powiadomienia o wodzie (etap aplikacji Android).
-- [x] Startowa baza produktów: 82 pozycje, kategorie i bezpieczne scalanie z produktami użytkownika.
+- [x] Startowa baza produktów: 128 pozycji, kategorie i bezpieczne scalanie z produktami użytkownika.
 - [x] Przepisy v1: 10 przepisów startowych, wyszukiwanie i kategorie, własne przepisy, edycja/usuwanie, porcje i dodawanie do planera.
 - [x] Generator kart v1: style Sweet/Savory, segmentowe logo MatFit, zdjęcie, aktywny wariant przepisu, eksport PNG oraz PDF/druk.
 - [ ] Zdjęcia AI do kart przez bezpieczny backend (bez klucza API w HTML).
@@ -106,7 +106,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Rozszerzone wartości przeliczają się wraz z gramaturą, porcją, wariantem przepisu i ręczną korektą posiłku.
 - [x] Użytkownik może jednym przełącznikiem pokazać lub ukryć szczegóły w planerze, podsumowaniu dnia, przepisach i produktach.
 - [x] Stare produkty, posiłki, kopie zapasowe i dane localStorage pozostają zgodne bez wymuszonej migracji.
-- [x] Uzupełnić szczegółowe wartości referencyjne 73 z 82 produktów bazowych na podstawie konkretnych rekordów USDA FoodData Central SR Legacy; 60 produktów ma komplet 4/4, a brak pomiaru nadal pozostaje brakiem danych.
+- [x] Uzupełnić szczegółowe wartości referencyjne 119 ze 128 produktów bazowych na podstawie konkretnych rekordów USDA FoodData Central SR Legacy; 103 produkty mają komplet 4/4, a brak lub niespójny pomiar nadal pozostaje brakiem danych.
 - [x] Zachować puste szczegóły dla 9 produktów silnie zależnych od marki lub procesu produkcji (m.in. skyr, WPC, pudding i makrela wędzona), zamiast przedstawiać średnią jako pewną wartość etykietową.
 
 ## Nutrition Data v2.1 — analiza 7/30 dni
@@ -120,6 +120,14 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Dodać przełączany widok 7- i 30-dniowy po uzupełnieniu zweryfikowanych danych większej części katalogu.
 - [x] Dodać średnie białko oraz procent realizacji średniego celu wyliczanego z profilu i typu każdego wpisanego dnia.
 
+## Nutrition Data v2.2 — rozszerzona baza podstawowa
+
+- [x] Rozszerzyć katalog z 82 do 128 produktów o kolejne ryby, nabiał, kasze, pieczywo, nasiona, warzywa, owoce i produkty spiżarniane.
+- [x] Przypisać każdej nowej pozycji konkretny rekord USDA FoodData Central SR Legacy oraz datę weryfikacji.
+- [x] Rozróżnić warianty suche i ugotowane tam, gdzie zmieniają się wartości na 100 g.
+- [x] Odrzucić niejednoznaczne mapowanie amerykańskiego „potato flour” na polską skrobię ziemniaczaną.
+- [ ] Uzupełniać katalog kolejnymi partiami według częstotliwości użycia w polskiej kuchni i zgłoszeń użytkowników.
+
 ## Strategia produktu — backlog zarządu
 
 ### 1. Domknięcie fundamentu
@@ -132,7 +140,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 ### 2. Nutrition Data v2 i duża baza produktów
 
-- [ ] Rozszerzyć ręcznie zweryfikowaną bazę podstawowych produktów używanych w Polsce.
+- [x] Wykonać pierwszą rozbudowę ręcznie zweryfikowanej bazy podstawowej z 82 do 128 produktów używanych w Polsce.
+- [ ] Kontynuować rozbudowę bazy podstawowej kolejnymi zweryfikowanymi partiami.
 - [ ] Zbudować duży katalog markowych produktów z polskich sklepów: wyszukiwanie po nazwie, marce, sklepie i kodzie EAN.
 - [ ] Zastosować model hybrydowy: mała baza startowa offline + legalne źródła online + lokalna pamięć ostatnich i ulubionych produktów.
 - [ ] Przed integracją każdego zewnętrznego źródła wykonać audyt licencji; nie kopiować ani nie scrapować bazy konkurencji.
