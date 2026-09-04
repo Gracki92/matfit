@@ -23,6 +23,18 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Skaner EAN v1: aparat lub kod ręczny, walidacja GTIN, lokalna baza i Open Food Facts, poprawianie danych, ręczne dodanie oraz ochrona przed duplikatami.
 - [ ] Przygotowanie wydania Android / Google Play.
 
+## Audyt stabilności DEV — 4 września 2026
+
+- [x] Pełny smoke test siedmiu modułów: Profil, Pomiary, Woda, Planer, Przepisy, Produkty i Zakupy.
+- [x] Daty i klucze dni korzystają z lokalnej strefy użytkownika zamiast UTC, więc wpisy nie przeskakują na sąsiedni dzień.
+- [x] Elastyczne porcje zachowują dokładne wartości, w tym 0,35 porcji, bez narastającego błędu zaokrągleń.
+- [x] Ręczna korekta zjedzonej gramatury aktualizuje również opis pozycji, kcal oraz B/W/T.
+- [x] Lista zakupów liczy 1, 3 lub 7 dni od aktualnie wybranego dnia planera, a nie zawsze od poniedziałku.
+- [x] Pierwszy pomiar nie pokazuje fałszywej zmiany 0,0, a wykres obwodów startuje od szyi zamiast masy ciała.
+- [x] Eksport pełnej kopii zapasowej zawsze pobiera plik JSON i potwierdza zapis w interfejsie.
+- [x] Dodawanie własnego produktu, zapis danych i licznik katalogu przeszły test końcowy bez błędów konsoli.
+- [ ] W UI v2 nadać wszystkim klikalnym elementom semantykę przycisku, obsługę klawiatury, widoczny fokus i etykiety dla czytników ekranu.
+
 ## Elastyczne przepisy
 
 Wersja v1 działa w DEV i czeka na testy przed przeniesieniem na produkcję.
@@ -60,7 +72,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 ### 1. Domknięcie fundamentu
 
 - [ ] Przetestować cały obecny DEV na prawdziwych danych: planer, elastyczne porcje, raport 7-dniowy, cel sylwetkowy, prognozę i kalibrację TDEE.
-- [ ] Wykonać całościowy audyt braków, błędów, dostępności oraz wygody najważniejszych ścieżek użytkownika.
+- [x] Wykonać pierwszy całościowy audyt braków, błędów, dostępności oraz wygody najważniejszych ścieżek użytkownika.
 - [ ] Przygotować makiety nowego interfejsu dla motywów Royal i Light oraz jeden wspólny system komponentów.
 - [ ] Przenieść aplikację z pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania.
 - [ ] Dodać onboarding dopasowujący widok do celu, diety, poziomu zaawansowania i preferowanego zakresu danych.
