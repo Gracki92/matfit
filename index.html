@@ -749,7 +749,7 @@ function onlyStoredRecipes(recipes) {
     return recipe && recipe.id !== undefined && (!isBaseRecipeId(recipe.id) || recipe.overridden);
   });
 }
-var TODAY = new Date().toISOString().slice(0, 10);
+var TODAY = mfISODate(new Date());
 var DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 var CAT_LABELS = {
   slodkie: "🍰 Słodkie",
@@ -887,6 +887,12 @@ function calcMacro(ings, prods) {
 }
 function r2(n) {
   return Math.round(n * 10) / 10;
+}
+function rGram(n) {
+  return Math.round(n * 100) / 100;
+}
+function fmtPortions(n) {
+  return String(Math.round((parseFloat(n) || 0) * 100) / 100);
 }
 function calcBMR(pr) {
   if (!pr.weight || !pr.height || !pr.age) return 0;
@@ -1494,7 +1500,7 @@ function DS(_ref7) {
     },
     style: inp
   }, week.map(function (d) {
-    var k = d.toISOString().slice(0, 10),
+    var k = mfISODate(d),
       dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
     return /*#__PURE__*/React.createElement("option", {
       key: k,
@@ -1956,7 +1962,7 @@ function App() {
     _useLS14 = _slicedToArray(_useLS13, 2),
     bodyLog = _useLS14[0],
     setBodyLog = _useLS14[1];
-  var _useState13 = useState("weight"),
+  var _useState13 = useState("neck"),
     _useState14 = _slicedToArray(_useState13, 2),
     activeChart = _useState14[0],
     setActiveChart = _useState14[1];
@@ -2307,7 +2313,7 @@ function App() {
     if (navigator.share) {
       navigator.share({
         title: "MatFit Pro — plan żywieniowy",
-        text: "Mój plan na " + new Date(key).toLocaleDateString("pl-PL", {
+        text: "Mój plan na " + mfDate(key).toLocaleDateString("pl-PL", {
           day: "numeric",
           month: "long"
         }),
@@ -2375,10 +2381,10 @@ function App() {
   }, [weekOffset]);
   
   var selectedDate = week.find(function (d) {
-    return d.toISOString().slice(0, 10) === selectedDay;
+    return mfISODate(d) === selectedDay;
   }) || week[0];
   
-  var selectedKey = selectedDate.toISOString().slice(0, 10);
+  var selectedKey = mfISODate(selectedDate);
   var todayMeals = planer[TODAY] || [];
   var eaten = todayMeals.reduce(function (a, m) {
     return {
@@ -2466,7 +2472,7 @@ function App() {
     var factor = portions / oldPortions;
     var items = (currentItems || []).map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: r2((parseFloat(item.grams) || 0) * factor)
+        grams: rGram((parseFloat(item.grams) || 0) * factor)
       });
     });
     setScales(function (prev) {
@@ -2524,7 +2530,7 @@ function App() {
     }
     var items = (currentItems || []).map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: r2((parseFloat(item.grams) || 0) * factor)
+        grams: rGram((parseFloat(item.grams) || 0) * factor)
       });
     });
     var targets = {
@@ -2557,7 +2563,7 @@ function App() {
       setSelRItems(function (items) {
         return (items || []).map(function (item) {
           return _objectSpread(_objectSpread({}, item), {}, {
-            grams: r2((parseFloat(item.grams) || 0) * factor)
+            grams: rGram((parseFloat(item.grams) || 0) * factor)
           });
         });
       });
@@ -2623,7 +2629,7 @@ function App() {
     var customItemsSelected = Array.isArray(selRItems) && selRItems.length;
     var scaledItems = sourceItems.map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: customItemsSelected ? r2(parseFloat(item.grams) || 0) : r2((parseFloat(item.grams) || 0) * factor)
+        grams: customItemsSelected ? rGram(parseFloat(item.grams) || 0) : rGram((parseFloat(item.grams) || 0) * factor)
       });
     });
     var mealMacro = calcMacro(scaledItems, products);
@@ -2668,7 +2674,7 @@ function App() {
     var customItemsSelected = Array.isArray(selRItems) && selRItems.length;
     var scaledItems = sourceItems.map(function (item) {
       return _objectSpread(_objectSpread({}, item), {}, {
-        grams: customItemsSelected ? r2(parseFloat(item.grams) || 0) : r2((parseFloat(item.grams) || 0) * factor)
+        grams: customItemsSelected ? rGram(parseFloat(item.grams) || 0) : rGram((parseFloat(item.grams) || 0) * factor)
       });
     });
     var mealMacro = calcMacro(scaledItems, products);
@@ -2719,6 +2725,7 @@ function App() {
       if (idx < 0) return prev;
       day[idx] = _objectSpread(_objectSpread({}, day[idx]), {}, {
         items: emItems,
+        grams: day[idx].type === "product" && emItems.length === 1 ? rGram(parseFloat(emItems[0].grams) || 0) : day[idx].grams,
         kcal: Math.round(m.kcal),
         protein: r2(m.protein),
         carbs: r2(m.carbs),
@@ -2868,7 +2875,7 @@ function App() {
         fat: r2(m.fat * factor),
         items: bItems.map(function (item) {
           return _objectSpread(_objectSpread({}, item), {}, {
-            grams: r2((parseFloat(item.grams) || 0) * factor)
+            grams: rGram((parseFloat(item.grams) || 0) * factor)
           });
         })
       };
@@ -3083,8 +3090,9 @@ function App() {
   }
   function getIngMap(days) {
     var map = {};
-    week.slice(0, days).forEach(function (d) {
-      (planer[d.toISOString().slice(0, 10)] || []).forEach(function (m) {
+    for (var dayIndex = 0; dayIndex < days; dayIndex++) {
+      var dayKey = mfShiftISO(selectedDay || TODAY, dayIndex);
+      (planer[dayKey] || []).forEach(function (m) {
         (m.items || []).forEach(function (item) {
           var p = products.find(function (x) {
             return x.id === item.productId;
@@ -3098,7 +3106,7 @@ function App() {
           map[p.id].qty += item.grams;
         });
       });
-    });
+    }
     return Object.entries(map);
   }
   function exportZ() {
@@ -3262,29 +3270,7 @@ function App() {
   function exportData() {
     var data = createBackupData();
     var json = JSON.stringify(data, null, 2);
-    var filename = "matfit_backup_" + new Date().toISOString().slice(0, 10) + ".json";
-    // Próbuj Web Share API (mobile)
-    if (navigator.share && navigator.canShare) {
-      var blob = new Blob([json], {
-        type: "application/json"
-      });
-      var file = new File([blob], filename, {
-        type: "application/json"
-      });
-      if (navigator.canShare({
-        files: [file]
-      })) {
-        navigator.share({
-          files: [file],
-          title: "MatFit Pro Backup"
-        }).then(function () {
-          return toast_("Udostępniono!");
-        }).catch(function () {
-          return downloadJson(json, filename);
-        });
-        return;
-      }
-    }
+    var filename = "matfit_backup_" + TODAY + ".json";
     downloadJson(json, filename);
   }
   function downloadJson(json, filename) {
@@ -3424,7 +3410,7 @@ function App() {
   var selectedRecipeFactor = selectedRecipeForPlaner ? Math.max(0.1, parseFloat(selRPortions) || 1) / Math.max(0.1, parseFloat(selectedRecipeForPlaner.servings) || 1) : 1;
   var selectedRecipeItems = Array.isArray(selRItems) && selRItems.length ? selRItems : selectedRecipeForPlaner ? (selectedRecipeForPlaner.ingredients || []).map(function (item) {
     return _objectSpread(_objectSpread({}, item), {}, {
-      grams: r2((parseFloat(item.grams) || 0) * selectedRecipeFactor)
+      grams: rGram((parseFloat(item.grams) || 0) * selectedRecipeFactor)
     });
   }) : [];
   var selectedRecipeMacro = calcMacro(selectedRecipeItems, products);
@@ -3809,7 +3795,7 @@ function App() {
     }, "\u2039"),
 
     week.map(function (d) {
-      var k = d.toISOString().slice(0, 10);
+      var k = mfISODate(d);
       var dow = d.getDay() === 0 ? 6 : d.getDay() - 1;
       var labels = ["Pn", "Wt", "\u015Ar", "Cz", "Pt", "Sb", "Nd"];
       var isSel = k === selectedDay;
@@ -3874,7 +3860,7 @@ function App() {
 
   [selectedDate].map(function (d) {
       
-    var key = d.toISOString().slice(0, 10);
+    var key = mfISODate(d);
     var meals = planer[key] || [];
     var total = meals.reduce(function (a, m) {
       return a + m.kcal;
@@ -4091,7 +4077,7 @@ function App() {
             fontSize: 13,
             color: T.text
           }
-        }, m.name, m.type === "product" && m.grams ? " · " + m.grams + "g" : m.items && m.items.length > 1 ? " · " + m.items.length + " skł." : ""), /*#__PURE__*/React.createElement("div", {
+        }, m.name, m.type === "product" && m.items && m.items[0] ? " · " + fmtPortions(m.items[0].grams) + "g" : m.type === "product" && m.grams ? " · " + fmtPortions(m.grams) + "g" : m.items && m.items.length > 1 ? " · " + m.items.length + " skł." : ""), /*#__PURE__*/React.createElement("div", {
           style: {
             fontSize: 11,
             color: T.text2,
@@ -4251,7 +4237,7 @@ function App() {
       variant = recipeVariants[String(r.id)] || null,
       baseItems = (r.ingredients || []).map(function (item) {
         return _objectSpread(_objectSpread({}, item), {}, {
-          grams: r2((parseFloat(item.grams) || 0) * f)
+          grams: rGram((parseFloat(item.grams) || 0) * f)
         });
       }),
       currentItems = variant && variant.portions === sc && Array.isArray(variant.items) ? variant.items : baseItems,
@@ -4417,7 +4403,7 @@ function App() {
         color: T.text3,
         marginBottom: 2
       }
-    }, "Razem dla ", r2(sc), sc === 1 ? " porcji" : " porcji", " (", Math.round(sc * 100), "% porcji)"), /*#__PURE__*/React.createElement(MG, {
+    }, "Razem dla ", fmtPortions(sc), sc === 1 ? " porcji" : " porcji", " (", Math.round(sc * 100), "% porcji)"), /*#__PURE__*/React.createElement(MG, {
       kcal: m.kcal,
       protein: m.protein,
       carbs: m.carbs,
@@ -4616,7 +4602,7 @@ function App() {
         },
         type: "number",
         min: "0",
-        step: "1",
+        step: "0.01",
         style: {
           width: 68,
           boxSizing: "border-box",
@@ -4900,6 +4886,13 @@ function App() {
       }
     }, d, " ", d === 1 ? "dzień" : "dni");
   })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      textAlign: "center",
+      margin: "-5px 0 10px"
+    }
+  }, zDays === 1 ? "Zakupy na " + mfFormatShortDate(selectedDay || TODAY) : "Zakupy od " + mfFormatShortDate(selectedDay || TODAY) + " do " + mfFormatShortDate(mfShiftISO(selectedDay || TODAY, zDays - 1))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5752,7 +5745,7 @@ function App() {
     }, function (_, index) {
       var date = new Date(TODAY + "T12:00:00");
       date.setDate(date.getDate() - index);
-      var key = date.toISOString().slice(0, 10);
+      var key = mfISODate(date);
       var day = waterLog[key] || {};
       var entries = Array.isArray(day.entries) ? day.entries : [];
       return {
@@ -6244,10 +6237,7 @@ function App() {
         date = _ref36[0],
         e = _ref36[1];
       return {
-        date: new Date(date).toLocaleDateString("pl-PL", {
-          day: "numeric",
-          month: "short"
-        }),
+        date: mfFormatShortDate(date),
         value: parseFloat(e.weight)
       };
     });
@@ -6266,10 +6256,7 @@ function App() {
         date = _ref44[0],
         e = _ref44[1];
       return {
-        date: new Date(date).toLocaleDateString("pl-PL", {
-          day: "numeric",
-          month: "short"
-        }),
+        date: mfFormatShortDate(date),
         value: entryBf(e)
       };
     });
@@ -6303,10 +6290,7 @@ function App() {
         date = _ref52[0],
         e = _ref52[1];
       return {
-        date: new Date(date).toLocaleDateString("pl-PL", {
-          day: "numeric",
-          month: "short"
-        }),
+        date: mfFormatShortDate(date),
         value: parseFloat(e[activeChart])
       };
     });
@@ -6514,7 +6498,7 @@ function App() {
         var value = key === "bf" ? entryBf(latestEntry) : parseFloat(latestEntry[key]);
         if (!isFinite(value)) return /*#__PURE__*/React.createElement("div", { key: key, style: { background: T.surf2, borderRadius: 8, padding: 8, textAlign: "center", color: T.text3, fontSize: 10 } }, label, ": —");
         var prevDelta = previousBody ? metricDelta(latestEntry, previousBody[1], key) : null;
-        var startDelta = firstBody ? metricDelta(latestEntry, firstBody[1], key) : null;
+        var startDelta = firstBody && firstBody[0] !== latestBody[0] ? metricDelta(latestEntry, firstBody[1], key) : null;
         var fmt = function fmt(v) { return v === null ? "—" : (v > 0 ? "+" : "") + v.toFixed(1); };
         return /*#__PURE__*/React.createElement("div", { key: key, style: { background: T.surf2, borderRadius: 8, padding: "8px 5px", textAlign: "center" } }, /*#__PURE__*/React.createElement("div", { style: { fontSize: 9, color: T.text3 } }, label), /*#__PURE__*/React.createElement("div", { style: { fontFamily: "monospace", fontSize: 16, fontWeight: 800, color: color, margin: "2px 0" } }, value.toFixed(1), unit), /*#__PURE__*/React.createElement("div", { style: { fontSize: 8, color: T.text3, lineHeight: 1.4 } }, "poprz.: ", fmt(prevDelta), /*#__PURE__*/React.createElement("br"), "start: ", fmt(startDelta)));
       })));
@@ -7270,7 +7254,7 @@ function App() {
       textAlign: "right",
       marginTop: 2
     }
-  }, r2(parseFloat(selRPortions) || 1), " porcji · ", Math.round((parseFloat(selRPortions) || 1) * 100), "%")), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
+  }, fmtPortions(parseFloat(selRPortions) || 1), " porcji · ", Math.round((parseFloat(selRPortions) || 1) * 100), "%")), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
     kcal: selectedRecipeMacro.kcal,
     protein: selectedRecipeMacro.protein,
     carbs: selectedRecipeMacro.carbs,
@@ -7364,7 +7348,7 @@ function App() {
       textAlign: "right",
       marginTop: 2
     }
-  }, r2(parseFloat(selRPortions) || 1), " porcji · ", Math.round((parseFloat(selRPortions) || 1) * 100), "%")), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
+  }, fmtPortions(parseFloat(selRPortions) || 1), " porcji · ", Math.round((parseFloat(selRPortions) || 1) * 100), "%")), selRId && selectedRecipeMacro.kcal > 0 && /*#__PURE__*/React.createElement(MG, {
     kcal: selectedRecipeMacro.kcal,
     protein: selectedRecipeMacro.protein,
     carbs: selectedRecipeMacro.carbs,
@@ -7765,7 +7749,7 @@ function App() {
       color: T.text3,
       marginBottom: 10
     }
-  }, "Plan na ", new Date(sharedData.date).toLocaleDateString("pl-PL", {
+  }, "Plan na ", mfDate(sharedData.date).toLocaleDateString("pl-PL", {
     day: "numeric",
     month: "long",
     year: "numeric"
