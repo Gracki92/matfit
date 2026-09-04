@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "check": "node --check src/app.js && node --check src/domain/date.js && node --check src/domain/nutrition.js && node --check src/domain/planner.js && node scripts/check-project.mjs && node --test",
+    "check": "node --check src/app.js && node --check src/domain/backup.js && node --check src/domain/date.js && node --check src/domain/nutrition.js && node --check src/domain/planner.js && node scripts/check-project.mjs && node --test",
     "test": "node --test"
   },
   "engines": {

@@ -29,6 +29,13 @@ import {
   scaledNutritionDetails,
   sumMealNutrition,
 } from "./domain/nutrition.js";
+import {
+  MAX_BACKUP_FILE_BYTES,
+  createBackupData,
+  mergeBackupIds,
+  mergeBackupRecords,
+  parseBackupJson,
+} from "./domain/backup.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -3417,160 +3424,27 @@ function App() {
       return toast_("Skopiowano!");
     });
   }
-  function isPlainBackupObject(value) {
-    return !!value && typeof value === "object" && !Array.isArray(value);
-  }
-  function createBackupData() {
-    return {
-      app: "MatFit Pro",
-      schemaVersion: 1,
-      version: 24,
-      exportedAt: new Date().toISOString(),
-      data: {
-        theme: safeTn,
-        profile: profile,
-        planer: planer,
-        recipes: onlyStoredRecipes(storedRecipes),
-        hiddenRecipes: hiddenRecipes,
-        products: onlyUserProducts(storedProducts),
-        favorites: favorites,
-        productFavorites: productFavorites,
-        recentProducts: recentProducts,
-        productGrams: productGrams,
-        dayTypes: dayTypes,
-        bodyLog: bodyLog,
-        waterLog: waterLog,
-        waterSettings: waterSettings,
-        shoppingChecked: zChecked
-      }
-    };
-  }
-  function backupHas(source, names) {
-    return names.some(function (name) {
-      return Object.prototype.hasOwnProperty.call(source, name);
+  function currentBackupSnapshot() {
+    return createBackupData({
+      theme: safeTn,
+      profile: profile,
+      planer: planer,
+      recipes: onlyStoredRecipes(storedRecipes),
+      hiddenRecipes: hiddenRecipes,
+      products: onlyUserProducts(storedProducts),
+      favorites: favorites,
+      productFavorites: productFavorites,
+      recentProducts: recentProducts,
+      productGrams: productGrams,
+      dayTypes: dayTypes,
+      bodyLog: bodyLog,
+      waterLog: waterLog,
+      waterSettings: waterSettings,
+      shoppingChecked: zChecked
     });
-  }
-  function backupRead(source, names, fallback) {
-    for (var i = 0; i < names.length; i++) {
-      if (Object.prototype.hasOwnProperty.call(source, names[i])) return source[names[i]];
-    }
-    return fallback;
-  }
-  function normalizeBackupData(raw) {
-    if (!isPlainBackupObject(raw)) throw new Error("Plik nie zawiera kopii MatFit");
-    var modern = raw.app === "MatFit Pro" && Number(raw.schemaVersion) >= 1 && isPlainBackupObject(raw.data);
-    if (!modern && !raw.version) throw new Error("To nie jest kopia MatFit");
-    if (modern && Number(raw.schemaVersion) > 1) throw new Error("Kopia pochodzi z nowszej wersji MatFit");
-    var source = modern ? raw.data : raw;
-    var aliases = {
-      theme: ["theme", "tn"],
-      profile: ["profile"],
-      planer: ["planer"],
-      recipes: ["recipes"],
-      hiddenRecipes: ["hiddenRecipes", "hidden_recipes"],
-      products: ["products"],
-      favorites: ["favorites"],
-      productFavorites: ["productFavorites", "product_favorites"],
-      recentProducts: ["recentProducts", "recent_products"],
-      productGrams: ["productGrams", "product_grams"],
-      dayTypes: ["dayTypes"],
-      bodyLog: ["bodyLog", "body"],
-      waterLog: ["waterLog", "water"],
-      waterSettings: ["waterSettings", "water_settings"],
-      shoppingChecked: ["shoppingChecked", "zakupy"]
-    };
-    var present = {};
-    Object.keys(aliases).forEach(function (key) {
-      present[key] = backupHas(source, aliases[key]);
-    });
-    if (!Object.keys(present).some(function (key) {
-      return present[key];
-    })) throw new Error("Kopia nie zawiera rozpoznanych danych");
-    var themeValue = backupRead(source, aliases.theme, "royal");
-    var normalized = {
-      theme: THEMES[themeValue] ? themeValue : "royal",
-      profile: isPlainBackupObject(backupRead(source, aliases.profile, null)) ? backupRead(source, aliases.profile, {}) : {},
-      planer: isPlainBackupObject(backupRead(source, aliases.planer, null)) ? backupRead(source, aliases.planer, {}) : {},
-      recipes: onlyStoredRecipes(backupRead(source, aliases.recipes, [])),
-      hiddenRecipes: Array.isArray(backupRead(source, aliases.hiddenRecipes, null)) ? backupRead(source, aliases.hiddenRecipes, []) : [],
-      products: onlyUserProducts(backupRead(source, aliases.products, [])),
-      favorites: Array.isArray(backupRead(source, aliases.favorites, null)) ? backupRead(source, aliases.favorites, []) : [],
-      productFavorites: Array.isArray(backupRead(source, aliases.productFavorites, null)) ? backupRead(source, aliases.productFavorites, []) : [],
-      recentProducts: Array.isArray(backupRead(source, aliases.recentProducts, null)) ? backupRead(source, aliases.recentProducts, []).slice(0, 8) : [],
-      productGrams: isPlainBackupObject(backupRead(source, aliases.productGrams, null)) ? backupRead(source, aliases.productGrams, {}) : {},
-      dayTypes: isPlainBackupObject(backupRead(source, aliases.dayTypes, null)) ? backupRead(source, aliases.dayTypes, {}) : {},
-      bodyLog: isPlainBackupObject(backupRead(source, aliases.bodyLog, null)) ? backupRead(source, aliases.bodyLog, {}) : {},
-      waterLog: isPlainBackupObject(backupRead(source, aliases.waterLog, null)) ? backupRead(source, aliases.waterLog, {}) : {},
-      waterSettings: isPlainBackupObject(backupRead(source, aliases.waterSettings, null)) ? backupRead(source, aliases.waterSettings, {}) : {},
-      shoppingChecked: isPlainBackupObject(backupRead(source, aliases.shoppingChecked, null)) ? backupRead(source, aliases.shoppingChecked, {}) : {}
-    };
-    var sectionLabels = {
-      theme: "motyw",
-      profile: "profil",
-      planer: "planer",
-      recipes: "przepisy",
-      hiddenRecipes: "ukryte przepisy",
-      products: "produkty",
-      favorites: "ulubione",
-      productFavorites: "ulubione produkty",
-      recentProducts: "ostatnie produkty",
-      productGrams: "zapamiętane gramatury",
-      dayTypes: "typy dni",
-      bodyLog: "pomiary",
-      waterLog: "woda",
-      waterSettings: "ustawienia wody",
-      shoppingChecked: "lista zakupów"
-    };
-    ["profile", "planer", "productGrams", "dayTypes", "bodyLog", "waterLog", "waterSettings", "shoppingChecked"].forEach(function (key) {
-      if (present[key] && !isPlainBackupObject(backupRead(source, aliases[key], null))) throw new Error("Uszkodzona sekcja kopii: " + sectionLabels[key]);
-    });
-    ["recipes", "hiddenRecipes", "products", "favorites", "productFavorites", "recentProducts"].forEach(function (key) {
-      if (present[key] && !Array.isArray(backupRead(source, aliases[key], null))) throw new Error("Uszkodzona sekcja kopii: " + sectionLabels[key]);
-    });
-    if (present.theme && !THEMES[themeValue]) throw new Error("Uszkodzona sekcja kopii: motyw");
-    var missing = Object.keys(present).filter(function (key) {
-      return !present[key];
-    }).map(function (key) {
-      return sectionLabels[key];
-    });
-    return {
-      data: normalized,
-      present: present,
-      missing: missing,
-      legacy: !modern,
-      schemaVersion: modern ? Number(raw.schemaVersion) : Number(raw.version),
-      exportedAt: raw.exportedAt || "",
-      summary: {
-        planDays: Object.keys(normalized.planer).length,
-        measurements: Object.keys(normalized.bodyLog).length,
-        waterDays: Object.keys(normalized.waterLog).length,
-        recipes: normalized.recipes.length,
-        products: normalized.products.length
-      }
-    };
-  }
-  function mergeBackupRecords(current, incoming) {
-    var records = new Map();
-    (Array.isArray(current) ? current : []).forEach(function (item) {
-      if (item && item.id !== undefined && item.id !== null) records.set(String(item.id), item);
-    });
-    (Array.isArray(incoming) ? incoming : []).forEach(function (item) {
-      if (item && item.id !== undefined && item.id !== null) records.set(String(item.id), item);
-    });
-    return Array.from(records.values());
-  }
-  function mergeBackupIds(current, incoming) {
-    var values = new Map();
-    (Array.isArray(current) ? current : []).forEach(function (value) {
-      values.set(String(value), value);
-    });
-    (Array.isArray(incoming) ? incoming : []).forEach(function (value) {
-      values.set(String(value), value);
-    });
-    return Array.from(values.values());
   }
   function exportData() {
-    var data = createBackupData();
+    var data = currentBackupSnapshot();
     var json = JSON.stringify(data, null, 2);
     var filename = "matfit_backup_" + TODAY + ".json";
     downloadJson(json, filename);
@@ -3597,15 +3471,18 @@ function App() {
     var file = (_e$target$files = e.target.files) === null || _e$target$files === void 0 ? void 0 : _e$target$files[0];
     if (!file) return;
     e.target.value = "";
-    if (file.size > 15 * 1024 * 1024) {
+    if (file.size > MAX_BACKUP_FILE_BYTES) {
       toast_("Kopia może mieć maksymalnie 15 MB");
       return;
     }
     var reader = new FileReader();
     reader.onload = function (ev) {
       try {
-        var parsed = JSON.parse(ev.target.result);
-        var normalized = normalizeBackupData(parsed);
+        var normalized = parseBackupJson(ev.target.result, {
+          validThemes: Object.keys(THEMES),
+          filterRecipes: onlyStoredRecipes,
+          filterProducts: onlyUserProducts
+        });
         setPendingBackup(_objectSpread(_objectSpread({}, normalized), {}, {
           filename: file.name
         }));
@@ -3644,7 +3521,7 @@ function App() {
     };
     if (mode === "replace") {
       var safetyName = "matfit_kopia_ratunkowa_" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
-      downloadJson(JSON.stringify(createBackupData(), null, 2), safetyName, false);
+      downloadJson(JSON.stringify(currentBackupSnapshot(), null, 2), safetyName, false);
       setTn(incoming.theme || "royal");
       setProfile(_objectSpread(_objectSpread({}, profileDefaults), incoming.profile));
       setPlaner(incoming.planer);

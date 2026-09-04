@@ -5,6 +5,7 @@ const requiredFiles = [
   "index.html",
   "assets/styles.css",
   "src/app.js",
+  "src/domain/backup.js",
   "src/domain/date.js",
   "src/domain/nutrition.js",
   "src/domain/planner.js",
@@ -21,9 +22,10 @@ const requiredFiles = [
 
 await Promise.all(requiredFiles.map((file) => access(new URL(file, root))));
 
-const [html, app, dates, nutrition, planner, styles, serviceWorker, manifestText] = await Promise.all([
+const [html, app, backup, dates, nutrition, planner, styles, serviceWorker, manifestText] = await Promise.all([
   readFile(new URL("index.html", root), "utf8"),
   readFile(new URL("src/app.js", root), "utf8"),
+  readFile(new URL("src/domain/backup.js", root), "utf8"),
   readFile(new URL("src/domain/date.js", root), "utf8"),
   readFile(new URL("src/domain/nutrition.js", root), "utf8"),
   readFile(new URL("src/domain/planner.js", root), "utf8"),
@@ -53,6 +55,7 @@ if (!html.includes('<script type="module" src="./src/app.js"></script>')) throw 
 if (/<style[\s>]/i.test(html)) throw new Error("CSS ponownie trafił do index.html");
 if (/<script>(?!\s*<\/script>)/i.test(html)) throw new Error("Kod JS ponownie trafił do index.html");
 if (!styles.includes("max-width:430px")) throw new Error("Brak docelowej szerokości telefonu");
+if (!app.includes('from "./domain/backup.js"')) throw new Error("Aplikacja nie importuje domeny kopii zapasowych");
 if (!app.includes('from "./domain/date.js"')) throw new Error("Aplikacja nie importuje domeny dat");
 if (!app.includes('from "./domain/nutrition.js"')) throw new Error("Aplikacja nie importuje domeny odżywiania");
 if (!app.includes('from "./domain/planner.js"')) throw new Error("Aplikacja nie importuje domeny planera");
@@ -68,6 +71,12 @@ for (const removedHelper of ["calcMacro", "calcBMR", "calcTDEE", "calcTargets", 
 for (const exportedFunction of ["calcMacro", "calcBMR", "calcTDEE", "calcTargets", "calcNavyBodyFat", "nutritionPeriodSummary"]) {
   if (!nutrition.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny odżywiania: ${exportedFunction}`);
 }
+for (const removedHelper of ["normalizeBackupData", "mergeBackupRecords", "mergeBackupIds", "createBackupData"]) {
+  if (app.includes(`function ${removedHelper}`)) throw new Error(`Logika kopii wróciła do pliku aplikacji: ${removedHelper}`);
+}
+for (const exportedFunction of ["normalizeBackupData", "parseBackupJson", "mergeBackupRecords", "mergeBackupIds", "createBackupData"]) {
+  if (!backup.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny kopii: ${exportedFunction}`);
+}
 if (app.includes("function plannedMealCopyKey") || app.includes("function clonePlannedMeal")) throw new Error("Logika planera wróciła do pliku aplikacji");
 for (const exportedFunction of ["plannedMealCopyKey", "clonePlannedMeal"]) {
   if (!planner.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny planera: ${exportedFunction}`);
@@ -79,7 +88,7 @@ for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_product
 
 const manifest = JSON.parse(manifestText);
 if (manifest.start_url !== "./" || manifest.scope !== "./") throw new Error("Manifest musi działać z podkatalogu DEV");
-for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/planner.js"]) {
+for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/backup.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/planner.js"]) {
   if (!serviceWorker.includes(asset)) throw new Error(`Service worker nie obejmuje pliku: ${asset}`);
 }
 
