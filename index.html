@@ -12,7 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { background:#060a14; scroll-behavior:smooth; }
     body { background:#060a14; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; overflow-x:hidden; }
-    #root { width:100%; max-width:1180px; margin:0 auto; min-height:100vh; padding-bottom:env(safe-area-inset-bottom); }
+    #root { width:100%; max-width:430px; margin:0 auto; min-height:100vh; padding-bottom:env(safe-area-inset-bottom); }
     html { scroll-padding-bottom: 320px; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { opacity: 1; }
@@ -32,7 +32,7 @@
       --mf-glow:rgba(212,175,55,.16);
       position:relative;
       width:100%;
-      max-width:1180px!important;
+      max-width:430px!important;
       isolation:isolate;
       overflow:hidden;
     }
@@ -269,16 +269,6 @@
     .mf-measure-grid{display:grid;grid-template-columns:1fr;gap:10px;}
     .mf-shell[data-theme="light"] .mf-section-card,
     .mf-shell[data-theme="light"] .mf-list-card{box-shadow:0 10px 30px rgba(37,99,235,.07);}
-    @media (min-width:760px){
-      .mf-topbar{padding-top:8px!important;}
-      .mf-topnav{display:flex!important;}
-      .mf-bottom-nav{display:none!important;}
-      .mf-main{padding-top:18px!important;padding-bottom:48px!important;}
-      .mf-daily-card{padding:18px!important;}
-      .mf-modal-backdrop{align-items:center!important;padding:24px;}
-      .mf-modal-panel{max-height:88vh!important;border-radius:24px!important;padding-bottom:32px!important;}
-      .mf-measure-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-    }
     @media (max-width:560px){
       .mf-page-head{align-items:flex-start;margin-bottom:15px;}
       .mf-page-title{font-size:25px;}

@@ -38,7 +38,7 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 ## UI v2.1 — powłoka aplikacji
 
 - [x] Wspólny system wizualny dla motywów Royal i Light: poprawiony kontrast, paleta makro, powierzchnie, obramowania i stany aktywne.
-- [x] Responsywny układ: mobilny dolny dock oraz szeroka nawigacja i przestrzeń robocza na komputerze bez poziomego przewijania.
+- [x] Docelowy układ mobile-first: kolumna do 430 px i dolny dock również w podglądzie na komputerze, bez przełączania aplikacji w szeroki tryb desktopowy.
 - [x] Nowy nagłówek marki, karta dziennego celu, widoczny fokus i obsługa powiększania strony przez użytkownika.
 - [x] Semantyczna nawigacja, wskaźnik realizacji kalorii, modal jako dialog oraz etykiety wyszukiwarki i filtrów.
 - [x] Obsługa klawiatury dla rozwijania przepisów; czytelne przyciski edycji i usuwania pozycji planera.
