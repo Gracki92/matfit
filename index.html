@@ -1253,6 +1253,53 @@ function sumMealNutrition(meals, products) {
   });
   return total;
 }
+function nutritionPeriodSummary(planer, products, endISO, days) {
+  var dates = [];
+  for (var index = days - 1; index >= 0; index--) dates.push(mfShiftISO(endISO, -index));
+  var loggedDays = 0;
+  var totalKcal = 0;
+  var totals = {};
+  var knownKcal = {};
+  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+    totals[field.key] = 0;
+    knownKcal[field.key] = 0;
+  });
+  dates.forEach(function (date) {
+    var meals = Array.isArray(planer && planer[date]) ? planer[date] : [];
+    if (!meals.length) return;
+    loggedDays++;
+    meals.forEach(function (meal) {
+      var nutrition = completeMealNutrition(meal, products);
+      var mealKcal = Math.max(0, parseFloat(nutrition.kcal) || 0);
+      totalKcal += mealKcal;
+      NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+        var value = optionalNutritionNumber(nutrition[field.key]);
+        if (value === null) return;
+        totals[field.key] += value;
+        knownKcal[field.key] += mealKcal;
+      });
+    });
+  });
+  var details = {};
+  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
+    var coverage = totalKcal > 0 ? knownKcal[field.key] / totalKcal : 0;
+    details[field.key] = {
+      total: totals[field.key],
+      average: loggedDays && coverage >= 0.7 ? totals[field.key] / loggedDays : null,
+      coverage: coverage,
+      coveragePct: Math.round(coverage * 100)
+    };
+  });
+  return {
+    from: dates[0],
+    to: dates[dates.length - 1],
+    days: days,
+    loggedDays: loggedDays,
+    totalKcal: totalKcal,
+    avgKcal: loggedDays ? totalKcal / loggedDays : null,
+    details: details
+  };
+}
 function r2(n) {
   return Math.round(n * 10) / 10;
 }
@@ -1694,6 +1741,94 @@ function NutritionDetails(_refNutritionDetails) {
   }) : /*#__PURE__*/React.createElement("span", {
     style: { fontSize: 10, color: T.text3 }
   }, "Brak szczegółowych danych — nie liczymy ich jako zera."));
+}
+function ExtendedNutritionReport(_refExtendedNutritionReport) {
+  var summary = _refExtendedNutritionReport.summary,
+    targetKcal = _refExtendedNutritionReport.targetKcal,
+    T = _refExtendedNutritionReport.T;
+  var details = summary.details;
+  var saturatedReference = Math.max(1, Math.round(((summary.avgKcal || targetKcal || 2000) * 0.1 / 9) * 10) / 10);
+  var cards = [{
+    key: "fiber",
+    label: "Błonnik",
+    reference: "cel ≥25 g",
+    limit: 25,
+    direction: "min"
+  }, {
+    key: "salt",
+    label: "Sól",
+    reference: "limit <5 g",
+    limit: 5,
+    direction: "max"
+  }, {
+    key: "saturatedFat",
+    label: "Tł. nasycone",
+    reference: "≤10% energii (~" + saturatedReference + " g)",
+    limit: saturatedReference,
+    direction: "max"
+  }, {
+    key: "sugars",
+    label: "Cukry ogółem",
+    reference: "bez celu",
+    limit: null,
+    direction: null
+  }];
+  function cardColor(card, row) {
+    if (row.average === null || row.coverage < 0.9 || !card.limit) return T.text;
+    var onTarget = card.direction === "min" ? row.average >= card.limit : row.average <= card.limit;
+    return onTarget ? "#22c55e" : "#f59e0b";
+  }
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mf-section-card",
+    "aria-label": "Średnie rozszerzone wartości odżywcze z siedmiu dni",
+    style: {
+      background: T.surf,
+      border: "1px solid " + T.border,
+      borderRadius: 16,
+      padding: 13,
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: { display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 9 }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 9, color: T.acc, textTransform: "uppercase", letterSpacing: 1.1, fontWeight: 800 }
+  }, "ODŻYWIANIE · 7 DNI"), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 15, color: T.text, fontWeight: 800, marginTop: 2 }
+  }, "Średnia z wpisanych dni")), /*#__PURE__*/React.createElement("span", {
+    style: { fontSize: 9, color: T.text3, textAlign: "right", lineHeight: 1.4 }
+  }, summary.loggedDays, "/7 dni z jedzeniem")), /*#__PURE__*/React.createElement("div", {
+    style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }
+  }, cards.map(function (card) {
+    var row = details[card.key];
+    var enough = row.average !== null;
+    var partial = enough && row.coveragePct < 100;
+    return /*#__PURE__*/React.createElement("div", {
+      key: card.key,
+      style: { background: T.surf2, border: "1px solid " + T.border, borderRadius: 10, padding: "9px 8px", minWidth: 0 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", justifyContent: "space-between", gap: 6, alignItems: "baseline" }
+    }, /*#__PURE__*/React.createElement("strong", {
+      style: { color: cardColor(card, row), fontFamily: "monospace", fontSize: 14 }
+    }, enough ? (partial ? "min. " : "") + r2(row.average) + " g" : "—"), /*#__PURE__*/React.createElement("span", {
+      style: { color: T.text3, fontSize: 8, whiteSpace: "nowrap" }
+    }, row.coveragePct, "% danych")), /*#__PURE__*/React.createElement("div", {
+      style: { color: T.text, fontSize: 10, fontWeight: 700, marginTop: 3 }
+    }, card.label), /*#__PURE__*/React.createElement("div", {
+      style: { color: T.text3, fontSize: 8, marginTop: 2 }
+    }, enough ? card.reference : "Potrzeba ≥70% pokrycia"));
+  })), /*#__PURE__*/React.createElement("div", {
+    style: { fontSize: 9, lineHeight: 1.45, color: T.text3, marginTop: 8 }
+  }, "Cukry ogółem obejmują też naturalne cukry z owoców i nabiału, dlatego nie porównujemy ich z limitem cukrów wolnych. Ocena celu lub limitu pojawia się dopiero przy ≥90% pokrycia danych. Punkty odniesienia dla zdrowych dorosłych: ", /*#__PURE__*/React.createElement("a", {
+    href: "https://www.efsa.europa.eu/en/press/news/nda100326",
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: { color: T.acc }
+  }, "EFSA"), " / ", /*#__PURE__*/React.createElement("a", {
+    href: "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+    target: "_blank",
+    rel: "noopener noreferrer",
+    style: { color: T.acc }
+  }, "WHO"), "."));
 }
 
 // Podgląd makro dla wybranego produktu — wyodrębniony komponent zamiast IIFE
@@ -2992,6 +3127,7 @@ function App() {
   var selectedKey = mfISODate(selectedDate);
   var todayMeals = planer[TODAY] || [];
   var eaten = sumMealNutrition(todayMeals, products);
+  var sevenDayNutrition = nutritionPeriodSummary(planer, products, TODAY, 7);
   var pct = Math.round(eaten.kcal / TARGETS.kcal * 100);
   var pctBar = Math.min(pct, 100);
   var inp = {
@@ -4471,6 +4607,11 @@ function App() {
       style: { fontSize: 8, color: T.text3, lineHeight: 1.4, marginTop: 7 }
     }, "Wpis w planerze traktujemy jako faktycznie zjedzony. TDEE to całkowity wydatek energii — BMR pozostaje wyliczeniem podstawowej przemiany materii. MatFit nigdy nie zmienia celu bez Twojej zgody."));
   }(),
+  showNutritionDetails && React.createElement(ExtendedNutritionReport, {
+    summary: sevenDayNutrition,
+    targetKcal: TARGETS.kcal,
+    T: T
+  }),
   React.createElement("div", {
     style: {
       fontSize: 10,

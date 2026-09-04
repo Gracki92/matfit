@@ -107,7 +107,16 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Użytkownik może jednym przełącznikiem pokazać lub ukryć szczegóły w planerze, podsumowaniu dnia, przepisach i produktach.
 - [x] Stare produkty, posiłki, kopie zapasowe i dane localStorage pozostają zgodne bez wymuszonej migracji.
 - [ ] Uzupełnić szczegółowe wartości w ręcznie zweryfikowanej bazie podstawowych produktów.
-- [ ] Dodać średnie 7- i 30-dniowe, cele dla błonnika oraz świadome alerty dla soli i tłuszczów nasyconych.
+
+## Nutrition Data v2.1 — analiza 7 dni
+
+- [x] Dodać 7-dniowe średnie błonnika, soli, tłuszczów nasyconych i cukrów ogółem z wpisanych dni.
+- [x] Liczyć pokrycie osobno dla każdego składnika, ważone energią posiłków, aby brak danych nie udawał zera.
+- [x] Pokazywać średnią dopiero od 70% pokrycia; przy niepełnych danych oznaczać ją jako wartość minimalną.
+- [x] Oceniać cel lub limit dopiero od 90% pokrycia danych.
+- [x] Przyjąć punkty odniesienia dla zdrowych dorosłych: błonnik co najmniej 25 g, sól poniżej 5 g i tłuszcze nasycone do 10% energii.
+- [x] Nie nadawać limitu cukrom ogółem, ponieważ nie są tym samym co cukry wolne.
+- [ ] Dodać widok 30-dniowy po uzupełnieniu zweryfikowanych danych większej części katalogu.
 
 ## Strategia produktu — backlog zarządu
 
