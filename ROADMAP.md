@@ -128,6 +128,16 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Odrzucić niejednoznaczne mapowanie amerykańskiego „potato flour” na polską skrobię ziemniaczaną.
 - [ ] Uzupełniać katalog kolejnymi partiami według częstotliwości użycia w polskiej kuchni i zgłoszeń użytkowników.
 
+## Quick Add v1 — szybkie dodawanie jedzenia
+
+- [x] Dodać osobne ulubione produkty z filtrem w katalogu i szybkim wyborem w planerze.
+- [x] Pokazywać osiem ostatnio używanych produktów bez dublowania pozycji już widocznych w ulubionych.
+- [x] Zapamiętywać ostatnią gramaturę każdego produktu i udostępnić skróty 50, 100, 150 i 200 g.
+- [x] Dodać kopiowanie pojedynczego posiłku do wybranego dnia i pory dnia.
+- [x] Chronić kopiowanie posiłku i całego dnia przed przypadkowym dodaniem identycznych wpisów.
+- [x] Uwzględnić ulubione produkty, historię ostatnich pozycji i zapamiętane gramatury w Backup/Restore PRO.
+- [ ] Dodać nazwane szablony całych posiłków po przetestowaniu szybkiego kopiowania na prawdziwych danych.
+
 ## Strategia produktu — backlog zarządu
 
 ### 1. Domknięcie fundamentu
@@ -158,7 +168,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [ ] Dodać szacowanie posiłku ze zdjęcia: rozpoznane składniki, orientacyjne przedziały gramatur i kcal, poziom pewności oraz pytania doprecyzowujące.
 - [ ] Przed zapisaniem posiłku użytkownik zatwierdza lub poprawia składniki i porcje; AI nie przedstawia wyniku jako dokładnego pomiaru.
 - [ ] Umożliwić zdjęcie z góry i z boku albo użycie znanego rozmiaru talerza jako punktu odniesienia.
-- [ ] Dodać szybkie wyszukiwanie ostatnich produktów, ulubione, szablony posiłków i kopiowanie posiłku z poprzedniego dnia.
+- [x] Dodać ostatnie produkty, ulubione, zapamiętaną gramaturę oraz kopiowanie pojedynczego posiłku i całego dnia.
+- [ ] Dodać nazwane szablony posiłków po realnych testach Quick Add v1.
 - [ ] Rozważyć dodawanie głosowe, np. „200 g skyru i banan”, zawsze z ekranem potwierdzenia.
 - [ ] Obsługiwać AI wyłącznie przez bezpieczny backend; żaden klucz API nie może znaleźć się w aplikacji klienckiej.
 

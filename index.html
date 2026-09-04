@@ -820,6 +820,9 @@ var PRODUCT_CATEGORIES = [{
   key: "own",
   label: "Własne"
 }, {
+  key: "favorite",
+  label: "⭐ Ulubione"
+}, {
   key: "protein",
   label: "Mięso i białko"
 }, {
@@ -2809,6 +2812,20 @@ function getWeekNumber(d) {
   var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
   return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 }
+function plannedMealCopyKey(meal) {
+  var items = (meal && Array.isArray(meal.items) ? meal.items : []).map(function (item) {
+    return String(item.productId || "") + ":" + String(rGram(parseFloat(item.grams) || 0));
+  }).join("|");
+  return [meal && meal.type || "", meal && (meal.sourceId || meal.name) || "", meal && meal.mealTime || "", meal && meal.grams || "", meal && meal.portions || "", items].join("::");
+}
+function clonePlannedMeal(meal, overrides) {
+  return _objectSpread(_objectSpread(_objectSpread({}, meal), overrides || {}), {}, {
+    id: Date.now() + Math.random(),
+    items: (meal && Array.isArray(meal.items) ? meal.items : []).map(function (item) {
+      return _objectSpread({}, item);
+    })
+  });
+}
 function App() {
   var _products$find, _recipes$find, _recipes$find2;
   var _useLS = useLS("fb_theme", "royal"),
@@ -2898,6 +2915,18 @@ function App() {
     _useLS10 = _slicedToArray(_useLS1, 2),
     favorites = _useLS10[0],
     setFavorites = _useLS10[1];
+  var _useLSProductFavorites = useLS("fb10_product_favorites", []),
+    _useLSProductFavorites2 = _slicedToArray(_useLSProductFavorites, 2),
+    productFavorites = _useLSProductFavorites2[0],
+    setProductFavorites = _useLSProductFavorites2[1];
+  var _useLSRecentProducts = useLS("fb10_recent_products", []),
+    _useLSRecentProducts2 = _slicedToArray(_useLSRecentProducts, 2),
+    recentProducts = _useLSRecentProducts2[0],
+    setRecentProducts = _useLSRecentProducts2[1];
+  var _useLSProductGrams = useLS("fb10_product_grams", {}),
+    _useLSProductGrams2 = _slicedToArray(_useLSProductGrams, 2),
+    productGrams = _useLSProductGrams2[0],
+    setProductGrams = _useLSProductGrams2[1];
   var _useLS11 = useLS("fb10_dayTypes", {}),
     _useLS12 = _slicedToArray(_useLS11, 2),
     dayTypes = _useLS12[0],
@@ -3016,6 +3045,18 @@ function App() {
     _useState32 = _slicedToArray(_useState31, 2),
     cpTo = _useState32[0],
     setCpTo = _useState32[1];
+  var _useStateCopyMealSource = useState(null),
+    _useStateCopyMealSource2 = _slicedToArray(_useStateCopyMealSource, 2),
+    copyMealSource = _useStateCopyMealSource2[0],
+    setCopyMealSource = _useStateCopyMealSource2[1];
+  var _useStateCopyMealTo = useState(TODAY),
+    _useStateCopyMealTo2 = _slicedToArray(_useStateCopyMealTo, 2),
+    copyMealTo = _useStateCopyMealTo2[0],
+    setCopyMealTo = _useStateCopyMealTo2[1];
+  var _useStateCopyMealTime = useState("sniadanie"),
+    _useStateCopyMealTime2 = _slicedToArray(_useStateCopyMealTime, 2),
+    copyMealTime = _useStateCopyMealTime2[0],
+    setCopyMealTime = _useStateCopyMealTime2[1];
   var _useState33 = useState(TODAY),
     _useState34 = _slicedToArray(_useState33, 2),
     addDay = _useState34[0],
@@ -3331,6 +3372,39 @@ function App() {
   var isFav = function isFav(id) {
     return favorites.includes(id);
   };
+  function toggleProductFavorite(id) {
+    setProductFavorites(function (prev) {
+      var ids = Array.isArray(prev) ? prev : [];
+      return ids.includes(id) ? ids.filter(function (value) {
+        return value !== id;
+      }) : [id].concat(_toConsumableArray(ids));
+    });
+  }
+  function isProductFavorite(id) {
+    return (Array.isArray(productFavorites) ? productFavorites : []).includes(id);
+  }
+  function rememberedProductGrams(id) {
+    var value = parseFloat(productGrams && productGrams[id]);
+    return Number.isFinite(value) && value > 0 ? rGram(value) : 100;
+  }
+  function selectPlannerProduct(product) {
+    if (!product) return;
+    setSelP(product.id);
+    setSelG(String(rememberedProductGrams(product.id)));
+    setModalProdSearch(product.name + (product.state ? " (" + product.state + ")" : product.brand && product.brand !== "—" ? " (" + product.brand + ")" : ""));
+  }
+  function rememberProductUse(id, grams) {
+    if (!id) return;
+    var amount = parseFloat(grams);
+    setRecentProducts(function (prev) {
+      return [id].concat(_toConsumableArray((Array.isArray(prev) ? prev : []).filter(function (value) {
+        return value !== id;
+      }))).slice(0, 8);
+    });
+    if (Number.isFinite(amount) && amount > 0) setProductGrams(function (prev) {
+      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, id, rGram(amount)));
+    });
+  }
   var todayDayType = dayTypes[TODAY] || "training";
   var todayDayMul = (DAY_TYPES.find(function (d) {
     return d.key === todayDayType;
@@ -3574,6 +3648,7 @@ function App() {
     setPlaner(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(prev[addDay] || []), [meal])));
     });
+    rememberProductUse(selP, g);
     setModal(null);
     toast_("✅ Dodano do planera!");
   }
@@ -3694,6 +3769,9 @@ function App() {
       return;
     }
     var m = calcMacro(emItems, products);
+    var editedMeal = (planer[emKey] || []).find(function (meal) {
+      return meal.id === emId;
+    });
     setPlaner(function (prev) {
       var day = _toConsumableArray(prev[emKey] || []);
       var idx = day.findIndex(function (x) {
@@ -3714,8 +3792,53 @@ function App() {
       });
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, emKey, day));
     });
+    if (editedMeal && editedMeal.type === "product" && emItems.length === 1) {
+      rememberProductUse(editedMeal.sourceId || emItems[0].productId, emItems[0].grams);
+    }
     setModal(null);
     toast_("Zapisano!");
+  }
+  function openCopyMeal(dayKey, meal) {
+    var visibleDays = week.map(mfISODate);
+    var preferredDay = dayKey !== TODAY && visibleDays.includes(TODAY) ? TODAY : mfShiftISO(dayKey, 1);
+    if (!visibleDays.includes(preferredDay) || preferredDay === dayKey) {
+      preferredDay = mfShiftISO(dayKey, -1);
+    }
+    if (!visibleDays.includes(preferredDay) || preferredDay === dayKey) {
+      preferredDay = visibleDays.find(function (key) {
+        return key !== dayKey;
+      }) || dayKey;
+    }
+    setCopyMealSource({
+      day: dayKey,
+      meal: meal
+    });
+    setCopyMealTo(preferredDay);
+    setCopyMealTime(meal.mealTime || "sniadanie");
+    setModal("copyMeal");
+  }
+  function copySingleMeal() {
+    if (!copyMealSource || !copyMealSource.meal) return;
+    if (!copyMealTo) {
+      toast_("Wybierz dzień docelowy");
+      return;
+    }
+    var candidate = clonePlannedMeal(copyMealSource.meal, {
+      mealTime: copyMealTime
+    });
+    var target = planer[copyMealTo] || [];
+    if (target.some(function (meal) {
+      return plannedMealCopyKey(meal) === plannedMealCopyKey(candidate);
+    })) {
+      toast_("Ten posiłek już jest w wybranym dniu");
+      return;
+    }
+    setPlaner(function (prev) {
+      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, copyMealTo, [].concat(_toConsumableArray(prev[copyMealTo] || []), [candidate])));
+    });
+    setModal(null);
+    setCopyMealSource(null);
+    toast_("Skopiowano posiłek!");
   }
   function copyDay() {
     if (cpFrom === cpTo) {
@@ -3727,14 +3850,22 @@ function App() {
       toast_("Brak posiłków");
       return;
     }
+    var target = planer[cpTo] || [];
+    var existingKeys = new Set(target.map(plannedMealCopyKey));
+    var toCopy = src.filter(function (meal) {
+      return !existingKeys.has(plannedMealCopyKey(meal));
+    });
+    var skipped = src.length - toCopy.length;
+    if (!toCopy.length) {
+      toast_("Ten dzień ma już wszystkie kopiowane posiłki");
+      return;
+    }
     setPlaner(function (prev) {
-      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, cpTo, [].concat(_toConsumableArray(prev[cpTo] || []), _toConsumableArray(src.map(function (m) {
-        return _objectSpread(_objectSpread({}, m), {}, {
-          id: Date.now() + Math.random()
-        });
+      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, cpTo, [].concat(_toConsumableArray(prev[cpTo] || []), _toConsumableArray(toCopy.map(function (meal) {
+        return clonePlannedMeal(meal);
       })))));
     });
-    toast_("Skopiowano!");
+    toast_(skipped ? "Skopiowano " + toCopy.length + ", pominięto " + skipped + " duplikatów" : "Skopiowano cały dzień!");
     setModal(null);
   }
   var _useState83 = useState(false),
@@ -3998,8 +4129,7 @@ function App() {
       return String(p.name || "").toLowerCase() === String(scanResult.name || "").toLowerCase() && String(p.brand || "").trim().toLowerCase() === scanBrand;
     });
     if (dup) {
-      setSelP(dup.id);
-      setModalProdSearch(dup.name);
+      selectPlannerProduct(dup);
       setModal("addProd");
       toast_("Produkt już w bazie!");
       return;
@@ -4015,6 +4145,7 @@ function App() {
       return [newProd].concat(_toConsumableArray(prev));
     });
     setSelP(newProd.id);
+    setSelG("100");
     setModalProdSearch(newProd.name);
     setModal("addProd");
     toast_("Dodano do bazy!");
@@ -4116,6 +4247,7 @@ function App() {
     });
     if (returnToPlanner) {
       setSelP(newProd.id);
+      setSelG("100");
       setModalProdSearch(newProd.name + (newProd.brand ? " (" + newProd.brand + ")" : ""));
       setModal("addProd");
       toast_("Dodano do bazy — ustaw gramaturę");
@@ -4170,7 +4302,7 @@ function App() {
     return {
       app: "MatFit Pro",
       schemaVersion: 1,
-      version: 23,
+      version: 24,
       exportedAt: new Date().toISOString(),
       data: {
         theme: safeTn,
@@ -4180,6 +4312,9 @@ function App() {
         hiddenRecipes: hiddenRecipes,
         products: onlyUserProducts(storedProducts),
         favorites: favorites,
+        productFavorites: productFavorites,
+        recentProducts: recentProducts,
+        productGrams: productGrams,
         dayTypes: dayTypes,
         bodyLog: bodyLog,
         waterLog: waterLog,
@@ -4213,6 +4348,9 @@ function App() {
       hiddenRecipes: ["hiddenRecipes", "hidden_recipes"],
       products: ["products"],
       favorites: ["favorites"],
+      productFavorites: ["productFavorites", "product_favorites"],
+      recentProducts: ["recentProducts", "recent_products"],
+      productGrams: ["productGrams", "product_grams"],
       dayTypes: ["dayTypes"],
       bodyLog: ["bodyLog", "body"],
       waterLog: ["waterLog", "water"],
@@ -4235,6 +4373,9 @@ function App() {
       hiddenRecipes: Array.isArray(backupRead(source, aliases.hiddenRecipes, null)) ? backupRead(source, aliases.hiddenRecipes, []) : [],
       products: onlyUserProducts(backupRead(source, aliases.products, [])),
       favorites: Array.isArray(backupRead(source, aliases.favorites, null)) ? backupRead(source, aliases.favorites, []) : [],
+      productFavorites: Array.isArray(backupRead(source, aliases.productFavorites, null)) ? backupRead(source, aliases.productFavorites, []) : [],
+      recentProducts: Array.isArray(backupRead(source, aliases.recentProducts, null)) ? backupRead(source, aliases.recentProducts, []).slice(0, 8) : [],
+      productGrams: isPlainBackupObject(backupRead(source, aliases.productGrams, null)) ? backupRead(source, aliases.productGrams, {}) : {},
       dayTypes: isPlainBackupObject(backupRead(source, aliases.dayTypes, null)) ? backupRead(source, aliases.dayTypes, {}) : {},
       bodyLog: isPlainBackupObject(backupRead(source, aliases.bodyLog, null)) ? backupRead(source, aliases.bodyLog, {}) : {},
       waterLog: isPlainBackupObject(backupRead(source, aliases.waterLog, null)) ? backupRead(source, aliases.waterLog, {}) : {},
@@ -4249,16 +4390,19 @@ function App() {
       hiddenRecipes: "ukryte przepisy",
       products: "produkty",
       favorites: "ulubione",
+      productFavorites: "ulubione produkty",
+      recentProducts: "ostatnie produkty",
+      productGrams: "zapamiętane gramatury",
       dayTypes: "typy dni",
       bodyLog: "pomiary",
       waterLog: "woda",
       waterSettings: "ustawienia wody",
       shoppingChecked: "lista zakupów"
     };
-    ["profile", "planer", "dayTypes", "bodyLog", "waterLog", "waterSettings", "shoppingChecked"].forEach(function (key) {
+    ["profile", "planer", "productGrams", "dayTypes", "bodyLog", "waterLog", "waterSettings", "shoppingChecked"].forEach(function (key) {
       if (present[key] && !isPlainBackupObject(backupRead(source, aliases[key], null))) throw new Error("Uszkodzona sekcja kopii: " + sectionLabels[key]);
     });
-    ["recipes", "hiddenRecipes", "products", "favorites"].forEach(function (key) {
+    ["recipes", "hiddenRecipes", "products", "favorites", "productFavorites", "recentProducts"].forEach(function (key) {
       if (present[key] && !Array.isArray(backupRead(source, aliases[key], null))) throw new Error("Uszkodzona sekcja kopii: " + sectionLabels[key]);
     });
     if (present.theme && !THEMES[themeValue]) throw new Error("Uszkodzona sekcja kopii: motyw");
@@ -4386,6 +4530,9 @@ function App() {
       setHiddenRecipes(incoming.hiddenRecipes);
       setStoredProducts(incoming.products);
       setFavorites(incoming.favorites);
+      setProductFavorites(incoming.productFavorites);
+      setRecentProducts(incoming.recentProducts);
+      setProductGrams(incoming.productGrams);
       setDayTypes(incoming.dayTypes);
       setBodyLog(incoming.bodyLog);
       setWaterLog(incoming.waterLog);
@@ -4412,6 +4559,15 @@ function App() {
       });
       if (present.favorites) setFavorites(function (prev) {
         return mergeBackupIds(prev, incoming.favorites);
+      });
+      if (present.productFavorites) setProductFavorites(function (prev) {
+        return mergeBackupIds(prev, incoming.productFavorites);
+      });
+      if (present.recentProducts) setRecentProducts(function (prev) {
+        return mergeBackupIds(incoming.recentProducts, prev).slice(0, 8);
+      });
+      if (present.productGrams) setProductGrams(function (prev) {
+        return _objectSpread(_objectSpread({}, prev), incoming.productGrams);
       });
       if (present.dayTypes) setDayTypes(function (prev) {
         return _objectSpread(_objectSpread({}, prev), incoming.dayTypes);
@@ -4450,9 +4606,23 @@ function App() {
     });
   }) : [];
   var selectedRecipeMacro = calcMacro(selectedRecipeItems, products);
+  var safeProductFavorites = Array.isArray(productFavorites) ? productFavorites : [];
+  var safeRecentProducts = Array.isArray(recentProducts) ? recentProducts : [];
+  var favoriteProductList = safeProductFavorites.map(function (id) {
+    return products.find(function (product) {
+      return product.id === id;
+    });
+  }).filter(Boolean).slice(0, 8);
+  var recentProductList = safeRecentProducts.filter(function (id) {
+    return !safeProductFavorites.includes(id);
+  }).map(function (id) {
+    return products.find(function (product) {
+      return product.id === id;
+    });
+  }).filter(Boolean).slice(0, 8);
   var productSearchNeedle = (prodSearch || "").trim().toLowerCase();
   var filtProd = products.filter(function (p) {
-    var categoryMatch = productCategory === "all" || productCategory === "own" && p.custom || p.category === productCategory;
+    var categoryMatch = productCategory === "all" || productCategory === "own" && p.custom || productCategory === "favorite" && safeProductFavorites.includes(p.id) || p.category === productCategory;
     if (!categoryMatch) return false;
     if (!productSearchNeedle) return true;
     var categoryLabel = (PRODUCT_CATEGORIES.find(function (category) {
@@ -4503,6 +4673,68 @@ function App() {
         }
       }, mt.label);
     }));
+  }
+  function QuickProductRow(_refQuickProductRow) {
+    var label = _refQuickProductRow.label,
+      items = _refQuickProductRow.items;
+    if (!items.length) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 10
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 5,
+        color: T.text3,
+        fontSize: 10,
+        fontWeight: 800,
+        letterSpacing: 0.7,
+        textTransform: "uppercase"
+      }
+    }, label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: 6,
+        overflowX: "auto",
+        paddingBottom: 4
+      }
+    }, items.map(function (product) {
+      return /*#__PURE__*/React.createElement("button", {
+        key: product.id,
+        type: "button",
+        onClick: function onClick() {
+          return selectPlannerProduct(product);
+        },
+        style: {
+          flex: "0 0 auto",
+          maxWidth: 160,
+          minHeight: 42,
+          padding: "7px 9px",
+          border: "1px solid " + T.border,
+          borderRadius: 11,
+          background: T.surf2,
+          color: T.text,
+          cursor: "pointer",
+          textAlign: "left"
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "block",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          fontSize: 11,
+          fontWeight: 700
+        }
+      }, product.emoji, " ", product.name), /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "block",
+          marginTop: 2,
+          color: T.text3,
+          fontSize: 9
+        }
+      }, rememberedProductGrams(product.id), " g · ", product.kcal, " kcal/100 g"));
+    })));
   }
   return /*#__PURE__*/React.createElement("div", {
     className: "mf-shell",
@@ -5233,6 +5465,20 @@ function App() {
             color: T.acc
           }
         }, "Edit")), /*#__PURE__*/React.createElement("button", {
+          type: "button",
+          className: "mf-danger-icon",
+          "aria-label": "Kopiuj " + m.name + " do innego dnia",
+          onClick: function onClick() {
+            return openCopyMeal(key, m);
+          },
+          title: "Kopiuj posiłek",
+          style: {
+            color: T.acc,
+            cursor: "pointer",
+            fontSize: 17,
+            padding: "0 5px"
+          }
+        }, "⧉"), /*#__PURE__*/React.createElement("button", {
           type: "button",
           className: "mf-danger-icon",
           "aria-label": "Usuń " + m.name,
@@ -6008,13 +6254,46 @@ function App() {
       T: T
     }), showNutritionDetails && /*#__PURE__*/React.createElement("div", {
       style: { fontSize: 9, color: T.text3, marginTop: -4 }
-    }, "Szczegóły ", nutritionDetailCompleteness(p), "/4", p.nutritionSource ? " · " + p.nutritionSource : "", p.nutritionRef ? " · " + p.nutritionRef : "", p.lastVerified ? " · sprawdzono " + p.lastVerified : "")), p.custom && /*#__PURE__*/React.createElement("button", {
+    }, "Szczegóły ", nutritionDetailCompleteness(p), "/4", p.nutritionSource ? " · " + p.nutritionSource : "", p.nutritionRef ? " · " + p.nutritionRef : "", p.lastVerified ? " · sprawdzono " + p.lastVerified : "")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": (isProductFavorite(p.id) ? "Usuń z ulubionych: " : "Dodaj do ulubionych: ") + p.name,
+      "aria-pressed": isProductFavorite(p.id),
+      onClick: function onClick() {
+        return toggleProductFavorite(p.id);
+      },
+      style: {
+        width: 42,
+        minWidth: 42,
+        minHeight: 42,
+        border: "none",
+        borderRadius: 12,
+        background: isProductFavorite(p.id) ? T.acc + "22" : "transparent",
+        color: isProductFavorite(p.id) ? T.acc : T.text3,
+        fontSize: 20,
+        cursor: "pointer"
+      }
+    }, isProductFavorite(p.id) ? "★" : "☆"), p.custom && /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": "Usuń produkt " + p.name,
       onClick: function onClick() {
-        return setProducts(products.filter(function (x) {
+        setProducts(products.filter(function (x) {
           return x.id !== p.id;
         }));
+        setProductFavorites(function (prev) {
+          return (Array.isArray(prev) ? prev : []).filter(function (id) {
+            return id !== p.id;
+          });
+        });
+        setRecentProducts(function (prev) {
+          return (Array.isArray(prev) ? prev : []).filter(function (id) {
+            return id !== p.id;
+          });
+        });
+        setProductGrams(function (prev) {
+          var next = _objectSpread({}, prev);
+          delete next[p.id];
+          return next;
+        });
       },
       style: {
         background: "none",
@@ -8119,7 +8398,13 @@ function App() {
   }, "Pora dnia"), /*#__PURE__*/React.createElement(MealTimePicker, {
     value: addMealTime,
     onChange: setAddMealTime
-  }), /*#__PURE__*/React.createElement(Lbl, {
+  }), !selP && !modalProdSearch && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(QuickProductRow, {
+    label: "⭐ Ulubione",
+    items: favoriteProductList
+  }), /*#__PURE__*/React.createElement(QuickProductRow, {
+    label: "Ostatnio używane",
+    items: recentProductList
+  })), /*#__PURE__*/React.createElement(Lbl, {
     T: T
   }, "Szukaj produktu"), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -8179,8 +8464,7 @@ function App() {
         key: p.id,
         type: "button",
         onClick: function onClick() {
-          setSelP(p.id);
-          setModalProdSearch(p.name + (p.state ? " (" + p.state + ")" : p.brand && p.brand !== "—" ? " (" + p.brand + ")" : ""));
+          selectPlannerProduct(p);
         },
         style: {
           padding: "10px 12px",
@@ -8244,9 +8528,54 @@ function App() {
     }
   }, "\u2713 ", (_products$find = products.find(function (x) {
     return x.id === selP;
-  })) === null || _products$find === void 0 ? void 0 : _products$find.name), /*#__PURE__*/React.createElement(Lbl, {
+  })) === null || _products$find === void 0 ? void 0 : _products$find.name, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-label": isProductFavorite(selP) ? "Usuń wybrany produkt z ulubionych" : "Dodaj wybrany produkt do ulubionych",
+    "aria-pressed": isProductFavorite(selP),
+    onClick: function onClick() {
+      return toggleProductFavorite(selP);
+    },
+    style: {
+      marginLeft: 8,
+      padding: "3px 7px",
+      border: "1px solid " + T.border,
+      borderRadius: 8,
+      background: isProductFavorite(selP) ? T.acc + "22" : "transparent",
+      color: isProductFavorite(selP) ? T.acc : T.text3,
+      cursor: "pointer"
+    }
+  }, isProductFavorite(selP) ? "★" : "☆")), /*#__PURE__*/React.createElement(Lbl, {
     T: T
-  }, "Gramatura (g)"), /*#__PURE__*/React.createElement("input", {
+  }, "Gramatura (g)"), /*#__PURE__*/React.createElement("div", {
+    role: "group",
+    "aria-label": "Szybki wybór gramatury",
+    style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(4,1fr)",
+      gap: 5,
+      marginBottom: 7
+    }
+  }, [50, 100, 150, 200].map(function (grams) {
+    var active = parseFloat(selG) === grams;
+    return /*#__PURE__*/React.createElement("button", {
+      key: grams,
+      type: "button",
+      "aria-pressed": active,
+      onClick: function onClick() {
+        return setSelG(String(grams));
+      },
+      style: {
+        minHeight: 36,
+        border: "1px solid " + (active ? T.acc : T.border),
+        borderRadius: 9,
+        background: active ? T.acc + "22" : T.surf2,
+        color: active ? T.acc : T.text2,
+        fontSize: 11,
+        fontWeight: active ? 800 : 600,
+        cursor: "pointer"
+      }
+    }, grams, " g");
+  })), /*#__PURE__*/React.createElement("input", {
     value: selG,
     onChange: function onChange(e) {
       return setSelG(e.target.value);
@@ -8720,7 +9049,66 @@ function App() {
     style: _objectSpread(_objectSpread({}, btnA), {}, {
       flex: 2
     })
-  }, "Kopiuj"))), modal === "recipe" && /*#__PURE__*/React.createElement(Modal, {
+  }, "Kopiuj"))), modal === "copyMeal" && copyMealSource && /*#__PURE__*/React.createElement(Modal, {
+    title: "Kopiuj posiłek",
+    onClose: function onClose() {
+      setCopyMealSource(null);
+      setModal(null);
+    },
+    T: T
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px 12px",
+      border: "1px solid " + T.border,
+      borderRadius: 11,
+      background: T.surf2,
+      color: T.text,
+      fontSize: 13,
+      fontWeight: 700
+    }
+  }, copyMealSource.meal.name, /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 3,
+      color: T.text3,
+      fontSize: 10,
+      fontWeight: 500
+    }
+  }, copyMealSource.meal.kcal, " kcal · z ", mfDate(copyMealSource.day).toLocaleDateString("pl-PL", {
+    day: "numeric",
+    month: "short"
+  }))), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Do dnia"), /*#__PURE__*/React.createElement(DS, {
+    value: copyMealTo,
+    onChange: setCopyMealTo,
+    week: week,
+    T: T,
+    inp: inp
+  }), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Pora dnia"), /*#__PURE__*/React.createElement(MealTimePicker, {
+    value: copyMealTime,
+    onChange: setCopyMealTime
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      setCopyMealSource(null);
+      setModal(null);
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      flex: 1
+    })
+  }, "Anuluj"), /*#__PURE__*/React.createElement("button", {
+    onClick: copySingleMeal,
+    style: _objectSpread(_objectSpread({}, btnA), {}, {
+      flex: 2
+    })
+  }, "Kopiuj posiłek"))), modal === "recipe" && /*#__PURE__*/React.createElement(Modal, {
     title: editRId ? "Edytuj przepis" : "Nowy przepis",
     onClose: function onClose() {
       return setModal(null);
