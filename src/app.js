@@ -9,6 +9,26 @@ import {
   mfISODate,
   mfShiftISO,
 } from "./domain/date.js";
+import {
+  ACTIVITY_MULTIPLIERS,
+  DAY_TYPE_MULTIPLIERS,
+  NUTRITION_DETAIL_FIELDS,
+  calcBMR,
+  calcFormulaTDEE,
+  calcMacro,
+  calcNavyBodyFat,
+  calcTDEE,
+  calcTargets,
+  completeMealNutrition,
+  fmtPortions,
+  nutritionDetailCompleteness,
+  nutritionPeriodSummary,
+  optionalNutritionNumber,
+  r2,
+  rGram,
+  scaledNutritionDetails,
+  sumMealNutrition,
+} from "./domain/nutrition.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -638,43 +658,43 @@ var DAY_TYPES = [{
   key: "training",
   label: "🏋️ Trening",
   desc: "Siłownia, bieganie, boks, spacer do pracy — Twój normalny dzień",
-  mul: 1.0
+  mul: DAY_TYPE_MULTIPLIERS.training
 }, {
   key: "rest",
   label: "😴 Odpoczynek",
   desc: "Leżysz plackiem lub krótki spacer",
-  mul: 0.85
+  mul: DAY_TYPE_MULTIPLIERS.rest
 }];
 var ACTIVITY = [{
   key: "sedentary",
   label: "🪑 Siedzący",
   desc: "Biuro, auto, dom — max 2km dziennie, zero sportu",
-  mul: 1.2
+  mul: ACTIVITY_MULTIPLIERS.sedentary
 }, {
   key: "light",
   label: "🚶 Lekko aktywny",
   desc: "Spacery 4-10km dziennie, sporadyczny trening",
-  mul: 1.375
+  mul: ACTIVITY_MULTIPLIERS.light
 }, {
   key: "moderate",
   label: "🏋️ Sport 3-4x/tydzień",
   desc: "Regularne treningi 3-4 razy w tygodniu",
-  mul: 1.55
+  mul: ACTIVITY_MULTIPLIERS.moderate
 }, {
   key: "active4",
   label: "⚡ Sport 4-5x/tydzień",
   desc: "Regularne treningi 4-5 razy w tygodniu",
-  mul: 1.65
+  mul: ACTIVITY_MULTIPLIERS.active4
 }, {
   key: "active",
   label: "🔥 Sport 5-6x/tydzień",
   desc: "Intensywne treningi 5-6 razy w tygodniu",
-  mul: 1.725
+  mul: ACTIVITY_MULTIPLIERS.active
 }, {
   key: "very",
   label: "💪 Wyczynowy",
   desc: "2x dziennie treningi lub bardzo ciężka praca fizyczna",
-  mul: 1.9
+  mul: ACTIVITY_MULTIPLIERS.very
 }];
 var STORAGE_PATH = window.location.pathname || "";
 var IS_DEV_STORAGE = STORAGE_PATH.indexOf("/dev/") !== -1 || STORAGE_PATH.indexOf("/matfit-dev/") !== -1 || /\/[0-9a-f]{40}\//i.test(STORAGE_PATH) || new URLSearchParams(window.location.search).get("env") === "dev";
@@ -709,222 +729,6 @@ function useLS(key, def) {
     });
   }, [key]);
   return [v, set];
-}
-var NUTRITION_DETAIL_FIELDS = [{
-  key: "sugars",
-  label: "w tym cukry"
-}, {
-  key: "fiber",
-  label: "błonnik"
-}, {
-  key: "saturatedFat",
-  label: "tł. nasycone"
-}, {
-  key: "salt",
-  label: "sól"
-}];
-function optionalNutritionNumber(value) {
-  if (value === null || value === undefined || value === "") return null;
-  var parsed = parseFloat(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-}
-function nutritionDetailCompleteness(source) {
-  return NUTRITION_DETAIL_FIELDS.filter(function (field) {
-    return optionalNutritionNumber(source && source[field.key]) !== null;
-  }).length;
-}
-function scaledNutritionDetails(source, factor) {
-  return NUTRITION_DETAIL_FIELDS.reduce(function (details, field) {
-    var value = optionalNutritionNumber(source && source[field.key]);
-    details[field.key] = value === null ? null : r2(value * factor);
-    return details;
-  }, {});
-}
-function calcMacro(ings, prods) {
-  var total = {
-    kcal: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    sugars: 0,
-    fiber: 0,
-    saturatedFat: 0,
-    salt: 0
-  };
-  var known = {
-    sugars: true,
-    fiber: true,
-    saturatedFat: true,
-    salt: true
-  };
-  var matched = 0;
-  (ings || []).forEach(function (item) {
-    var p = prods.find(function (x) {
-      return x.id === item.productId;
-    });
-    if (!p) {
-      NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-        known[field.key] = false;
-      });
-      return;
-    }
-    matched++;
-    var f = (parseFloat(item.grams) || 0) / 100;
-    total.kcal += (parseFloat(p.kcal) || 0) * f;
-    total.protein += (parseFloat(p.protein) || 0) * f;
-    total.carbs += (parseFloat(p.carbs) || 0) * f;
-    total.fat += (parseFloat(p.fat) || 0) * f;
-    NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-      var value = optionalNutritionNumber(p[field.key]);
-      if (value === null) known[field.key] = false;else total[field.key] += value * f;
-    });
-  });
-  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-    if (!matched || !known[field.key]) total[field.key] = null;
-  });
-  return total;
-}
-function completeMealNutrition(meal, products) {
-  if (meal && Array.isArray(meal.items) && meal.items.length) {
-    var allProductsAvailable = meal.items.every(function (item) {
-      return products.some(function (product) {
-        return product.id === item.productId;
-      });
-    });
-    if (allProductsAvailable) return calcMacro(meal.items, products);
-  }
-  return _objectSpread({
-    kcal: parseFloat(meal && meal.kcal) || 0,
-    protein: parseFloat(meal && meal.protein) || 0,
-    carbs: parseFloat(meal && meal.carbs) || 0,
-    fat: parseFloat(meal && meal.fat) || 0
-  }, scaledNutritionDetails(meal, 1));
-}
-function sumMealNutrition(meals, products) {
-  var rows = (meals || []).map(function (meal) {
-    return completeMealNutrition(meal, products);
-  });
-  var total = rows.reduce(function (sum, row) {
-    sum.kcal += row.kcal;
-    sum.protein += row.protein;
-    sum.carbs += row.carbs;
-    sum.fat += row.fat;
-    return sum;
-  }, {
-    kcal: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0
-  });
-  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-    total[field.key] = rows.length && rows.every(function (row) {
-      return optionalNutritionNumber(row[field.key]) !== null;
-    }) ? rows.reduce(function (sum, row) {
-      return sum + row[field.key];
-    }, 0) : null;
-  });
-  return total;
-}
-function nutritionPeriodSummary(planer, products, endISO, days, profile, dayTypes) {
-  var dates = [];
-  for (var index = days - 1; index >= 0; index--) dates.push(mfShiftISO(endISO, -index));
-  var loggedDays = 0;
-  var totalKcal = 0;
-  var totalProtein = 0;
-  var totalProteinTarget = 0;
-  var proteinTargetDays = 0;
-  var totals = {};
-  var knownKcal = {};
-  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-    totals[field.key] = 0;
-    knownKcal[field.key] = 0;
-  });
-  dates.forEach(function (date) {
-    var meals = Array.isArray(planer && planer[date]) ? planer[date] : [];
-    if (!meals.length) return;
-    loggedDays++;
-    if (profile) {
-      var dayType = dayTypes && dayTypes[date] || "training";
-      var dayMultiplier = (DAY_TYPES.find(function (option) {
-        return option.key === dayType;
-      }) || DAY_TYPES[0]).mul;
-      totalProteinTarget += calcTargets(profile, dayMultiplier).protein;
-      proteinTargetDays++;
-    }
-    meals.forEach(function (meal) {
-      var nutrition = completeMealNutrition(meal, products);
-      var mealKcal = Math.max(0, parseFloat(nutrition.kcal) || 0);
-      totalKcal += mealKcal;
-      totalProtein += Math.max(0, parseFloat(nutrition.protein) || 0);
-      NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-        var value = optionalNutritionNumber(nutrition[field.key]);
-        if (value === null) return;
-        totals[field.key] += value;
-        knownKcal[field.key] += mealKcal;
-      });
-    });
-  });
-  var details = {};
-  NUTRITION_DETAIL_FIELDS.forEach(function (field) {
-    var coverage = totalKcal > 0 ? knownKcal[field.key] / totalKcal : 0;
-    details[field.key] = {
-      total: totals[field.key],
-      average: loggedDays && coverage >= 0.7 ? totals[field.key] / loggedDays : null,
-      coverage: coverage,
-      coveragePct: Math.round(coverage * 100)
-    };
-  });
-  return {
-    from: dates[0],
-    to: dates[dates.length - 1],
-    days: days,
-    loggedDays: loggedDays,
-    totalKcal: totalKcal,
-    avgKcal: loggedDays ? totalKcal / loggedDays : null,
-    totalProtein: totalProtein,
-    avgProtein: loggedDays ? totalProtein / loggedDays : null,
-    avgProteinTarget: proteinTargetDays ? totalProteinTarget / proteinTargetDays : null,
-    details: details
-  };
-}
-function r2(n) {
-  return Math.round(n * 10) / 10;
-}
-function rGram(n) {
-  return Math.round(n * 100) / 100;
-}
-function fmtPortions(n) {
-  return String(Math.round((parseFloat(n) || 0) * 100) / 100);
-}
-function calcBMR(pr) {
-  if (!pr.weight || !pr.height || !pr.age) return 0;
-  return 10 * pr.weight + 6.25 * pr.height - 5 * pr.age + (pr.gender === "m" ? 5 : -161);
-}
-function calcFormulaTDEE(pr) {
-  return Math.round(calcBMR(pr) * (ACTIVITY.find(function (a) {
-    return a.key === pr.activity;
-  }) || ACTIVITY[2]).mul);
-}
-function calcTDEE(pr) {
-  var calibrated = parseFloat(pr.tdeeManual);
-  return calibrated >= 1200 && calibrated <= 6000 ? Math.round(calibrated) : calcFormulaTDEE(pr);
-}
-function calcNavyBodyFat(pr, measures) {
-  var height = parseFloat(pr.height);
-  var neck = parseFloat(measures.neck);
-  var waist = parseFloat(measures.belly || measures.waist);
-  var hips = parseFloat(measures.hips);
-  if (!height || !neck || !waist) return null;
-  var inch = 1 / 2.54;
-  var result;
-  if (pr.gender === "f") {
-    if (!hips) return null;
-    result = 163.205 * Math.log10((waist + hips - neck) * inch) - 97.684 * Math.log10(height * inch) - 78.387;
-  } else {
-    if (waist <= neck) return null;
-    result = 86.01 * Math.log10((waist - neck) * inch) - 70.041 * Math.log10(height * inch) + 36.76;
-  }
-  return result >= 1 && result <= 60 ? Math.round(result * 10) / 10 : null;
 }
 function mfWeightTrend(entries) {
   var maxDays = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 42;
@@ -1175,40 +979,6 @@ function mfTdeeCalibration(planer, bodyLog, profile, endISO) {
     cooldownDays: cooldownDays,
     periodStart: periodStart,
     periodEnd: periodEnd
-  };
-}
-function calcTargets(pr) {
-  var dayMul = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1.0;
-  var tdee = calcTDEE(pr);
-  if (!tdee) return {
-    kcal: 2800,
-    protein: 180,
-    carbs: 280,
-    fat: 70
-  };
-  var adj = (pr.tdeeAdjust || 0) / 100;
-  var kcal = Math.round(tdee * dayMul * (1 + adj));
-  var protein, fat, carbs;
-  if (pr.macroMode === "manual" && pr.macroProt && pr.macroFat && pr.macroCarb) {
-    // Ręczny % — normalizuj do 100%
-    var total = (parseFloat(pr.macroProt) || 0) + (parseFloat(pr.macroFat) || 0) + (parseFloat(pr.macroCarb) || 0);
-    var pProt = total > 0 ? (parseFloat(pr.macroProt) || 0) / total : 0.3;
-    var pFat = total > 0 ? (parseFloat(pr.macroFat) || 0) / total : 0.25;
-    var pCarb = total > 0 ? (parseFloat(pr.macroCarb) || 0) / total : 0.45;
-    protein = Math.round(kcal * pProt / 4);
-    fat = Math.round(kcal * pFat / 9);
-    carbs = Math.round(kcal * pCarb / 4);
-  } else {
-    // Auto — białko 2.2g/kg, tłuszcz 25%, reszta węgle
-    protein = Math.round((pr.weight || 80) * 2.2);
-    fat = Math.round(kcal * 0.25 / 9);
-    carbs = Math.round((kcal - protein * 4 - fat * 9) / 4);
-  }
-  return {
-    kcal: kcal,
-    protein: protein,
-    carbs: Math.max(carbs, 0),
-    fat: fat
   };
 }
 function MG(_ref) {

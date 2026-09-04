@@ -49,7 +49,8 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Przełączyć plik startowy aplikacji na moduł ES bez zmiany zachowania interfejsu.
 - [x] Wydzielić kopiowanie i wykrywanie duplikatów planera do `src/domain/planner.js` oraz testować je przez bezpośredni import.
 - [x] Wydzielić lokalne daty, tygodnie i formatowanie do `src/domain/date.js`, z testami strefy czasowej i zmiany czasu.
-- [ ] Wydzielać kolejne domeny z `src/app.js` do testowalnych modułów: odżywianie, backup i katalog produktów.
+- [x] Wydzielić makro posiłków, szczegółowe dane odżywcze, BMR, TDEE, cele i Navy BF do `src/domain/nutrition.js`.
+- [ ] Wydzielać kolejne domeny z `src/app.js` do testowalnych modułów: backup i katalog produktów.
 
 ## UI v2.1 — powłoka aplikacji
 
