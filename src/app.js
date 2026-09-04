@@ -1,4 +1,14 @@
 import { clonePlannedMeal, plannedMealCopyKey } from "./domain/planner.js";
+import {
+  getWeek,
+  getWeekNumber,
+  mfDate,
+  mfDaysBetween,
+  mfFormatDate,
+  mfFormatShortDate,
+  mfISODate,
+  mfShiftISO,
+} from "./domain/date.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -666,19 +676,6 @@ var ACTIVITY = [{
   desc: "2x dziennie treningi lub bardzo ciężka praca fizyczna",
   mul: 1.9
 }];
-function getWeek() {
-  var offset = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-  var days = [],
-    d = new Date(),
-    dow = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() + offset * 7);
-  for (var i = 0; i < 7; i++) {
-    var x = new Date(d);
-    x.setDate(d.getDate() - dow + i);
-    days.push(x);
-  }
-  return days;
-}
 var STORAGE_PATH = window.location.pathname || "";
 var IS_DEV_STORAGE = STORAGE_PATH.indexOf("/dev/") !== -1 || STORAGE_PATH.indexOf("/matfit-dev/") !== -1 || /\/[0-9a-f]{40}\//i.test(STORAGE_PATH) || new URLSearchParams(window.location.search).get("env") === "dev";
 var STORAGE_PREFIX = IS_DEV_STORAGE ? "matfit_dev_" : "";
@@ -928,35 +925,6 @@ function calcNavyBodyFat(pr, measures) {
     result = 86.01 * Math.log10((waist - neck) * inch) - 70.041 * Math.log10(height * inch) + 36.76;
   }
   return result >= 1 && result <= 60 ? Math.round(result * 10) / 10 : null;
-}
-function addDaysISO(days) {
-  var d = new Date();
-  d.setDate(d.getDate() + Math.max(0, Math.round(days)));
-  return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
-}
-function mfDate(value) {
-  return new Date(String(value).slice(0, 10) + "T12:00:00");
-}
-function mfISODate(value) {
-  var d = value instanceof Date ? new Date(value) : mfDate(value);
-  var year = d.getFullYear();
-  var month = String(d.getMonth() + 1).padStart(2, "0");
-  var day = String(d.getDate()).padStart(2, "0");
-  return year + "-" + month + "-" + day;
-}
-function mfShiftISO(value, days) {
-  var d = mfDate(value);
-  d.setDate(d.getDate() + Math.round(days || 0));
-  return mfISODate(d);
-}
-function mfDaysBetween(from, to) {
-  return Math.round((mfDate(to) - mfDate(from)) / 86400000);
-}
-function mfFormatDate(value) {
-  return mfDate(value).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
-}
-function mfFormatShortDate(value) {
-  return mfDate(value).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 }
 function mfWeightTrend(entries) {
   var maxDays = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 42;
@@ -2209,12 +2177,6 @@ function ScanModal(_ref9) {
       fontSize: 12
     })
   }, "Dodaj r\u0119cznie")))));
-}
-function getWeekNumber(d) {
-  var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-  var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 }
 function App() {
   var _products$find, _recipes$find, _recipes$find2;
