@@ -5,7 +5,8 @@ Mobilna aplikacja żywieniowa rozwijana na gałęzi `matfit-dev`. Wersja DEV dzi
 ## Struktura
 
 - `index.html` — mały dokument startowy i kolejność ładowania zasobów;
-- `src/app.js` — aktualny kod aplikacji React, wydzielony bez zmiany zachowania;
+- `src/app.js` — moduł startowy aktualnej aplikacji React;
+- `src/domain/` — wydzielona, testowalna logika domenowa, zaczynając od operacji planera;
 - `assets/styles.css` — wspólny system wizualny i układ mobile-first;
 - `vendor/` — przypięte, lokalne wydania React, ReactDOM, PropTypes i Recharts;
 - `legacy/app.jsx` — historyczne, nieużywane źródło zachowane wyłącznie jako punkt odniesienia;
@@ -26,4 +27,4 @@ npm run build
 
 ## Zasady migracji
 
-Pierwszy etap rozdziela działający monolit na pliki bez przepisywania interfejsu i bez zmiany kluczy localStorage. Kolejne moduły będą wydzielane z `src/app.js` małymi, testowanymi partiami. Dzięki temu aplikacja zachowuje obecną funkcjonalność podczas porządkowania kodu.
+Pierwszy etap rozdzielił działający monolit na pliki bez przepisywania interfejsu i bez zmiany kluczy localStorage. Drugi etap przenosi logikę domenową z `src/app.js` do małych modułów ES testowanych przez bezpośredni import. Dzięki temu aplikacja zachowuje obecną funkcjonalność podczas porządkowania kodu.

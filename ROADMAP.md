@@ -43,7 +43,12 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Dodać powtarzalny build statyczny do katalogu `dist` bez pobierania zależności z sieci.
 - [x] Poprawić manifest i service worker tak, aby działały z adresem DEV umieszczonym w podkatalogu oraz aktualizowały cache.
 - [x] Zachować poprzedni plik `app.jsx` wyłącznie w katalogu `legacy`, poza paczką produkcyjną.
-- [ ] Wydzielać kolejne domeny z `src/app.js` do testowalnych modułów: daty, odżywianie, planer, backup i katalog produktów.
+
+## Migracja React — etap 2
+
+- [x] Przełączyć plik startowy aplikacji na moduł ES bez zmiany zachowania interfejsu.
+- [x] Wydzielić kopiowanie i wykrywanie duplikatów planera do `src/domain/planner.js` oraz testować je przez bezpośredni import.
+- [ ] Wydzielać kolejne domeny z `src/app.js` do testowalnych modułów: daty, odżywianie, backup i katalog produktów.
 
 ## UI v2.1 — powłoka aplikacji
 
