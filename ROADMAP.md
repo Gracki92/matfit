@@ -1,6 +1,6 @@
 # MatFit Pro — roadmap
 
-Stan bazowy: 1 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
+Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
 
 ## Aktualny etap — rdzeń aplikacji
 
@@ -52,23 +52,105 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] korelacje: waga–pas, waga–BF, pas–BF oraz wpisany deficyt–tempo zmiany masy;
 - [x] odblokowanie korelacji dopiero przy wystarczającej liczbie serii i rozpiętości minimum 42 dni;
 - [x] walidacja pomiarów oraz synchronizacja najnowszej wagi z profilem;
-- [x] zgodność nowych danych celu z istniejącym localStorage i Backup/Restore PRO.
+- [x] zgodność nowych danych celu z istniejącym localStorage i Backup/Restore PRO;
 - [x] oddzielna przestrzeń danych DEV z jednorazowym, bezpiecznym skopiowaniem dotychczasowych danych do testów.
 
-## Dalszy rozwój
+## Strategia produktu — backlog zarządu
 
-Kolejność po zatwierdzeniu obecnego DEV:
+### 1. Domknięcie fundamentu
 
-1. test raportu, prognozy i kalibracji TDEE na prawdziwej historii użytkownika;
-2. całościowy audyt produktu oraz makiety nowego interfejsu dla motywu Royal i Light — bez dokładania trzeciego niespójnego wyglądu;
-3. migracja pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania;
-4. wdrożenie zaakceptowanego interfejsu v2 na wspólnym systemie komponentów i tokenów obu motywów;
-5. aplikacja Android: tryb offline, powiadomienia, widget, Health Connect; Garmin po ustabilizowaniu warstwy aktywności;
-6. gotowe plany treningowe: dom bez sprzętu, gumy, hantle, siłownia, FBW, push–pull i inne;
-7. poziomy beginner, intermediate i advanced oraz pakiety funkcjonalne i mobilnościowe;
-8. profil treningowy, progresja obciążeń, historia rekordów i generator planów AI z ograniczeniami bezpieczeństwa;
-9. raporty i eksport dla trenera/dietetyka, streak oparty na zachowaniu zamiast sztucznego odhaczania;
-10. bezpieczny backend do zdjęć AI kart, format social, onboarding, dostępność, telemetria błędów, prywatność i Google Play.
+- [ ] Przetestować cały obecny DEV na prawdziwych danych: planer, elastyczne porcje, raport 7-dniowy, cel sylwetkowy, prognozę i kalibrację TDEE.
+- [ ] Wykonać całościowy audyt braków, błędów, dostępności oraz wygody najważniejszych ścieżek użytkownika.
+- [ ] Przygotować makiety nowego interfejsu dla motywów Royal i Light oraz jeden wspólny system komponentów.
+- [ ] Przenieść aplikację z pojedynczego HTML-a do utrzymywalnego projektu React z testami, wersjonowaniem danych i procesem budowania.
+- [ ] Dodać onboarding dopasowujący widok do celu, diety, poziomu zaawansowania i preferowanego zakresu danych.
+
+### 2. Nutrition Data v2 i duża baza produktów
+
+- [ ] Rozszerzyć ręcznie zweryfikowaną bazę podstawowych produktów używanych w Polsce.
+- [ ] Zbudować duży katalog markowych produktów z polskich sklepów: wyszukiwanie po nazwie, marce, sklepie i kodzie EAN.
+- [ ] Zastosować model hybrydowy: mała baza startowa offline + legalne źródła online + lokalna pamięć ostatnich i ulubionych produktów.
+- [ ] Przed integracją każdego zewnętrznego źródła wykonać audyt licencji; nie kopiować ani nie scrapować bazy konkurencji.
+- [ ] Zapisywać pochodzenie produktu, datę ostatniej weryfikacji, kompletność danych i poziom zaufania do wartości.
+- [ ] Scalać duplikaty po EAN oraz umożliwić zgłoszenie i poprawienie błędnych danych bez nadpisywania pewnych danych niezweryfikowaną wersją.
+- [ ] Rozbudować model wartości odżywczych. Domyślnie: kcal oraz B/W/T; opcjonalnie: **w tym cukry, błonnik, kwasy tłuszczowe nasycone i sól**.
+- [ ] Traktować „w tym cukry” jako część węglowodanów, a nie czwarte makro „C”; rozróżniać cukry ogółem od cukrów dodanych tylko wtedy, gdy źródło faktycznie to podaje.
+- [ ] Dodać opcjonalny widok mikroelementów: sód, potas, wapń, żelazo, magnez oraz wybrane witaminy. Brak danych ma oznaczać „brak danych”, nigdy zero.
+- [ ] Pokazywać mikroelementy przede wszystkim jako średnią 7- lub 30-dniową, aby widok pomagał ocenić dietę, a nie zmuszał do codziennego polowania na każdy miligram.
+- [ ] Rozszerzyć skaner o OCR etykiety żywieniowej, aby można było dodać produkt, którego nie ma jeszcze w katalogu.
+
+### 3. Szybkie dodawanie jedzenia i asystent AI
+
+- [ ] Dodać szacowanie posiłku ze zdjęcia: rozpoznane składniki, orientacyjne przedziały gramatur i kcal, poziom pewności oraz pytania doprecyzowujące.
+- [ ] Przed zapisaniem posiłku użytkownik zatwierdza lub poprawia składniki i porcje; AI nie przedstawia wyniku jako dokładnego pomiaru.
+- [ ] Umożliwić zdjęcie z góry i z boku albo użycie znanego rozmiaru talerza jako punktu odniesienia.
+- [ ] Dodać szybkie wyszukiwanie ostatnich produktów, ulubione, szablony posiłków i kopiowanie posiłku z poprzedniego dnia.
+- [ ] Rozważyć dodawanie głosowe, np. „200 g skyru i banan”, zawsze z ekranem potwierdzenia.
+- [ ] Obsługiwać AI wyłącznie przez bezpieczny backend; żaden klucz API nie może znaleźć się w aplikacji klienckiej.
+
+### 4. Przepisy według produktów, które są w domu
+
+- [ ] Dodać wyszukiwarkę „mam w domu”, w której jeden lub kilka składników można oznaczyć jako obowiązkową bazę przepisu.
+- [ ] Dodać tryb „zużyj najpierw” z terminem ważności, spiżarnią i przypomnieniami o kończących się produktach.
+- [ ] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki.
+- [ ] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, ale jasno oznaczać zmianę i ponownie przeliczać makro.
+- [ ] Połączyć przepisy ze zbiorczą listą zakupów oraz dodać import przepisu z linku do późniejszej weryfikacji.
+
+### 5. Edukacja i profile żywieniowe — bez udawania lekarza
+
+- [ ] Stworzyć krótkie, aktualizowane ścieżki edukacyjne z podaniem źródeł i daty przeglądu, zamiast automatycznych diagnoz i „diet leczniczych”.
+- [ ] Rozdzielić alergię, celiakię, nietolerancję, preferencję i czasową strategię eliminacyjną — to nie są zamienne pojęcia.
+- [ ] SIBO: wyjaśniać, że nie oznacza automatycznie diety bezglutenowej; ewentualne strategie, np. low-FODMAP, mają służyć kontroli objawów i wymagają rozsądnego prowadzenia.
+- [ ] Insulinooporność: uwzględniać nie tylko indeks glikemiczny, lecz także ilość i jakość węglowodanów, błonnik, skład całego posiłku oraz regularność.
+- [ ] Histamina: oznaczać ograniczoną i zmienną jakość dowodów oraz różnice między listami produktów; prowadzić użytkownika przez dziennik objawów, a nie przez stałą, szeroką eliminację.
+- [ ] Dodać opcjonalne filtry i ostrzeżenia dla alergenów, glutenu, laktozy, low-FODMAP i innych profili tylko tam, gdzie dane produktu są wystarczające.
+- [ ] Dodać dziennik objawów i ostrożne korelacje z posiłkami, snem, stresem i aktywnością; korelacja nigdy nie będzie opisywana jako przyczyna.
+- [ ] Przy niepokojących objawach pokazywać jasne czerwone flagi i zalecenie kontaktu z lekarzem lub dietetykiem.
+
+### 6. Treningi i Trener AI
+
+- [ ] Dodać gotowe treningi na 20, 30, 40 i 60 minut według celu, intensywności, miejsca i dostępnego sprzętu.
+- [ ] Obsłużyć dom bez sprzętu, gumy, hantle i siłownię oraz warianty FBW, góra/dół, push–pull, mobilność, rozciąganie i kondycję.
+- [ ] Dodać poziomy beginner, intermediate i advanced, profil treningowy, historię wyników, progresję i planowane tygodnie lżejsze.
+- [ ] Stworzyć zweryfikowaną bibliotekę ćwiczeń z techniką, najczęstszymi błędami, łatwiejszą i trudniejszą wersją.
+- [ ] Trener AI ma układać plan z biblioteki i ograniczeń użytkownika, a nie wymyślać dowolne ćwiczenia bez kontroli.
+- [ ] Dla bólu, strzelania, ograniczonego zakresu ruchu lub świeżego urazu najpierw uruchamiać wywiad bezpieczeństwa i czerwone flagi; AI nie diagnozuje biodra, kręgosłupa ani innego problemu.
+- [ ] Pakiety typu „biodra i pośladki”, „lędźwie”, „mobilność” traktować jako ogólny trening funkcjonalny; ścieżki rehabilitacyjne wymagają przeglądu specjalisty.
+- [ ] Dodać ocenę gotowości, reguły przerwania ćwiczenia i bezpieczną zmianę planu po zgłoszeniu bólu.
+- [ ] Po ustabilizowaniu aplikacji połączyć aktywność z Health Connect, a następnie rozważyć Garmin.
+
+### 7. Baza przepisów i pełne filtry — etap końcowy
+
+- [ ] Rozszerzać bazę dopiero po ustabilizowaniu mechanizmu przepisów; ostateczny zestaw receptur zatwierdza zarząd MatFit po realnych testach gotowania.
+- [ ] Zapewnić mocne przepisy wytrawne i słodkie, a nie dużą liczbę przypadkowych pozycji.
+- [ ] Dodać czas całkowity: do 10, do 20, do 30 i powyżej 30 minut.
+- [ ] Dodać filtry: słodkie/wytrawne, posiłek, kalorie, białko, trudność, sprzęt, wegetariańskie, bez glutenu, bez laktozy i alergeny.
+- [ ] Tagów zdrowotnych nie opierać wyłącznie na deklaracji autora. Aplikacja powinna sprawdzać składniki i pokazywać ostrzeżenie, jeśli nie może potwierdzić oznaczenia lub ryzyka zanieczyszczenia krzyżowego.
+- [ ] Pozwolić użytkownikom dodawać własne przepisy i tagi, ale oddzielić treści prywatne, społecznościowe i zweryfikowane przez MatFit.
+
+### 8. Platforma i przewaga konkurencyjna
+
+- [ ] Dodać konta i szyfrowaną synchronizację w chmurze dopiero po dopracowaniu lokalnego modelu danych; zachować pełny eksport i usuwanie konta.
+- [ ] Przygotować raporty PDF/CSV dla trenera lub dietetyka bez automatycznego udostępniania danych.
+- [ ] Dodać prywatność od początku: świadome zgody, minimalizację danych, politykę retencji oraz możliwość wyłączenia funkcji AI.
+- [ ] Mierzyć wyłącznie użyteczne zdarzenia i błędy bez zbierania treści dziennika żywieniowego bez wyraźnej zgody.
+- [ ] Zbudować prosty kanał zgłaszania błędnych produktów, przepisów i sugestii użytkowników.
+- [ ] Funkcje społecznościowe i monetyzację projektować dopiero po potwierdzeniu, że planer, baza, przepisy i raporty dają samodzielną wartość.
+
+## Kolejność wykonania
+
+1. test i poprawki obecnego DEV;
+2. audyt całej aplikacji oraz makiety UI v2;
+3. migracja do projektu React i wdrożenie zaakceptowanego UI;
+4. Nutrition Data v2: cukry, błonnik, tłuszcze nasycone, sól i opcjonalne mikroelementy;
+5. większa baza produktów podstawowych, następnie legalny katalog markowych produktów z polskich sklepów;
+6. szybsze logowanie: ostatnie, ulubione, szablony, OCR etykiety;
+7. wyszukiwanie przepisów po składnikach, spiżarnia, zamienniki i lista zakupów;
+8. zdjęcie posiłku i pozostałe funkcje AI po uruchomieniu bezpiecznego backendu;
+9. edukacja i dziennik objawów z recenzją merytoryczną;
+10. treningi podstawowe, następnie bezpieczny Trener AI;
+11. Android, tryb offline, powiadomienia, Health Connect i później Garmin;
+12. finalne rozszerzenie oraz ręczne zatwierdzenie bazy przepisów i jej filtrów.
 
 ## Zasady produktu
 
@@ -78,4 +160,7 @@ Kolejność po zatwierdzeniu obecnego DEV:
 - małe, testowalne etapy zamiast wielu równoległych zmian;
 - wersja DEV przed przeniesieniem na produkcję;
 - integracje treningowe i zdrowotne nie mogą udawać diagnozy medycznej;
+- wartości szacowane przez AI muszą być wyraźnie oznaczone i możliwe do poprawienia przed zapisem;
+- nieznana wartość odżywcza oznacza brak danych, a nie zero;
+- zewnętrzne katalogi produktów wymagają legalnego źródła, atrybucji i kontroli jakości;
 - przed Google Play kod zostanie przeniesiony z pojedynczego HTML-a do utrzymywalnego projektu React z procesem budowania i warstwą Android.
