@@ -53,10 +53,17 @@ import {
 import {
   filterRecipesByPantry,
   parsePantryTerms,
+  recipePantryMatch,
   recipeSubstitutionOptions,
   replaceRecipeIngredient,
   summarizeRecipeSubstitutions,
 } from "./domain/recipes.js";
+import {
+  buildShoppingMap,
+  mergeShoppingQuantities,
+  missingRecipeShoppingItems,
+  normalizeShoppingQuantities,
+} from "./domain/shopping.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -1843,6 +1850,10 @@ function App() {
     _useLS16 = _slicedToArray(_useLS15, 2),
     zChecked = _useLS16[0],
     setZChecked = _useLS16[1];
+  var _useLSShoppingManual = useLS("fb10_shopping_manual", {}),
+    _useLSShoppingManual2 = _slicedToArray(_useLSShoppingManual, 2),
+    shoppingManual = _useLSShoppingManual2[0],
+    setShoppingManual = _useLSShoppingManual2[1];
   var _useState29 = useState(TODAY),
     _useState30 = _slicedToArray(_useState29, 2),
     cpFrom = _useState30[0],
@@ -3067,25 +3078,35 @@ function App() {
     }
   }
   function getIngMap(days) {
-    var map = {};
+    var plannedItems = [];
     for (var dayIndex = 0; dayIndex < days; dayIndex++) {
       var dayKey = mfShiftISO(selectedDay || TODAY, dayIndex);
       (planer[dayKey] || []).forEach(function (m) {
         (m.items || []).forEach(function (item) {
-          var p = products.find(function (x) {
-            return x.id === item.productId;
-          });
-          if (!p) return;
-          if (!map[p.id]) map[p.id] = {
-            name: p.name,
-            qty: 0,
-            packageSize: p.packageSize || null
-          };
-          map[p.id].qty += item.grams;
+          plannedItems.push(item);
         });
       });
     }
-    return Object.entries(map);
+    return Object.entries(buildShoppingMap(plannedItems, products, shoppingManual));
+  }
+  function addMissingRecipeToShopping(currentItems, pantryMatch, recipeName) {
+    var items = missingRecipeShoppingItems(currentItems, pantryMatch && pantryMatch.missingIngredientIndexes);
+    if (!items.length) {
+      toast_("Nie ma brakujących składników");
+      return;
+    }
+    setShoppingManual(function (previous) {
+      return mergeShoppingQuantities(previous, items);
+    });
+    setZChecked(function (previous) {
+      var next = _objectSpread({}, previous);
+      items.forEach(function (item) {
+        delete next[String(item.productId)];
+      });
+      return next;
+    });
+    var itemLabel = items.length === 1 ? " składnik" : items.length < 5 ? " składniki" : " składników";
+    toast_("Dodano " + items.length + itemLabel + " z: " + recipeName);
   }
   function exportZ() {
     var items = getIngMap(zDays);
@@ -3121,7 +3142,8 @@ function App() {
       bodyLog: bodyLog,
       waterLog: waterLog,
       waterSettings: waterSettings,
-      shoppingChecked: zChecked
+      shoppingChecked: zChecked,
+      shoppingManual: normalizeShoppingQuantities(shoppingManual)
     });
   }
   function exportData() {
@@ -3222,6 +3244,7 @@ function App() {
         manualTarget: ""
       }, incoming.waterSettings));
       setZChecked(incoming.shoppingChecked);
+      setShoppingManual(incoming.shoppingManual);
     } else {
       if (present.theme) setTn(incoming.theme);
       if (present.profile) setProfile(function (prev) {
@@ -3265,6 +3288,9 @@ function App() {
       });
       if (present.shoppingChecked) setZChecked(function (prev) {
         return _objectSpread(_objectSpread({}, prev), incoming.shoppingChecked);
+      });
+      if (present.shoppingManual) setShoppingManual(function (prev) {
+        return _objectSpread(_objectSpread({}, normalizeShoppingQuantities(prev)), normalizeShoppingQuantities(incoming.shoppingManual));
       });
     }
     setBackupResult({
@@ -3317,6 +3343,8 @@ function App() {
     pantry: recipePantry
   });
   var pantryTerms = parsePantryTerms(recipePantry);
+  var normalizedShoppingManual = normalizeShoppingQuantities(shoppingManual);
+  var manualShoppingCount = Object.keys(normalizedShoppingManual).length;
   var tdee = calcTDEE(profile),
     bmr = Math.round(calcBMR(profile));
   var weeklySummary = mfWeeklySummary(planer, bodyLog, profile, dayTypes, TODAY);
@@ -4352,8 +4380,7 @@ function App() {
     copy: pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
     T: T
   }), visibleRecipeMatches.map(function (_refRecipeMatch) {
-    var r = _refRecipeMatch.recipe,
-      pantryMatch = _refRecipeMatch.pantry;
+    var r = _refRecipeMatch.recipe;
     var exp = expanded === r.id,
       sc = scales[r.id] || r.servings,
       f = sc / r.servings,
@@ -4376,6 +4403,9 @@ function App() {
       finishedWeight = originalFinishedWeight > 0 && baseIngredientWeight > 0 ? originalFinishedWeight * (currentIngredientWeight / baseIngredientWeight) : 0,
       per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0,
       substitutionSummary = summarizeRecipeSubstitutions(r.ingredients, currentItems, products),
+      currentPantryMatch = recipePantryMatch({
+        ingredients: currentItems
+      }, products, recipePantry),
       isCustomized = !!variant;
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
@@ -4422,14 +4452,14 @@ function App() {
         color: T.text2,
         marginTop: 2
       }
-    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.custom === false ? " · MatFit" : " · Własny"), pantryMatch.active && /*#__PURE__*/React.createElement("div", {
+    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.custom === false ? " · MatFit" : " · Własny"), currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
       style: {
-        color: pantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.acc,
+        color: currentPantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.acc,
         fontSize: 10,
         fontWeight: 700,
         marginTop: 4
       }
-    }, pantryMatch.matchPercent, "% składników masz · ", pantryMatch.missingIngredients.length === 0 ? "komplet" : "brakuje " + pantryMatch.missingIngredients.length)), /*#__PURE__*/React.createElement("button", {
+    }, currentPantryMatch.matchPercent, "% składników masz · ", currentPantryMatch.missingIngredients.length === 0 ? "komplet" : "brakuje " + currentPantryMatch.missingIngredients.length)), /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": isFav(r.id) ? "Usuń z ulubionych: " + r.name : "Dodaj do ulubionych: " + r.name,
       "aria-pressed": isFav(r.id),
@@ -4470,10 +4500,10 @@ function App() {
       onClick: function onClick(e) {
         return e.stopPropagation();
       }
-    }, pantryMatch.active && /*#__PURE__*/React.createElement("div", {
+    }, currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
       style: {
         background: T.surf2,
-        border: "1px solid " + (pantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.border),
+        border: "1px solid " + (currentPantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.border),
         borderRadius: 9,
         color: T.text2,
         fontSize: 10,
@@ -4481,11 +4511,23 @@ function App() {
         marginTop: 10,
         padding: "8px 9px"
       }
-    }, pantryMatch.missingIngredients.length === 0 ? "✓ Masz wszystkie składniki tego przepisu." : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
+    }, currentPantryMatch.missingIngredients.length === 0 ? "✓ Masz wszystkie składniki tego przepisu." : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
       style: {
         color: T.text
       }
-    }, "Brakuje: "), pantryMatch.missingIngredients.join(", "))), /*#__PURE__*/React.createElement("div", {
+    }, "Brakuje: "), currentPantryMatch.missingIngredients.join(", "), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return addMissingRecipeToShopping(currentItems, currentPantryMatch, r.name);
+      },
+      style: _objectSpread(_objectSpread({}, btnA), {}, {
+        display: "block",
+        fontSize: 10,
+        marginTop: 7,
+        padding: "7px 9px",
+        width: "100%"
+      })
+    }, "+ Dodaj brakujące do zakupów"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",
@@ -5155,6 +5197,11 @@ function App() {
           delete next[p.id];
           return next;
         });
+        setShoppingManual(function (prev) {
+          var next = _objectSpread({}, prev);
+          delete next[p.id];
+          return next;
+        });
       },
       style: {
         background: "none",
@@ -5167,7 +5214,7 @@ function App() {
   })), page === "zakupy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
     eyebrow: "Z planu na listę",
     title: "Lista zakupów",
-    subtitle: "MatFit sumuje składniki z wybranego zakresu i przelicza potrzebne opakowania.",
+    subtitle: "MatFit łączy składniki z planera i ręcznie dodane braki oraz przelicza potrzebne opakowania.",
     T: T
   }), /*#__PURE__*/React.createElement("div", {
     className: "mf-chip-row",
@@ -5203,7 +5250,38 @@ function App() {
       textAlign: "center",
       margin: "-5px 0 10px"
     }
-  }, zDays === 1 ? "Zakupy na " + mfFormatShortDate(selectedDay || TODAY) : "Zakupy od " + mfFormatShortDate(selectedDay || TODAY) + " do " + mfFormatShortDate(mfShiftISO(selectedDay || TODAY, zDays - 1))), /*#__PURE__*/React.createElement("div", {
+  }, zDays === 1 ? "Zakupy na " + mfFormatShortDate(selectedDay || TODAY) : "Zakupy od " + mfFormatShortDate(selectedDay || TODAY) + " do " + mfFormatShortDate(mfShiftISO(selectedDay || TODAY, zDays - 1))), manualShoppingCount > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      alignItems: "center",
+      background: T.surf2,
+      border: "1px solid " + T.border,
+      borderRadius: 10,
+      display: "flex",
+      gap: 8,
+      marginBottom: 10,
+      padding: "8px 10px"
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: T.text2,
+      flex: 1,
+      fontSize: 10
+    }
+  }, "Dodane ręcznie z przepisów: ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: T.text
+    }
+  }, manualShoppingCount)), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setShoppingManual({});
+      toast_("Usunięto ręcznie dodane zakupy");
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      fontSize: 9,
+      padding: "6px 8px"
+    })
+  }, "Wyczyść dodane")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 8,
@@ -5242,6 +5320,8 @@ function App() {
         _ref20$ = _ref20[1],
         name = _ref20$.name,
         qty = _ref20$.qty,
+        plannedQty = _ref20$.plannedQty,
+        manualQty = _ref20$.manualQty,
         packageSize = _ref20$.packageSize;
       var chk = zChecked[id] || false;
       var pkgs = packageSize ? Math.ceil(qty / packageSize) : null;
@@ -5297,7 +5377,14 @@ function App() {
           fontSize: 11,
           color: T.text3
         }
-      }, " \xB7 ", packageSize, "g/szt.")), /*#__PURE__*/React.createElement("div", {
+      }, " \xB7 ", packageSize, "g/szt."), manualQty > 0 && /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "block",
+          fontSize: 9,
+          color: T.text3,
+          marginTop: 2
+        }
+      }, plannedQty > 0 ? "z planera " + Math.round(plannedQty) + " g · dodane " + Math.round(manualQty) + " g" : "dodane z przepisu · " + Math.round(manualQty) + " g")), /*#__PURE__*/React.createElement("div", {
         style: {
           textAlign: "right",
           flexShrink: 0
@@ -5972,7 +6059,7 @@ function App() {
       color: T.text3,
       lineHeight: 1.5
     }
-  }, "Kopia obejmuje profil, planer, pomiary, wodę, przepisy, produkty, ulubione, typy dni, listę zakupów i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
+  }, "Kopia obejmuje profil, planer, pomiary, wodę, przepisy, produkty, ulubione, typy dni, listę zakupów wraz z ręcznie dodanymi brakami i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
     var selectedWaterDay = waterLog[waterDate] || {};
     var waterEntries = Array.isArray(selectedWaterDay.entries) ? selectedWaterDay.entries : [];
     var measurementDates = Object.keys(bodyLog || {}).filter(function (date) {

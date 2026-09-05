@@ -2,7 +2,7 @@ export const MAX_BACKUP_FILE_BYTES = 15 * 1024 * 1024;
 
 const APP_NAME = "MatFit Pro";
 const SCHEMA_VERSION = 1;
-const DATA_VERSION = 24;
+const DATA_VERSION = 25;
 const MAX_NESTING_DEPTH = 20;
 const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
@@ -22,6 +22,7 @@ const SECTION_ALIASES = Object.freeze({
   waterLog: ["waterLog", "water"],
   waterSettings: ["waterSettings", "water_settings"],
   shoppingChecked: ["shoppingChecked", "zakupy"],
+  shoppingManual: ["shoppingManual", "shopping_manual"],
 });
 
 const SECTION_LABELS = Object.freeze({
@@ -40,6 +41,7 @@ const SECTION_LABELS = Object.freeze({
   waterLog: "woda",
   waterSettings: "ustawienia wody",
   shoppingChecked: "lista zakupów",
+  shoppingManual: "ręcznie dodane zakupy",
 });
 
 const OBJECT_SECTIONS = [
@@ -51,6 +53,7 @@ const OBJECT_SECTIONS = [
   "waterLog",
   "waterSettings",
   "shoppingChecked",
+  "shoppingManual",
 ];
 const ARRAY_SECTIONS = [
   "recipes",
@@ -162,6 +165,7 @@ export function normalizeBackupData(raw, options = {}) {
     waterLog: readNormalizedSection(source, "waterLog", {}),
     waterSettings: readNormalizedSection(source, "waterSettings", {}),
     shoppingChecked: readNormalizedSection(source, "shoppingChecked", {}),
+    shoppingManual: readNormalizedSection(source, "shoppingManual", {}),
   };
   const missing = Object.keys(present)
     .filter((key) => !present[key])

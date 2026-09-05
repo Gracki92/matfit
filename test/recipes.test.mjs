@@ -49,6 +49,7 @@ test("wszystkie wpisane składniki są obowiązkowe", () => {
   assert.equal(results.length, 1);
   assert.equal(results[0].recipe.id, "chicken-rice");
   assert.equal(results[0].pantry.matchPercent, 67);
+  assert.deepEqual(results[0].pantry.missingIngredientIndexes, [2]);
   assert.deepEqual(results[0].pantry.missingIngredients, ["Brokuł"]);
 });
 

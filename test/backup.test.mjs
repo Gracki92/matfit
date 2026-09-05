@@ -26,6 +26,7 @@ function completeData() {
     waterLog: { "2026-09-04": { amount: 2500 } },
     waterSettings: { manualTarget: 3000 },
     shoppingChecked: { "own-product": true },
+    shoppingManual: { "own-product": 250 },
   };
 }
 
@@ -34,7 +35,7 @@ test("eksport tworzy wersjonowaną kopię z ustaloną datą", () => {
   const backup = createBackupData(data, "2026-09-04T21:00:00.000Z");
   assert.equal(backup.app, "MatFit Pro");
   assert.equal(backup.schemaVersion, 1);
-  assert.equal(backup.version, 24);
+  assert.equal(backup.version, 25);
   assert.equal(backup.exportedAt, "2026-09-04T21:00:00.000Z");
   assert.strictEqual(backup.data, data);
   assert.equal(MAX_BACKUP_FILE_BYTES, 15 * 1024 * 1024);
@@ -45,6 +46,7 @@ test("pełna współczesna kopia przechodzi normalizację i podsumowanie", () =>
   assert.equal(normalized.legacy, false);
   assert.equal(normalized.missing.length, 0);
   assert.equal(normalized.data.profile.weight, 97);
+  assert.equal(normalized.data.shoppingManual["own-product"], 250);
   assert.deepEqual(normalized.summary, {
     planDays: 1,
     measurements: 1,

@@ -197,7 +197,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [ ] Dodać tryb „zużyj najpierw” z terminem ważności, spiżarnią i przypomnieniami o kończących się produktach.
 - [x] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki z tej samej kategorii produktu.
 - [x] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, jasno oznaczać zmianę, pokazywać różnicę i ponownie przeliczać makro.
-- [ ] Połączyć przepisy ze zbiorczą listą zakupów oraz dodać import przepisu z linku do późniejszej weryfikacji.
+- [x] Połączyć brakujące składniki przepisu ze zbiorczą listą zakupów bez dodawania fikcyjnego posiłku do planera.
+- [ ] Dodać import przepisu z linku do późniejszej weryfikacji.
 
 ### 5. Edukacja i profile żywieniowe — bez udawania lekarza
 

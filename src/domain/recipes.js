@@ -64,6 +64,9 @@ export function recipePantryMatch(recipe, products, pantryValue) {
     active: terms.length > 0,
     matchesAll: terms.length > 0 && matchedTerms.length === terms.length,
     matchedTerms,
+    missingIngredientIndexes: ingredients
+      .filter((ingredient) => !matchedIngredientIndexes.has(ingredient.index))
+      .map((ingredient) => ingredient.index),
     missingIngredients,
     matchPercent: ingredients.length > 0
       ? Math.round((matchedIngredientIndexes.size / ingredients.length) * 100)
