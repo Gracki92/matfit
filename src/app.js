@@ -64,6 +64,14 @@ import {
   missingRecipeShoppingItems,
   normalizeShoppingQuantities,
 } from "./domain/shopping.js";
+import {
+  normalizePantryEntries,
+  pantryExpiryStatus,
+  rankRecipeMatchesByExpiry,
+  removePantryEntry,
+  sortPantryEntries,
+  upsertPantryEntry,
+} from "./domain/pantry.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -1838,6 +1846,26 @@ function App() {
     _useStateRecipePantry2 = _slicedToArray(_useStateRecipePantry, 2),
     recipePantry = _useStateRecipePantry2[0],
     setRecipePantry = _useStateRecipePantry2[1];
+  var _useLSPantry = useLS("fb10_pantry", []),
+    _useLSPantry2 = _slicedToArray(_useLSPantry, 2),
+    pantryEntries = _useLSPantry2[0],
+    setPantryEntries = _useLSPantry2[1];
+  var _useStatePantryOpen = useState(false),
+    _useStatePantryOpen2 = _slicedToArray(_useStatePantryOpen, 2),
+    pantryOpen = _useStatePantryOpen2[0],
+    setPantryOpen = _useStatePantryOpen2[1];
+  var _useStateUseFirst = useState(false),
+    _useStateUseFirst2 = _slicedToArray(_useStateUseFirst, 2),
+    useFirst = _useStateUseFirst2[0],
+    setUseFirst = _useStateUseFirst2[1];
+  var _useStatePantryForm = useState({
+      productId: "",
+      grams: "",
+      expiresAt: ""
+    }),
+    _useStatePantryForm2 = _slicedToArray(_useStatePantryForm, 2),
+    pantryForm = _useStatePantryForm2[0],
+    setPantryForm = _useStatePantryForm2[1];
   var _useStateProductCategory = useState("all"),
     _useStateProductCategory2 = _slicedToArray(_useStateProductCategory, 2),
     productCategory = _useStateProductCategory2[0],
@@ -3108,6 +3136,43 @@ function App() {
     var itemLabel = items.length === 1 ? " składnik" : items.length < 5 ? " składniki" : " składników";
     toast_("Dodano " + items.length + itemLabel + " z: " + recipeName);
   }
+  function savePantryProduct() {
+    var product = products.find(function (entry) {
+      return String(entry.id) === String(pantryForm.productId);
+    });
+    var grams = parseFloat(pantryForm.grams);
+    if (!product) {
+      toast_("Wybierz produkt do spiżarni");
+      return;
+    }
+    if (!grams || grams <= 0 || grams > 100000) {
+      toast_("Podaj ilość od 1 do 100 000 g");
+      return;
+    }
+    setPantryEntries(function (previous) {
+      return upsertPantryEntry(previous, {
+        id: "pantry_" + product.id,
+        productId: product.id,
+        grams: rGram(grams),
+        expiresAt: pantryForm.expiresAt,
+        addedAt: TODAY
+      });
+    });
+    setPantryForm({
+      productId: "",
+      grams: "",
+      expiresAt: ""
+    });
+    toast_("Zapisano w spiżarni: " + product.name);
+  }
+  function deletePantryProduct(productId) {
+    setPantryEntries(function (previous) {
+      var next = removePantryEntry(previous, productId);
+      if (!next.length) setUseFirst(false);
+      return next;
+    });
+    toast_("Usunięto ze spiżarni");
+  }
   function exportZ() {
     var items = getIngMap(zDays);
     if (!items.length) {
@@ -3143,7 +3208,8 @@ function App() {
       waterLog: waterLog,
       waterSettings: waterSettings,
       shoppingChecked: zChecked,
-      shoppingManual: normalizeShoppingQuantities(shoppingManual)
+      shoppingManual: normalizeShoppingQuantities(shoppingManual),
+      pantry: normalizePantryEntries(pantryEntries)
     });
   }
   function exportData() {
@@ -3245,6 +3311,7 @@ function App() {
       }, incoming.waterSettings));
       setZChecked(incoming.shoppingChecked);
       setShoppingManual(incoming.shoppingManual);
+      setPantryEntries(incoming.pantry);
     } else {
       if (present.theme) setTn(incoming.theme);
       if (present.profile) setProfile(function (prev) {
@@ -3292,6 +3359,11 @@ function App() {
       if (present.shoppingManual) setShoppingManual(function (prev) {
         return _objectSpread(_objectSpread({}, normalizeShoppingQuantities(prev)), normalizeShoppingQuantities(incoming.shoppingManual));
       });
+      if (present.pantry) setPantryEntries(function (prev) {
+        return normalizePantryEntries(incoming.pantry).reduce(function (next, entry) {
+          return upsertPantryEntry(next, entry);
+        }, normalizePantryEntries(prev));
+      });
     }
     setBackupResult({
       mode: mode,
@@ -3337,11 +3409,18 @@ function App() {
   var _countProductTypes = countProductTypes(products),
     userProductCount = _countProductTypes.user,
     baseProductCount = _countProductTypes.base;
-  var visibleRecipeMatches = filterRecipesByPantry(recipes, products, {
+  var filteredRecipeMatches = filterRecipesByPantry(recipes, products, {
     category: recipeCategory,
     search: recipeSearch,
     pantry: recipePantry
   });
+  var normalizedPantryEntries = normalizePantryEntries(pantryEntries);
+  var sortedPantryEntries = sortPantryEntries(normalizedPantryEntries, TODAY);
+  var visibleRecipeMatches = useFirst ? rankRecipeMatchesByExpiry(filteredRecipeMatches, sortedPantryEntries, products, TODAY) : filteredRecipeMatches;
+  var pantryUrgentCount = sortedPantryEntries.filter(function (entry) {
+    var kind = pantryExpiryStatus(entry.expiresAt, TODAY).kind;
+    return kind === "expired" || kind === "today" || kind === "soon";
+  }).length;
   var pantryTerms = parsePantryTerms(recipePantry);
   var normalizedShoppingManual = normalizeShoppingQuantities(shoppingManual);
   var manualShoppingCount = Object.keys(normalizedShoppingManual).length;
@@ -4329,6 +4408,202 @@ function App() {
       marginTop: 5
     }
   }, pantryTerms.length > 0 ? visibleRecipeMatches.length + " pasujących przepisów · wszystkie wpisane składniki są wymagane" : "Oddziel składniki przecinkami. Pokażemy najlepsze dopasowania i brakujące produkty."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 6,
+      flexWrap: "wrap",
+      alignItems: "center",
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-expanded": pantryOpen,
+    onClick: function onClick() {
+      return setPantryOpen(!pantryOpen);
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      padding: "7px 10px",
+      fontSize: 10,
+      background: pantryOpen ? T.acc + "18" : T.surf
+    })
+  }, "Spiżarnia (", normalizedPantryEntries.length, ")"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-pressed": useFirst,
+    onClick: function onClick() {
+      if (!normalizedPantryEntries.length) {
+        setPantryOpen(true);
+        toast_("Najpierw dodaj produkt do spiżarni");
+        return;
+      }
+      setUseFirst(!useFirst);
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      padding: "7px 10px",
+      fontSize: 10,
+      borderColor: useFirst ? T.acc : T.border,
+      background: useFirst ? T.acc : T.surf,
+      color: useFirst ? safeTn === "light" ? "#fff" : "#000" : T.text2
+    })
+  }, "⏳ Zużyj najpierw"), pantryUrgentCount > 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#dc2626",
+      fontSize: 10,
+      fontWeight: 800
+    }
+  }, pantryUrgentCount, " pilne")), pantryOpen && /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: T.surf,
+      border: "1px solid " + T.border,
+      borderRadius: 10,
+      padding: 9,
+      marginTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: T.text,
+      fontSize: 11,
+      fontWeight: 800,
+      marginBottom: 7
+    }
+  }, "Dodaj do spiżarni"), /*#__PURE__*/React.createElement("select", {
+    value: pantryForm.productId,
+    onChange: function onChange(e) {
+      return setPantryForm(_objectSpread(_objectSpread({}, pantryForm), {}, {
+        productId: e.target.value
+      }));
+    },
+    "aria-label": "Produkt do spiżarni",
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      background: T.surf2,
+      marginBottom: 6
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "Wybierz produkt…"), products.slice().sort(function (a, b) {
+    return String(a.name).localeCompare(String(b.name), "pl");
+  }).map(function (product) {
+    return /*#__PURE__*/React.createElement("option", {
+      key: product.id,
+      value: product.id
+    }, product.name, product.brand ? " · " + product.brand : "");
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 6
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "1",
+    max: "100000",
+    inputMode: "decimal",
+    value: pantryForm.grams,
+    onChange: function onChange(e) {
+      return setPantryForm(_objectSpread(_objectSpread({}, pantryForm), {}, {
+        grams: e.target.value
+      }));
+    },
+    placeholder: "Ilość (g)",
+    "aria-label": "Ilość produktu w gramach",
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      background: T.surf2,
+      margin: 0
+    })
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: pantryForm.expiresAt,
+    onChange: function onChange(e) {
+      return setPantryForm(_objectSpread(_objectSpread({}, pantryForm), {}, {
+        expiresAt: e.target.value
+      }));
+    },
+    "aria-label": "Termin ważności, opcjonalnie",
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      background: T.surf2,
+      margin: 0
+    })
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: savePantryProduct,
+    style: _objectSpread(_objectSpread({}, btnA), {}, {
+      width: "100%",
+      marginTop: 7,
+      padding: "8px 10px",
+      fontSize: 11
+    })
+  }, "Zapisz produkt"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: T.text3,
+      fontSize: 9,
+      lineHeight: 1.4,
+      marginTop: 5
+    }
+  }, "Termin jest opcjonalny. „Zużyj najpierw” pokazuje przepisy wykorzystujące produkty ze spiżarni; produktów po terminie nie proponujemy do zjedzenia."), sortedPantryEntries.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: T.text3,
+      fontSize: 10,
+      textAlign: "center",
+      padding: "12px 4px 4px"
+    }
+  }, "Spiżarnia jest pusta.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gap: 6,
+      marginTop: 9
+    }
+  }, sortedPantryEntries.map(function (entry) {
+    var product = products.find(function (item) {
+      return String(item.id) === entry.productId;
+    });
+    var status = pantryExpiryStatus(entry.expiresAt, TODAY);
+    var statusColor = status.kind === "expired" || status.kind === "today" ? "#dc2626" : status.kind === "soon" ? T.acc : status.kind === "later" ? "#16a34a" : T.text3;
+    return /*#__PURE__*/React.createElement("div", {
+      key: entry.id,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        background: T.surf2,
+        borderRadius: 8,
+        padding: "7px 8px"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: T.text,
+        fontSize: 10,
+        fontWeight: 750,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }
+    }, product ? product.emoji + " " + product.name : "Nieznany produkt", " · ", entry.grams, " g"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: statusColor,
+        fontSize: 9,
+        fontWeight: status.kind === "none" ? 500 : 800,
+        marginTop: 2
+      }
+    }, status.label, entry.expiresAt ? " · " + entry.expiresAt : "")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Usuń ze spiżarni: " + (product ? product.name : entry.productId),
+      onClick: function onClick() {
+        return deletePantryProduct(entry.productId);
+      },
+      style: {
+        border: "none",
+        background: "transparent",
+        color: T.text3,
+        cursor: "pointer",
+        fontSize: 16,
+        padding: 5
+      }
+    }, "×"));
+  }))), /*#__PURE__*/React.createElement("div", {
     "aria-live": "polite",
     style: {
       position: "absolute",
@@ -4377,10 +4652,11 @@ function App() {
   })), visibleRecipeMatches.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
     icon: "◇",
     title: "Nie znaleźliśmy takiego przepisu",
-    copy: pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
+    copy: useFirst ? "Żaden przepis nie wykorzystuje obecnych produktów ze spiżarni. Dodaj produkt albo wyłącz „Zużyj najpierw”." : pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
     T: T
   }), visibleRecipeMatches.map(function (_refRecipeMatch) {
-    var r = _refRecipeMatch.recipe;
+    var r = _refRecipeMatch.recipe,
+      recipePriority = _refRecipeMatch.priority || null;
     var exp = expanded === r.id,
       sc = scales[r.id] || r.servings,
       f = sc / r.servings,
@@ -4459,7 +4735,16 @@ function App() {
         fontWeight: 700,
         marginTop: 4
       }
-    }, currentPantryMatch.matchPercent, "% składników masz · ", currentPantryMatch.missingIngredients.length === 0 ? "komplet" : "brakuje " + currentPantryMatch.missingIngredients.length)), /*#__PURE__*/React.createElement("button", {
+    }, currentPantryMatch.matchPercent, "% składników masz · ", currentPantryMatch.missingIngredients.length === 0 ? "komplet" : "brakuje " + currentPantryMatch.missingIngredients.length), useFirst && recipePriority && recipePriority.products.length > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: recipePriority.products[0].status.kind === "expired" || recipePriority.products[0].status.kind === "today" ? "#dc2626" : T.acc,
+        fontSize: 10,
+        fontWeight: 800,
+        marginTop: 4
+      }
+    }, "⏳ Zużyj najpierw: ", recipePriority.products.slice(0, 2).map(function (entry) {
+      return entry.name + " (" + entry.status.label + ")";
+    }).join(", "))), /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": isFav(r.id) ? "Usuń z ulubionych: " + r.name : "Dodaj do ulubionych: " + r.name,
       "aria-pressed": isFav(r.id),
@@ -5201,6 +5486,9 @@ function App() {
           var next = _objectSpread({}, prev);
           delete next[p.id];
           return next;
+        });
+        setPantryEntries(function (prev) {
+          return removePantryEntry(prev, p.id);
         });
       },
       style: {
@@ -6059,7 +6347,7 @@ function App() {
       color: T.text3,
       lineHeight: 1.5
     }
-  }, "Kopia obejmuje profil, planer, pomiary, wodę, przepisy, produkty, ulubione, typy dni, listę zakupów wraz z ręcznie dodanymi brakami i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
+  }, "Kopia obejmuje profil, planer, pomiary, wodę, przepisy, produkty, spiżarnię, ulubione, typy dni, listę zakupów wraz z ręcznie dodanymi brakami i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
     var selectedWaterDay = waterLog[waterDate] || {};
     var waterEntries = Array.isArray(selectedWaterDay.entries) ? selectedWaterDay.entries : [];
     var measurementDates = Object.keys(bodyLog || {}).filter(function (date) {

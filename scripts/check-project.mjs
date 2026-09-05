@@ -8,6 +8,7 @@ const requiredFiles = [
   "src/domain/backup.js",
   "src/domain/date.js",
   "src/domain/nutrition.js",
+  "src/domain/pantry.js",
   "src/domain/planner.js",
   "src/domain/products.js",
   "src/domain/recipes.js",
@@ -25,12 +26,13 @@ const requiredFiles = [
 
 await Promise.all(requiredFiles.map((file) => access(new URL(file, root))));
 
-const [html, app, backup, dates, nutrition, planner, products, recipes, shopping, styles, serviceWorker, manifestText] = await Promise.all([
+const [html, app, backup, dates, nutrition, pantry, planner, products, recipes, shopping, styles, serviceWorker, manifestText] = await Promise.all([
   readFile(new URL("index.html", root), "utf8"),
   readFile(new URL("src/app.js", root), "utf8"),
   readFile(new URL("src/domain/backup.js", root), "utf8"),
   readFile(new URL("src/domain/date.js", root), "utf8"),
   readFile(new URL("src/domain/nutrition.js", root), "utf8"),
+  readFile(new URL("src/domain/pantry.js", root), "utf8"),
   readFile(new URL("src/domain/planner.js", root), "utf8"),
   readFile(new URL("src/domain/products.js", root), "utf8"),
   readFile(new URL("src/domain/recipes.js", root), "utf8"),
@@ -64,6 +66,7 @@ if (!styles.includes("max-width:430px")) throw new Error("Brak docelowej szeroko
 if (!app.includes('from "./domain/backup.js"')) throw new Error("Aplikacja nie importuje domeny kopii zapasowych");
 if (!app.includes('from "./domain/date.js"')) throw new Error("Aplikacja nie importuje domeny dat");
 if (!app.includes('from "./domain/nutrition.js"')) throw new Error("Aplikacja nie importuje domeny odżywiania");
+if (!app.includes('from "./domain/pantry.js"')) throw new Error("Aplikacja nie importuje domeny spiżarni");
 if (!app.includes('from "./domain/planner.js"')) throw new Error("Aplikacja nie importuje domeny planera");
 if (!app.includes('from "./domain/products.js"')) throw new Error("Aplikacja nie importuje domeny produktów");
 if (!app.includes('from "./domain/recipes.js"')) throw new Error("Aplikacja nie importuje domeny przepisów");
@@ -103,14 +106,17 @@ for (const exportedFunction of ["parsePantryTerms", "recipePantryMatch", "filter
 for (const exportedFunction of ["normalizeShoppingQuantities", "missingRecipeShoppingItems", "mergeShoppingQuantities", "buildShoppingMap"]) {
   if (!shopping.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny zakupów: ${exportedFunction}`);
 }
+for (const exportedFunction of ["pantryExpiryStatus", "normalizePantryEntries", "upsertPantryEntry", "removePantryEntry", "sortPantryEntries", "rankRecipeMatchesByExpiry"]) {
+  if (!pantry.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny spiżarni: ${exportedFunction}`);
+}
 
-for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_products", "fb10_product_grams", "fb10_shopping_manual"]) {
+for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_products", "fb10_product_grams", "fb10_shopping_manual", "fb10_pantry"]) {
   if (!app.includes(key)) throw new Error(`Brak stabilnego klucza danych: ${key}`);
 }
 
 const manifest = JSON.parse(manifestText);
 if (manifest.start_url !== "./" || manifest.scope !== "./") throw new Error("Manifest musi działać z podkatalogu DEV");
-for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/backup.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/planner.js", "./src/domain/products.js", "./src/domain/recipes.js", "./src/domain/shopping.js"]) {
+for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/backup.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/pantry.js", "./src/domain/planner.js", "./src/domain/products.js", "./src/domain/recipes.js", "./src/domain/shopping.js"]) {
   if (!serviceWorker.includes(asset)) throw new Error(`Service worker nie obejmuje pliku: ${asset}`);
 }
 

@@ -194,7 +194,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 ### 4. Przepisy według produktów, które są w domu
 
 - [x] Dodać wyszukiwarkę „mam w domu”, w której jeden lub kilka składników jest obowiązkową bazą przepisu; wyniki pokazują procent dopasowania i brakujące produkty.
-- [ ] Dodać tryb „zużyj najpierw” z terminem ważności, spiżarnią i przypomnieniami o kończących się produktach.
+- [x] Dodać trwałą spiżarnię z ilością i opcjonalnym terminem ważności, oznaczeniami pilności oraz trybem „zużyj najpierw”, który szereguje pasujące przepisy.
 - [x] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki z tej samej kategorii produktu.
 - [x] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, jasno oznaczać zmianę, pokazywać różnicę i ponownie przeliczać makro.
 - [x] Połączyć brakujące składniki przepisu ze zbiorczą listą zakupów bez dodawania fikcyjnego posiłku do planera.
