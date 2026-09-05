@@ -4,7 +4,10 @@ import {
   filterRecipesByPantry,
   normalizeRecipeTerm,
   parsePantryTerms,
+  recipeSubstitutionOptions,
   recipePantryMatch,
+  replaceRecipeIngredient,
+  summarizeRecipeSubstitutions,
 } from "../src/domain/recipes.js";
 
 const products = [
@@ -69,4 +72,47 @@ test("zwykłe wyszukiwanie obejmuje nazwy składników i współpracuje z katego
     pantry: "ryż",
   });
   assert.deepEqual(wrongCategory, []);
+});
+
+test("zamienniki pochodzą z tej samej kategorii i pokazują oryginał jako pierwszy", () => {
+  const catalog = [
+    { id: "kefir", name: "Kefir", category: "dairy", custom: false },
+    { id: "yogurt", name: "Jogurt naturalny", category: "dairy", custom: false },
+    { id: "own-skyr", name: "Mój skyr", category: "dairy", custom: true },
+    { id: "rice", name: "Ryż", category: "carbs", custom: false },
+  ];
+  const options = recipeSubstitutionOptions("yogurt", catalog);
+  assert.deepEqual(options.map((product) => product.id), ["yogurt", "own-skyr", "kefir"]);
+});
+
+test("zamiana produktu zachowuje gramaturę i nie modyfikuje wejściowej tablicy", () => {
+  const items = [{ productId: "yogurt", grams: 150 }, { productId: "rice", grams: 80 }];
+  const changed = replaceRecipeIngredient(items, 0, "kefir", [
+    { id: "yogurt" },
+    { id: "kefir" },
+    { id: "rice" },
+  ]);
+  assert.deepEqual(changed, [{ productId: "kefir", grams: 150 }, { productId: "rice", grams: 80 }]);
+  assert.deepEqual(items, [{ productId: "yogurt", grams: 150 }, { productId: "rice", grams: 80 }]);
+});
+
+test("podsumowanie zamienników liczy różnicę makro przy tej samej gramaturze", () => {
+  const catalog = [
+    { id: "yogurt", name: "Jogurt", kcal: 60, protein: 4, carbs: 5, fat: 2 },
+    { id: "kefir", name: "Kefir", kcal: 50, protein: 3, carbs: 4, fat: 2 },
+  ];
+  const summary = summarizeRecipeSubstitutions(
+    [{ productId: "yogurt", grams: 200 }],
+    [{ productId: "kefir", grams: 300 }],
+    catalog,
+  );
+  assert.equal(summary.count, 1);
+  assert.deepEqual(summary.substitutions[0], {
+    index: 0,
+    fromProductId: "yogurt",
+    toProductId: "kefir",
+    fromName: "Jogurt",
+    toName: "Kefir",
+  });
+  assert.deepEqual(summary.delta, { kcal: -30, protein: -3, carbs: -3, fat: 0 });
 });

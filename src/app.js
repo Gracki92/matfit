@@ -50,7 +50,13 @@ import {
   onlyUserProducts,
   toggleProductId,
 } from "./domain/products.js";
-import { filterRecipesByPantry, parsePantryTerms } from "./domain/recipes.js";
+import {
+  filterRecipesByPantry,
+  parsePantryTerms,
+  recipeSubstitutionOptions,
+  replaceRecipeIngredient,
+  summarizeRecipeSubstitutions,
+} from "./domain/recipes.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -2286,6 +2292,10 @@ function App() {
       fat: r.fat || 0
     };
   }
+  function formatRecipeDelta(value, whole) {
+    var rounded = whole ? Math.round(value || 0) : r2(value || 0);
+    return (rounded > 0 ? "+" : "") + rounded;
+  }
   function setRecipeVariant(id, portions, items, extra) {
     var key = String(id);
     setRecipeVariants(function (prev) {
@@ -2330,6 +2340,19 @@ function App() {
       targetKcal: "",
       targetProtein: ""
     });
+  }
+  function changeRecipeIngredientProduct(r, portions, currentItems, index, productId) {
+    var items = replaceRecipeIngredient(currentItems, index, productId, products);
+    if (String(items[index] && items[index].productId) === String(currentItems[index] && currentItems[index].productId)) return;
+    setRecipeVariant(r.id, portions, items, {
+      targetGrams: "",
+      targetKcal: "",
+      targetProtein: ""
+    });
+    var product = products.find(function (entry) {
+      return String(entry.id) === String(productId);
+    });
+    toast_(product ? "Zamieniono na: " + product.name : "Zmieniono składnik");
   }
   function setRecipeTarget(r, portions, currentItems, field, value) {
     var targets = {
@@ -4352,6 +4375,7 @@ function App() {
       originalFinishedWeight = parseFloat(r.finishedWeight) || 0,
       finishedWeight = originalFinishedWeight > 0 && baseIngredientWeight > 0 ? originalFinishedWeight * (currentIngredientWeight / baseIngredientWeight) : 0,
       per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0,
+      substitutionSummary = summarizeRecipeSubstitutions(r.ingredients, currentItems, products),
       isCustomized = !!variant;
     return /*#__PURE__*/React.createElement("div", {
       key: r.id,
@@ -4640,7 +4664,33 @@ function App() {
         lineHeight: 1.4,
         marginBottom: 8
       }
-    }, "Cele skalują wszystkie składniki proporcjonalnie. Każdy cel działa osobno — ostatni wybór zastępuje poprzedni. Pojedyncze składniki możesz poprawić niżej."), [["Łączna gramatura", "targetGrams", "g", Math.round(currentIngredientWeight)], ["Docelowe kalorie", "targetKcal", "kcal", Math.round(m.kcal)], ["Docelowe białko", "targetProtein", "g", r2(m.protein)]].map(function (_refRecipeTarget) {
+    }, "Cele skalują wszystkie składniki proporcjonalnie. Każdy cel działa osobno — ostatni wybór zastępuje poprzedni. Pojedyncze składniki możesz poprawić niżej."), substitutionSummary.count > 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.surf,
+        border: "1px solid " + T.acc,
+        borderRadius: 8,
+        color: T.text2,
+        fontSize: 9,
+        lineHeight: 1.5,
+        marginBottom: 8,
+        padding: "7px 8px"
+      }
+    }, /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: T.acc
+      }
+    }, "Zamienniki: ", substitutionSummary.count), substitutionSummary.substitutions.map(function (entry) {
+      return /*#__PURE__*/React.createElement("div", {
+        key: entry.index
+      }, entry.fromName, " → ", entry.toName);
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        borderTop: "1px solid " + T.border,
+        color: T.text,
+        marginTop: 4,
+        paddingTop: 4
+      }
+    }, "Zmiana całego przepisu: ", formatRecipeDelta(substitutionSummary.delta.kcal, true), " kcal · B ", formatRecipeDelta(substitutionSummary.delta.protein), " g · W ", formatRecipeDelta(substitutionSummary.delta.carbs), " g · T ", formatRecipeDelta(substitutionSummary.delta.fat), " g")), [["Łączna gramatura", "targetGrams", "g", Math.round(currentIngredientWeight)], ["Docelowe kalorie", "targetKcal", "kcal", Math.round(m.kcal)], ["Docelowe białko", "targetProtein", "g", r2(m.protein)]].map(function (_refRecipeTarget) {
       var _refRecipeTarget2 = _slicedToArray(_refRecipeTarget, 4),
         label = _refRecipeTarget2[0],
         field = _refRecipeTarget2[1],
@@ -4713,15 +4763,24 @@ function App() {
       var p = products.find(function (x) {
         return x.id === item.productId;
       });
+      var originalItem = (r.ingredients || [])[i] || item;
+      var originalProduct = products.find(function (x) {
+        return String(x.id) === String(originalItem.productId);
+      });
+      var substituteOptions = recipeSubstitutionOptions(originalItem.productId, products);
+      var isSubstituted = String(item.productId) !== String(originalItem.productId);
       return p ? /*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "6px 0",
+          padding: "7px 0",
           borderBottom: "1px solid " + T.border,
           fontSize: 13
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 8
         }
       }, /*#__PURE__*/React.createElement("span", {
         style: {
@@ -4735,7 +4794,13 @@ function App() {
           fontSize: 8,
           color: T.text3
         }
-      }, p.state) : null), /*#__PURE__*/React.createElement("input", {
+      }, p.state) : null, isSubstituted && originalProduct ? /*#__PURE__*/React.createElement("span", {
+        style: {
+          display: "block",
+          fontSize: 8,
+          color: T.acc
+        }
+      }, "zamiast: ", originalProduct.name) : null), /*#__PURE__*/React.createElement("input", {
         value: item.grams,
         onChange: function onChange(e) {
           return changeRecipeIngredient(r, sc, currentItems, i, e.target.value);
@@ -4761,7 +4826,57 @@ function App() {
           fontSize: 10,
           color: T.text3
         }
-      }, "g")) : null;
+      }, "g")), substituteOptions.length > 1 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginTop: 6
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          color: T.text3,
+          fontSize: 9,
+          flexShrink: 0
+        }
+      }, "Zamień:"), /*#__PURE__*/React.createElement("select", {
+        value: String(item.productId),
+        onChange: function onChange(e) {
+          return changeRecipeIngredientProduct(r, sc, currentItems, i, e.target.value);
+        },
+        "aria-label": "Zamiennik dla " + ((originalProduct && originalProduct.name) || p.name),
+        style: {
+          flex: 1,
+          minWidth: 0,
+          background: T.surf2,
+          border: "1px solid " + (isSubstituted ? T.acc : T.border),
+          borderRadius: 7,
+          color: T.text,
+          fontSize: 9,
+          padding: "6px 7px",
+          outline: "none"
+        }
+      }, substituteOptions.map(function (option) {
+        return /*#__PURE__*/React.createElement("option", {
+          key: option.id,
+          value: String(option.id)
+        }, option.name, option.state ? " — " + option.state : "", option.custom ? " · własny" : "");
+      })), isSubstituted && /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return changeRecipeIngredientProduct(r, sc, currentItems, i, originalItem.productId);
+        },
+        "aria-label": "Przywróć oryginalny składnik " + ((originalProduct && originalProduct.name) || ""),
+        style: {
+          background: "transparent",
+          border: "1px solid " + T.border,
+          borderRadius: 7,
+          color: T.acc,
+          cursor: "pointer",
+          fontSize: 10,
+          padding: "6px 8px"
+        }
+      }, "↺ Oryginał"))) : null;
     }), (r.steps || []).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,

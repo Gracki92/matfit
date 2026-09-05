@@ -6,7 +6,7 @@ Mobilna aplikacja żywieniowa rozwijana na gałęzi `matfit-dev`. Wersja DEV dzi
 
 - `index.html` — mały dokument startowy i kolejność ładowania zasobów;
 - `src/app.js` — moduł startowy aktualnej aplikacji React;
-- `src/domain/` — wydzielona, testowalna logika kopii zapasowych, dat, odżywiania, planera, produktów i dopasowania przepisów;
+- `src/domain/` — wydzielona, testowalna logika kopii zapasowych, dat, odżywiania, planera, produktów, dopasowania przepisów i zamienników;
 - `assets/styles.css` — wspólny system wizualny i układ mobile-first;
 - `vendor/` — przypięte, lokalne wydania React, ReactDOM, PropTypes i Recharts;
 - `legacy/app.jsx` — historyczne, nieużywane źródło zachowane wyłącznie jako punkt odniesienia;

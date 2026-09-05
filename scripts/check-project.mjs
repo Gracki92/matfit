@@ -94,7 +94,7 @@ for (const exportedFunction of ["normalizeBarcode", "isValidGtin", "mergeProduct
   if (!products.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny produktów: ${exportedFunction}`);
 }
 if (!products.includes("export const PRODUCTS_DEFAULT")) throw new Error("Bazowy katalog produktów nie jest eksportowany z domeny");
-for (const exportedFunction of ["parsePantryTerms", "recipePantryMatch", "filterRecipesByPantry"]) {
+for (const exportedFunction of ["parsePantryTerms", "recipePantryMatch", "filterRecipesByPantry", "recipeSubstitutionOptions", "replaceRecipeIngredient", "summarizeRecipeSubstitutions"]) {
   if (!recipes.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny przepisów: ${exportedFunction}`);
 }
 

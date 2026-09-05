@@ -195,8 +195,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 - [x] Dodać wyszukiwarkę „mam w domu”, w której jeden lub kilka składników jest obowiązkową bazą przepisu; wyniki pokazują procent dopasowania i brakujące produkty.
 - [ ] Dodać tryb „zużyj najpierw” z terminem ważności, spiżarnią i przypomnieniami o kończących się produktach.
-- [ ] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki.
-- [ ] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, ale jasno oznaczać zmianę i ponownie przeliczać makro.
+- [x] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki z tej samej kategorii produktu.
+- [x] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, jasno oznaczać zmianę, pokazywać różnicę i ponownie przeliczać makro.
 - [ ] Połączyć przepisy ze zbiorczą listą zakupów oraz dodać import przepisu z linku do późniejszej weryfikacji.
 
 ### 5. Edukacja i profile żywieniowe — bez udawania lekarza
