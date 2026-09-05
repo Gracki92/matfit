@@ -9,6 +9,7 @@ const requiredFiles = [
   "src/domain/date.js",
   "src/domain/nutrition.js",
   "src/domain/planner.js",
+  "src/domain/products.js",
   "src/register-sw.js",
   "vendor/react.production.min.js",
   "vendor/react-dom.production.min.js",
@@ -22,13 +23,14 @@ const requiredFiles = [
 
 await Promise.all(requiredFiles.map((file) => access(new URL(file, root))));
 
-const [html, app, backup, dates, nutrition, planner, styles, serviceWorker, manifestText] = await Promise.all([
+const [html, app, backup, dates, nutrition, planner, products, styles, serviceWorker, manifestText] = await Promise.all([
   readFile(new URL("index.html", root), "utf8"),
   readFile(new URL("src/app.js", root), "utf8"),
   readFile(new URL("src/domain/backup.js", root), "utf8"),
   readFile(new URL("src/domain/date.js", root), "utf8"),
   readFile(new URL("src/domain/nutrition.js", root), "utf8"),
   readFile(new URL("src/domain/planner.js", root), "utf8"),
+  readFile(new URL("src/domain/products.js", root), "utf8"),
   readFile(new URL("assets/styles.css", root), "utf8"),
   readFile(new URL("sw.js", root), "utf8"),
   readFile(new URL("manifest.json", root), "utf8"),
@@ -59,6 +61,7 @@ if (!app.includes('from "./domain/backup.js"')) throw new Error("Aplikacja nie i
 if (!app.includes('from "./domain/date.js"')) throw new Error("Aplikacja nie importuje domeny dat");
 if (!app.includes('from "./domain/nutrition.js"')) throw new Error("Aplikacja nie importuje domeny odżywiania");
 if (!app.includes('from "./domain/planner.js"')) throw new Error("Aplikacja nie importuje domeny planera");
+if (!app.includes('from "./domain/products.js"')) throw new Error("Aplikacja nie importuje domeny produktów");
 for (const removedHelper of ["mfDate", "mfISODate", "mfShiftISO", "mfDaysBetween", "getWeek", "getWeekNumber"]) {
   if (app.includes(`function ${removedHelper}`)) throw new Error(`Logika dat wróciła do pliku aplikacji: ${removedHelper}`);
 }
@@ -81,6 +84,13 @@ if (app.includes("function plannedMealCopyKey") || app.includes("function cloneP
 for (const exportedFunction of ["plannedMealCopyKey", "clonePlannedMeal"]) {
   if (!planner.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny planera: ${exportedFunction}`);
 }
+for (const removedHelper of ["normalizeBarcode", "isValidGtin", "mergeProductCatalog", "onlyUserProducts"]) {
+  if (app.includes(`function ${removedHelper}`)) throw new Error(`Logika produktów wróciła do pliku aplikacji: ${removedHelper}`);
+}
+for (const exportedFunction of ["normalizeBarcode", "isValidGtin", "mergeProductCatalog", "onlyUserProducts", "filterProductCatalog"]) {
+  if (!products.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny produktów: ${exportedFunction}`);
+}
+if (!products.includes("export const PRODUCTS_DEFAULT")) throw new Error("Bazowy katalog produktów nie jest eksportowany z domeny");
 
 for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_products", "fb10_product_grams"]) {
   if (!app.includes(key)) throw new Error(`Brak stabilnego klucza danych: ${key}`);
@@ -88,7 +98,7 @@ for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_product
 
 const manifest = JSON.parse(manifestText);
 if (manifest.start_url !== "./" || manifest.scope !== "./") throw new Error("Manifest musi działać z podkatalogu DEV");
-for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/backup.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/planner.js"]) {
+for (const asset of ["./index.html", "./assets/styles.css", "./src/app.js", "./src/domain/backup.js", "./src/domain/date.js", "./src/domain/nutrition.js", "./src/domain/planner.js", "./src/domain/products.js"]) {
   if (!serviceWorker.includes(asset)) throw new Error(`Service worker nie obejmuje pliku: ${asset}`);
 }
 

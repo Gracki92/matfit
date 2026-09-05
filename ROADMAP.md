@@ -51,7 +51,7 @@ Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit
 - [x] Wydzielić lokalne daty, tygodnie i formatowanie do `src/domain/date.js`, z testami strefy czasowej i zmiany czasu.
 - [x] Wydzielić makro posiłków, szczegółowe dane odżywcze, BMR, TDEE, cele i Navy BF do `src/domain/nutrition.js`.
 - [x] Wydzielić wersjonowanie, walidację i scalanie kopii do `src/domain/backup.js`, zachowując obsługę starszych formatów.
-- [ ] Wydzielić katalog produktów z `src/app.js` do testowalnego modułu.
+- [x] Wydzielić bazę referencyjną, EAN/GTIN, scalanie, duplikaty i filtrowanie produktów do `src/domain/products.js`.
 
 ## UI v2.1 — powłoka aplikacji
 
