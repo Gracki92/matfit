@@ -50,6 +50,7 @@ import {
   onlyUserProducts,
   toggleProductId,
 } from "./domain/products.js";
+import { filterRecipesByPantry, parsePantryTerms } from "./domain/recipes.js";
 
 (function() {
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -1820,6 +1821,10 @@ function App() {
     _useStateRecipeCategory2 = _slicedToArray(_useStateRecipeCategory, 2),
     recipeCategory = _useStateRecipeCategory2[0],
     setRecipeCategory = _useStateRecipeCategory2[1];
+  var _useStateRecipePantry = useState(""),
+    _useStateRecipePantry2 = _slicedToArray(_useStateRecipePantry, 2),
+    recipePantry = _useStateRecipePantry2[0],
+    setRecipePantry = _useStateRecipePantry2[1];
   var _useStateProductCategory = useState("all"),
     _useStateProductCategory2 = _slicedToArray(_useStateProductCategory, 2),
     productCategory = _useStateProductCategory2[0],
@@ -3283,6 +3288,12 @@ function App() {
   var _countProductTypes = countProductTypes(products),
     userProductCount = _countProductTypes.user,
     baseProductCount = _countProductTypes.base;
+  var visibleRecipeMatches = filterRecipesByPantry(recipes, products, {
+    category: recipeCategory,
+    search: recipeSearch,
+    pantry: recipePantry
+  });
+  var pantryTerms = parsePantryTerms(recipePantry);
   var tdee = calcTDEE(profile),
     bmr = Math.round(calcBMR(profile));
   var weeklySummary = mfWeeklySummary(planer, bodyLog, profile, dayTypes, TODAY);
@@ -4207,7 +4218,79 @@ function App() {
     placeholder: "Szukaj przepisu...",
     "aria-label": "Szukaj przepisu",
     style: _objectSpread({}, inp)
+  }), /*#__PURE__*/React.createElement("section", {
+    "aria-labelledby": "recipe-pantry-title",
+    style: {
+      background: T.surf2,
+      border: "1px solid " + (pantryTerms.length ? T.acc : T.border),
+      borderRadius: 12,
+      padding: 10,
+      marginTop: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    id: "recipe-pantry-title",
+    style: {
+      flex: 1,
+      color: T.text,
+      fontSize: 12,
+      fontWeight: 700
+    }
+  }, "🥕 Mam w domu"), pantryTerms.length > 0 && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setRecipePantry("");
+    },
+    style: {
+      border: "none",
+      background: "transparent",
+      color: T.acc,
+      fontSize: 10,
+      fontWeight: 700,
+      cursor: "pointer",
+      padding: 4
+    }
+  }, "Wyczyść")), /*#__PURE__*/React.createElement("input", {
+    value: recipePantry,
+    onChange: function onChange(e) {
+      return setRecipePantry(e.target.value);
+    },
+    placeholder: "np. kurczak, ryż",
+    "aria-label": "Składniki, które mam w domu",
+    "aria-describedby": "recipe-pantry-help",
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      background: T.surf,
+      margin: 0
+    })
   }), /*#__PURE__*/React.createElement("div", {
+    id: "recipe-pantry-help",
+    style: {
+      color: T.text3,
+      fontSize: 9,
+      lineHeight: 1.4,
+      marginTop: 5
+    }
+  }, pantryTerms.length > 0 ? visibleRecipeMatches.length + " pasujących przepisów · wszystkie wpisane składniki są wymagane" : "Oddziel składniki przecinkami. Pokażemy najlepsze dopasowania i brakujące produkty."), /*#__PURE__*/React.createElement("div", {
+    "aria-live": "polite",
+    style: {
+      position: "absolute",
+      width: 1,
+      height: 1,
+      padding: 0,
+      margin: -1,
+      overflow: "hidden",
+      clip: "rect(0, 0, 0, 0)",
+      whiteSpace: "nowrap",
+      border: 0
+    }
+  }, pantryTerms.length > 0 ? "Znaleziono " + visibleRecipeMatches.length + " przepisów" : "")), /*#__PURE__*/React.createElement("div", {
     className: "mf-chip-row",
     style: {
       display: "flex",
@@ -4240,20 +4323,14 @@ function App() {
         cursor: "pointer"
       }
     }, label);
-  })), recipes.filter(function (r) {
-    var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
-    var q = recipeSearch.trim().toLowerCase();
-    return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
-  }).length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
+  })), visibleRecipeMatches.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
     icon: "◇",
     title: "Nie znaleźliśmy takiego przepisu",
-    copy: "Zmień kategorię albo skróć wyszukiwaną frazę.",
+    copy: pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
     T: T
-  }), recipes.filter(function (r) {
-    var matchesCategory = recipeCategory === "all" || r.cat === recipeCategory;
-    var q = recipeSearch.trim().toLowerCase();
-    return matchesCategory && (!q || (r.name || "").toLowerCase().includes(q));
-  }).map(function (r) {
+  }), visibleRecipeMatches.map(function (_refRecipeMatch) {
+    var r = _refRecipeMatch.recipe,
+      pantryMatch = _refRecipeMatch.pantry;
     var exp = expanded === r.id,
       sc = scales[r.id] || r.servings,
       f = sc / r.servings,
@@ -4321,7 +4398,14 @@ function App() {
         color: T.text2,
         marginTop: 2
       }
-    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.custom === false ? " · MatFit" : " · Własny")), /*#__PURE__*/React.createElement("button", {
+    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.custom === false ? " · MatFit" : " · Własny"), pantryMatch.active && /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: pantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.acc,
+        fontSize: 10,
+        fontWeight: 700,
+        marginTop: 4
+      }
+    }, pantryMatch.matchPercent, "% składników masz · ", pantryMatch.missingIngredients.length === 0 ? "komplet" : "brakuje " + pantryMatch.missingIngredients.length)), /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-label": isFav(r.id) ? "Usuń z ulubionych: " + r.name : "Dodaj do ulubionych: " + r.name,
       "aria-pressed": isFav(r.id),
@@ -4362,7 +4446,22 @@ function App() {
       onClick: function onClick(e) {
         return e.stopPropagation();
       }
-    }, /*#__PURE__*/React.createElement("div", {
+    }, pantryMatch.active && /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: T.surf2,
+        border: "1px solid " + (pantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.border),
+        borderRadius: 9,
+        color: T.text2,
+        fontSize: 10,
+        lineHeight: 1.45,
+        marginTop: 10,
+        padding: "8px 9px"
+      }
+    }, pantryMatch.missingIngredients.length === 0 ? "✓ Masz wszystkie składniki tego przepisu." : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: T.text
+      }
+    }, "Brakuje: "), pantryMatch.missingIngredients.join(", "))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         alignItems: "center",

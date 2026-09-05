@@ -1,6 +1,6 @@
 # MatFit Pro — roadmap
 
-Ostatnia aktualizacja: 4 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
+Ostatnia aktualizacja: 5 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
 
 ## Aktualny etap — rdzeń aplikacji
 
@@ -193,7 +193,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 ### 4. Przepisy według produktów, które są w domu
 
-- [ ] Dodać wyszukiwarkę „mam w domu”, w której jeden lub kilka składników można oznaczyć jako obowiązkową bazę przepisu.
+- [x] Dodać wyszukiwarkę „mam w domu”, w której jeden lub kilka składników jest obowiązkową bazą przepisu; wyniki pokazują procent dopasowania i brakujące produkty.
 - [ ] Dodać tryb „zużyj najpierw” z terminem ważności, spiżarnią i przypomnieniami o kończących się produktach.
 - [ ] Wyświetlać procent dopasowania, liczbę brakujących składników oraz możliwe zamienniki.
 - [ ] Dopuszczać przepisy z zamiennikiem, np. kefir zamiast jogurtu, ale jasno oznaczać zmianę i ponownie przeliczać makro.
