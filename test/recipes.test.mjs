@@ -75,6 +75,27 @@ test("zwykłe wyszukiwanie obejmuje nazwy składników i współpracuje z katego
   assert.deepEqual(wrongCategory, []);
 });
 
+test("filtry czasu i trudności współpracują z pozostałymi filtrami", () => {
+  const recipesWithMeta = [
+    { id: "quick", name: "Szybki", cat: "obiad", prepMinutes: 10, difficulty: "easy", ingredients: [] },
+    { id: "medium", name: "Średni", cat: "obiad", prepMinutes: 25, difficulty: "medium", ingredients: [] },
+    { id: "long", name: "Długi", cat: "obiad", prepMinutes: 45, difficulty: "hard", ingredients: [] },
+    { id: "unknown", name: "Bez danych", cat: "obiad", ingredients: [] },
+  ];
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithMeta, [], { time: "max20" }).map((match) => match.recipe.id),
+    ["quick"],
+  );
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithMeta, [], { time: "over30", difficulty: "hard" }).map((match) => match.recipe.id),
+    ["long"],
+  );
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithMeta, [], { time: "all", difficulty: "all" }).map((match) => match.recipe.id),
+    ["quick", "medium", "long", "unknown"],
+  );
+});
+
 test("zamienniki pochodzą z tej samej kategorii i pokazują oryginał jako pierwszy", () => {
   const catalog = [
     { id: "kefir", name: "Kefir", category: "dairy", custom: false },

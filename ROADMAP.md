@@ -1,6 +1,6 @@
 # MatFit Pro — roadmap
 
-Ostatnia aktualizacja: 5 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
+Ostatnia aktualizacja: 6 września 2026. Rozwój odbywa się na gałęzi `matfit-dev`; `main` jest aktualizowany dopiero po akceptacji przetestowanego etapu.
 
 ## Aktualny etap — rdzeń aplikacji
 
@@ -227,8 +227,9 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 
 - [ ] Rozszerzać bazę dopiero po ustabilizowaniu mechanizmu przepisów; ostateczny zestaw receptur zatwierdza zarząd MatFit po realnych testach gotowania.
 - [ ] Zapewnić mocne przepisy wytrawne i słodkie, a nie dużą liczbę przypadkowych pozycji.
-- [ ] Dodać czas całkowity: do 10, do 20, do 30 i powyżej 30 minut.
-- [ ] Dodać filtry: słodkie/wytrawne, posiłek, kalorie, białko, trudność, sprzęt, wegetariańskie, bez glutenu, bez laktozy i alergeny.
+- [x] Dodać czas całkowity: do 10, do 20, do 30 i powyżej 30 minut.
+- [x] Dodać filtry podstawowe: słodkie/wytrawne, pora posiłku, czas i trudność.
+- [ ] Rozszerzyć filtry o kalorie, białko, sprzęt, wegetariańskie, bez glutenu, bez laktozy i alergeny.
 - [ ] Tagów zdrowotnych nie opierać wyłącznie na deklaracji autora. Aplikacja powinna sprawdzać składniki i pokazywać ostrzeżenie, jeśli nie może potwierdzić oznaczenia lub ryzyka zanieczyszczenia krzyżowego.
 - [ ] Pozwolić użytkownikom dodawać własne przepisy i tagi, ale oddzielić treści prywatne, społecznościowe i zweryfikowane przez MatFit.
 

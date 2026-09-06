@@ -78,6 +78,8 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
   const category = options.category || "all";
   const search = normalizeRecipeTerm(options.search);
   const pantry = options.pantry || "";
+  const time = options.time || "all";
+  const difficulty = options.difficulty || "all";
 
   return (Array.isArray(recipes) ? recipes : [])
     .map((recipe, index) => ({
@@ -87,6 +89,15 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
     }))
     .filter(({ recipe, pantry: match }) => {
       if (category !== "all" && recipe.cat !== category) return false;
+      if (difficulty !== "all" && recipe.difficulty !== difficulty) return false;
+      if (time !== "all") {
+        const minutes = Number(recipe.prepMinutes);
+        if (!Number.isFinite(minutes) || minutes <= 0) return false;
+        if (time === "max10" && minutes > 10) return false;
+        if (time === "max20" && minutes > 20) return false;
+        if (time === "max30" && minutes > 30) return false;
+        if (time === "over30" && minutes <= 30) return false;
+      }
       if (match.active && !match.matchesAll) return false;
       if (!search) return true;
 
