@@ -230,7 +230,8 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Dodać czas całkowity: do 10, do 20, do 30 i powyżej 30 minut.
 - [x] Dodać filtry podstawowe: słodkie/wytrawne, pora posiłku, czas i trudność.
 - [x] Rozszerzyć filtry o kalorie i białko liczone na porcję.
-- [ ] Rozszerzyć filtry o sprzęt i zweryfikowane oznaczenia: wegetariańskie, bez glutenu, bez laktozy i alergeny.
+- [x] Dodać wielokrotny wybór sprzętu w przepisie oraz filtrowanie po wymaganym sprzęcie.
+- [ ] Dodać zweryfikowane oznaczenia: wegetariańskie, bez glutenu, bez laktozy i alergeny.
 - [ ] Tagów zdrowotnych nie opierać wyłącznie na deklaracji autora. Aplikacja powinna sprawdzać składniki i pokazywać ostrzeżenie, jeśli nie może potwierdzić oznaczenia lub ryzyka zanieczyszczenia krzyżowego.
 - [ ] Pozwolić użytkownikom dodawać własne przepisy i tagi, ale oddzielić treści prywatne, społecznościowe i zweryfikowane przez MatFit.
 

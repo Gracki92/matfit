@@ -139,6 +139,25 @@ test("filtry kalorii i białka działają na wartości jednej porcji", () => {
   );
 });
 
+test("filtr sprzętu obsługuje przepisy z wieloma wymaganiami", () => {
+  const recipesWithEquipment = [
+    { id: "cold", name: "Na zimno", equipment: ["none"], ingredients: [] },
+    { id: "pan", name: "Z patelni", equipment: ["pan"], ingredients: [] },
+    { id: "combo", name: "Patelnia i garnek", equipment: ["pan", "pot"], ingredients: [] },
+    { id: "legacy", name: "Starszy przepis", ingredients: [] },
+  ];
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithEquipment, [], { equipment: "pan" })
+      .map((match) => match.recipe.id),
+    ["pan", "combo"],
+  );
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithEquipment, [], { equipment: "none" })
+      .map((match) => match.recipe.id),
+    ["cold"],
+  );
+});
+
 test("zamienniki pochodzą z tej samej kategorii i pokazują oryginał jako pierwszy", () => {
   const catalog = [
     { id: "kefir", name: "Kefir", category: "dairy", custom: false },

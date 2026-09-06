@@ -135,7 +135,7 @@ light: {
   navbg: "rgba(247,250,255,.92)", name: "☀️ Jasny"
 }
 };
-function baseRecipe(id, name, emoji, cat, servings, ingredients, steps, finishedWeight, prepMinutes, difficulty) {
+function baseRecipe(id, name, emoji, cat, servings, ingredients, steps, finishedWeight, prepMinutes, difficulty, equipment) {
   return {
     id: "base_recipe_" + id,
     name: name,
@@ -147,6 +147,7 @@ function baseRecipe(id, name, emoji, cat, servings, ingredients, steps, finished
     finishedWeight: finishedWeight || "",
     prepMinutes: prepMinutes,
     difficulty: difficulty,
+    equipment: equipment,
     source: "matfit",
     custom: false
   };
@@ -167,7 +168,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_peanut_butter",
     grams: 15
-  }], ["Płatki zalej niewielką ilością gorącej wody i odstaw na kilka minut.", "Dodaj skyr i odżywkę białkową, dokładnie wymieszaj.", "Na wierzchu ułóż banana i masło orzechowe."], 430, 10, "easy"),
+  }], ["Płatki zalej niewielką ilością gorącej wody i odstaw na kilka minut.", "Dodaj skyr i odżywkę białkową, dokładnie wymieszaj.", "Na wierzchu ułóż banana i masło orzechowe."], 430, 10, "easy", ["pot"]),
   baseRecipe("protein_pancakes", "Naleśniki proteinowe", "🥞", "slodkie", 2, [{
     productId: "base_oat_flour",
     grams: 80
@@ -183,7 +184,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_banana",
     grams: 100
-  }], ["Zblenduj wszystkie składniki na gładkie ciasto.", "Smaż cienkie naleśniki na dobrej patelni bez dodatku tłuszczu.", "Podziel na dwie równe porcje."], 430, 20, "easy"),
+  }], ["Zblenduj wszystkie składniki na gładkie ciasto.", "Smaż cienkie naleśniki na dobrej patelni bez dodatku tłuszczu.", "Podziel na dwie równe porcje."], 430, 20, "easy", ["blender", "pan"]),
   baseRecipe("chicken_rice", "Kurczak z ryżem i brokułem", "🍗", "obiad", 2, [{
     productId: "base_chicken_breast_raw",
     grams: 300
@@ -196,7 +197,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_olive_oil",
     grams: 10
-  }], ["Ryż ugotuj zgodnie z instrukcją na opakowaniu.", "Kurczaka dopraw i usmaż lub ugrilluj, używając odmierzonej oliwy.", "Brokuł ugotuj na parze i podziel całość na dwie porcje."], "", 30, "easy"),
+  }], ["Ryż ugotuj zgodnie z instrukcją na opakowaniu.", "Kurczaka dopraw i usmaż lub ugrilluj, używając odmierzonej oliwy.", "Brokuł ugotuj na parze i podziel całość na dwie porcje."], "", 30, "easy", ["pot", "pan"]),
   baseRecipe("chicken_tortilla", "Tortilla fit z kurczakiem", "🌯", "wytrawne", 1, [{
     productId: "base_tortilla_wheat",
     grams: 60
@@ -212,7 +213,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_cucumber",
     grams: 80
-  }], ["Podgrzej tortillę na suchej patelni.", "Dodaj pokrojonego kurczaka i warzywa.", "Polej jogurtem doprawionym według uznania i zawiń."], 450, 15, "easy"),
+  }], ["Podgrzej tortillę na suchej patelni.", "Dodaj pokrojonego kurczaka i warzywa.", "Polej jogurtem doprawionym według uznania i zawiń."], 450, 15, "easy", ["pan"]),
   baseRecipe("tuna_pasta", "Makaron z tuńczykiem", "🍝", "obiad", 2, [{
     productId: "base_pasta_wheat_dry",
     grams: 160
@@ -228,7 +229,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_onion",
     grams: 60
-  }], ["Ugotuj makaron al dente.", "Dodaj odsączonego tuńczyka, pomidora i drobno posiekaną cebulę.", "Po lekkim przestudzeniu połącz z jogurtem i podziel na dwie porcje."], "", 20, "easy"),
+  }], ["Ugotuj makaron al dente.", "Dodaj odsączonego tuńczyka, pomidora i drobno posiekaną cebulę.", "Po lekkim przestudzeniu połącz z jogurtem i podziel na dwie porcje."], "", 20, "easy", ["pot"]),
   baseRecipe("quark_bowl", "Miska twarogowa z borówkami", "🫐", "kolacja", 1, [{
     productId: "base_quark_lean",
     grams: 250
@@ -241,7 +242,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_almonds",
     grams: 15
-  }], ["Twaróg rozgnieć z jogurtem na kremową masę.", "Dodaj borówki i posyp posiekanymi migdałami."], 465, 10, "easy"),
+  }], ["Twaróg rozgnieć z jogurtem na kremową masę.", "Dodaj borówki i posyp posiekanymi migdałami."], 465, 10, "easy", ["none"]),
   baseRecipe("protein_shake", "Shake białkowy z bananem", "🥤", "slodkie", 1, [{
     productId: "base_milk_15",
     grams: 300
@@ -254,7 +255,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_peanut_butter",
     grams: 15
-  }], ["Wszystkie składniki umieść w blenderze.", "Blenduj do uzyskania gładkiej konsystencji."], 465, 5, "easy"),
+  }], ["Wszystkie składniki umieść w blenderze.", "Blenduj do uzyskania gładkiej konsystencji."], 465, 5, "easy", ["blender"]),
   baseRecipe("salmon_potatoes", "Łosoś z ziemniakami i brokułem", "🐟", "obiad", 2, [{
     productId: "base_salmon_raw",
     grams: 300
@@ -267,7 +268,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_olive_oil",
     grams: 10
-  }], ["Ziemniaki ugotuj lub upiecz.", "Łososia dopraw i upiecz, a brokuł ugotuj na parze.", "Dodaj odmierzoną oliwę i podziel całość na dwie porcje."], "", 40, "medium"),
+  }], ["Ziemniaki ugotuj lub upiecz.", "Łososia dopraw i upiecz, a brokuł ugotuj na parze.", "Dodaj odmierzoną oliwę i podziel całość na dwie porcje."], "", 40, "medium", ["oven", "pot"]),
   baseRecipe("tofu_rice", "Tofu z ryżem i warzywami", "🌱", "obiad", 2, [{
     productId: "base_tofu_natural",
     grams: 300
@@ -283,7 +284,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_rapeseed_oil",
     grams: 10
-  }], ["Ryż ugotuj zgodnie z instrukcją.", "Tofu i warzywa pokrój, następnie podsmaż na odmierzonej ilości oleju.", "Połącz składniki i podziel na dwie porcje."], "", 30, "easy"),
+  }], ["Ryż ugotuj zgodnie z instrukcją.", "Tofu i warzywa pokrój, następnie podsmaż na odmierzonej ilości oleju.", "Połącz składniki i podziel na dwie porcje."], "", 30, "easy", ["pot", "pan"]),
   baseRecipe("egg_breakfast", "Jajka z pieczywem i pomidorem", "🍳", "sniadanie", 1, [{
     productId: "base_egg_whole",
     grams: 150
@@ -296,7 +297,7 @@ var RECIPES_DEFAULT = [
   }, {
     productId: "base_tomato",
     grams: 150
-  }], ["Jajka i białka przygotuj na patelni bez dodatku tłuszczu.", "Podaj z pieczywem i pokrojonym pomidorem."], 550, 15, "easy")
+  }], ["Jajka i białka przygotuj na patelni bez dodatku tłuszczu.", "Podaj z pieczywem i pokrojonym pomidorem."], 550, 15, "easy", ["pan"])
 ];
 function isBaseRecipeId(id) {
   return RECIPES_DEFAULT.some(function (recipe) {
@@ -345,6 +346,15 @@ var RECIPE_DIFFICULTY_LABELS = {
   easy: "Łatwy",
   medium: "Średni",
   hard: "Trudny"
+};
+var RECIPE_EQUIPMENT_LABELS = {
+  none: "Bez sprzętu",
+  pot: "Garnek",
+  pan: "Patelnia",
+  oven: "Piekarnik",
+  blender: "Blender",
+  airfryer: "Air fryer",
+  microwave: "Mikrofala"
 };
 
 // Pory dnia
@@ -1884,6 +1894,10 @@ function App() {
     _useStateRecipeProtein2 = _slicedToArray(_useStateRecipeProtein, 2),
     recipeProtein = _useStateRecipeProtein2[0],
     setRecipeProtein = _useStateRecipeProtein2[1];
+  var _useStateRecipeEquipment = useState("all"),
+    _useStateRecipeEquipment2 = _slicedToArray(_useStateRecipeEquipment, 2),
+    recipeEquipment = _useStateRecipeEquipment2[0],
+    setRecipeEquipment = _useStateRecipeEquipment2[1];
   var _useStateRecipePantry = useState(""),
     _useStateRecipePantry2 = _slicedToArray(_useStateRecipePantry, 2),
     recipePantry = _useStateRecipePantry2[0],
@@ -1999,6 +2013,7 @@ function App() {
       servings: "1",
       prepMinutes: "",
       difficulty: "easy",
+      equipment: ["none"],
       finishedWeight: "",
       steps: ""
     }),
@@ -2833,6 +2848,7 @@ function App() {
       servings: "1",
       prepMinutes: "",
       difficulty: "easy",
+      equipment: ["none"],
       finishedWeight: "",
       steps: ""
     });
@@ -2851,6 +2867,7 @@ function App() {
       servings: "1",
       prepMinutes: "",
       difficulty: "easy",
+      equipment: ["none"],
       finishedWeight: "",
       steps: ""
     });
@@ -2870,6 +2887,9 @@ function App() {
       servings: String(r.servings),
       prepMinutes: r.prepMinutes ? String(r.prepMinutes) : "",
       difficulty: RECIPE_DIFFICULTY_LABELS[r.difficulty] ? r.difficulty : "easy",
+      equipment: Array.isArray(r.equipment) ? r.equipment.filter(function (item) {
+        return RECIPE_EQUIPMENT_LABELS[item];
+      }) : [],
       finishedWeight: r.finishedWeight ? String(r.finishedWeight) : "",
       steps: (r.steps || []).join("\n")
     });
@@ -2892,6 +2912,13 @@ function App() {
       return;
     }
     var difficulty = RECIPE_DIFFICULTY_LABELS[rf.difficulty] ? rf.difficulty : "easy";
+    var equipment = Array.isArray(rf.equipment) ? rf.equipment.filter(function (item, index, list) {
+      return RECIPE_EQUIPMENT_LABELS[item] && list.indexOf(item) === index;
+    }) : [];
+    if (!equipment.length) {
+      toast_("Wybierz potrzebny sprzęt albo opcję „Bez sprzętu”");
+      return;
+    }
     var m = calcMacro(bItems, products);
     var newId = editRId || Date.now();
     var r = {
@@ -2902,6 +2929,7 @@ function App() {
       servings: parseInt(rf.servings) || 1,
       prepMinutes: prepMinutes,
       difficulty: difficulty,
+      equipment: equipment,
       finishedWeight: parseFloat(rf.finishedWeight) > 0 ? r2(parseFloat(rf.finishedWeight)) : "",
       kcal: Math.round(m.kcal),
       protein: r2(m.protein),
@@ -3532,9 +3560,10 @@ function App() {
     time: recipeTime,
     difficulty: recipeDifficulty,
     calories: recipeCalories,
-    protein: recipeProtein
+    protein: recipeProtein,
+    equipment: recipeEquipment
   });
-  var hasRecipeDetailFilters = recipeTime !== "all" || recipeDifficulty !== "all" || recipeCalories !== "all" || recipeProtein !== "all";
+  var hasRecipeDetailFilters = recipeTime !== "all" || recipeDifficulty !== "all" || recipeCalories !== "all" || recipeProtein !== "all" || recipeEquipment !== "all";
   var normalizedPantryEntries = normalizePantryEntries(pantryEntries);
   var sortedPantryEntries = sortPantryEntries(normalizedPantryEntries, TODAY);
   var normalizedMealTemplates = normalizeMealTemplates(mealTemplates);
@@ -4931,6 +4960,41 @@ function App() {
       key: value,
       value: value
     }, label);
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      gridColumn: "1 / -1"
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-equipment-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Sprzęt"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-equipment-filter",
+    value: recipeEquipment,
+    onChange: function onChange(e) {
+      return setRecipeEquipment(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Dowolny"), Object.entries(RECIPE_EQUIPMENT_LABELS).map(function (_refRecipeEquipment) {
+    var _refRecipeEquipment2 = _slicedToArray(_refRecipeEquipment, 2),
+      value = _refRecipeEquipment2[0],
+      label = _refRecipeEquipment2[1];
+    return /*#__PURE__*/React.createElement("option", {
+      key: value,
+      value: value
+    }, label);
   })))), hasRecipeDetailFilters && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: function onClick() {
@@ -4938,6 +5002,7 @@ function App() {
       setRecipeDifficulty("all");
       setRecipeCalories("all");
       setRecipeProtein("all");
+      setRecipeEquipment("all");
     },
     style: {
       display: "block",
@@ -5029,7 +5094,9 @@ function App() {
         color: T.text2,
         marginTop: 2
       }
-    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.prepMinutes ? " · ⏱ " + r.prepMinutes + " min" : "", RECIPE_DIFFICULTY_LABELS[r.difficulty] ? " · " + RECIPE_DIFFICULTY_LABELS[r.difficulty] : "", r.custom === false ? " · MatFit" : " · Własny"), currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
+    }, r.servings, r.servings === 1 ? " porcja · " : " porcje · ", CAT_LABELS[r.cat] || r.cat, r.prepMinutes ? " · ⏱ " + r.prepMinutes + " min" : "", RECIPE_DIFFICULTY_LABELS[r.difficulty] ? " · " + RECIPE_DIFFICULTY_LABELS[r.difficulty] : "", Array.isArray(r.equipment) && r.equipment.length ? " · " + r.equipment.map(function (item) {
+      return RECIPE_EQUIPMENT_LABELS[item];
+    }).filter(Boolean).join(", ") : "", r.custom === false ? " · MatFit" : " · Własny"), currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
       style: {
         color: currentPantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.acc,
         fontSize: 10,
@@ -8659,6 +8726,7 @@ function App() {
         servings: "1",
         prepMinutes: "",
         difficulty: "easy",
+        equipment: ["none"],
         finishedWeight: "",
         steps: ""
       });
@@ -8895,6 +8963,50 @@ function App() {
       value: value
     }, label);
   })))), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Potrzebny sprzęt"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 12
+    }
+  }, Object.entries(RECIPE_EQUIPMENT_LABELS).map(function (_refRecipeEquipmentForm) {
+    var _refRecipeEquipmentForm2 = _slicedToArray(_refRecipeEquipmentForm, 2),
+      value = _refRecipeEquipmentForm2[0],
+      label = _refRecipeEquipmentForm2[1];
+    var selected = Array.isArray(rf.equipment) && rf.equipment.includes(value);
+    return /*#__PURE__*/React.createElement("button", {
+      key: value,
+      type: "button",
+      "aria-pressed": selected,
+      onClick: function onClick() {
+        var current = Array.isArray(rf.equipment) ? rf.equipment : [];
+        var next;
+        if (value === "none") {
+          next = ["none"];
+        } else {
+          next = current.filter(function (item) {
+            return item !== "none" && item !== value;
+          });
+          if (!selected) next.push(value);
+          if (next.length === 0) next = ["none"];
+        }
+        setRf(_objectSpread(_objectSpread({}, rf), {}, {
+          equipment: next
+        }));
+      },
+      style: {
+        border: "1px solid " + (selected ? T.acc : T.border),
+        background: selected ? T.acc + "22" : T.surf2,
+        color: selected ? T.acc : T.text2,
+        borderRadius: 999,
+        padding: "7px 10px",
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, label);
+  })), /*#__PURE__*/React.createElement(Lbl, {
     T: T
   }, "Sk\u0142adniki"), /*#__PURE__*/React.createElement(Builder, {
     items: bItems,
@@ -9753,7 +9865,9 @@ function App() {
         color: theme.muted,
         fontWeight: 600
       }
-    }, servings, servings === 1 ? " porcja" : " porcje", " · ", category, r.prepMinutes ? " · " + r.prepMinutes + " min" : "", RECIPE_DIFFICULTY_LABELS[r.difficulty] ? " · " + RECIPE_DIFFICULTY_LABELS[r.difficulty] : "")), /*#__PURE__*/React.createElement("div", {
+    }, servings, servings === 1 ? " porcja" : " porcje", " · ", category, r.prepMinutes ? " · " + r.prepMinutes + " min" : "", RECIPE_DIFFICULTY_LABELS[r.difficulty] ? " · " + RECIPE_DIFFICULTY_LABELS[r.difficulty] : "", Array.isArray(r.equipment) && r.equipment.length ? " · " + r.equipment.map(function (item) {
+      return RECIPE_EQUIPMENT_LABELS[item];
+    }).filter(Boolean).join(", ") : "")), /*#__PURE__*/React.createElement("div", {
       style: {
         background: theme.hero,
         position: "relative",

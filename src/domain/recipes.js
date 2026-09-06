@@ -108,6 +108,7 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
   const difficulty = options.difficulty || "all";
   const calories = options.calories || "all";
   const protein = options.protein || "all";
+  const equipment = options.equipment || "all";
 
   return (Array.isArray(recipes) ? recipes : [])
     .map((recipe, index) => ({
@@ -119,6 +120,10 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
       const nutrition = recipeNutritionPerServing(recipe, products);
       if (category !== "all" && recipe.cat !== category) return false;
       if (difficulty !== "all" && recipe.difficulty !== difficulty) return false;
+      if (equipment !== "all") {
+        const recipeEquipment = Array.isArray(recipe.equipment) ? recipe.equipment : [];
+        if (!recipeEquipment.includes(equipment)) return false;
+      }
       if (time !== "all") {
         const minutes = Number(recipe.prepMinutes);
         if (!Number.isFinite(minutes) || minutes <= 0) return false;
