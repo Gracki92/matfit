@@ -59,8 +59,10 @@ import {
   toggleProductId,
 } from "./domain/products.js";
 import {
+  RECIPE_ALLERGEN_LABELS,
   filterRecipesByPantry,
   parsePantryTerms,
+  recipeDietarySummary,
   recipePantryMatch,
   recipeSubstitutionOptions,
   replaceRecipeIngredient,
@@ -1904,6 +1906,18 @@ function App() {
     _useStateRecipeVegetarian2 = _slicedToArray(_useStateRecipeVegetarian, 2),
     recipeVegetarian = _useStateRecipeVegetarian2[0],
     setRecipeVegetarian = _useStateRecipeVegetarian2[1];
+  var _useStateRecipeGluten = useState("all"),
+    _useStateRecipeGluten2 = _slicedToArray(_useStateRecipeGluten, 2),
+    recipeGluten = _useStateRecipeGluten2[0],
+    setRecipeGluten = _useStateRecipeGluten2[1];
+  var _useStateRecipeLactose = useState("all"),
+    _useStateRecipeLactose2 = _slicedToArray(_useStateRecipeLactose, 2),
+    recipeLactose = _useStateRecipeLactose2[0],
+    setRecipeLactose = _useStateRecipeLactose2[1];
+  var _useStateRecipeAllergen = useState("all"),
+    _useStateRecipeAllergen2 = _slicedToArray(_useStateRecipeAllergen, 2),
+    recipeAllergen = _useStateRecipeAllergen2[0],
+    setRecipeAllergen = _useStateRecipeAllergen2[1];
   var _useStateRecipePantry = useState(""),
     _useStateRecipePantry2 = _slicedToArray(_useStateRecipePantry, 2),
     recipePantry = _useStateRecipePantry2[0],
@@ -2048,6 +2062,9 @@ function App() {
       fiber: "",
       saturatedFat: "",
       salt: "",
+      allergens: [],
+      containsLactose: false,
+      allergenDataConfirmed: false,
       packageSize: ""
     }),
     _useState60 = _slicedToArray(_useState59, 2),
@@ -3165,6 +3182,9 @@ function App() {
       fiber: source.fiber === null || source.fiber === undefined ? "" : source.fiber,
       saturatedFat: source.saturatedFat === null || source.saturatedFat === undefined ? "" : source.saturatedFat,
       salt: source.salt === null || source.salt === undefined ? "" : source.salt,
+      allergens: [],
+      containsLactose: false,
+      allergenDataConfirmed: false,
       packageSize: source.packageSize || ""
     });
     setScanResult(null);
@@ -3206,6 +3226,10 @@ function App() {
       toast_("Tłuszcze nasycone nie mogą być większe niż wszystkie tłuszcze");
       return;
     }
+    if ((Array.isArray(pf.allergens) && pf.allergens.length > 0 || pf.containsLactose === true) && pf.allergenDataConfirmed !== true) {
+      toast_("Potwierdź, że dane o alergenach sprawdzono na etykiecie lub w składzie");
+      return;
+    }
     var returnToPlanner = modal === "newProdFromPlanner";
     var newProd = _objectSpread(_objectSpread({}, pf), {}, {
       id: "u" + Date.now(),
@@ -3220,6 +3244,11 @@ function App() {
       fiber: optionalValues.fiber,
       saturatedFat: optionalValues.saturatedFat,
       salt: optionalValues.salt,
+      allergens: Array.isArray(pf.allergens) ? pf.allergens.filter(function (key, index, list) {
+        return RECIPE_ALLERGEN_LABELS[key] && list.indexOf(key) === index;
+      }) : [],
+      containsLactose: pf.allergenDataConfirmed === true && pf.containsLactose === true,
+      allergenDataStatus: pf.allergenDataConfirmed === true ? "user" : null,
       packageSize: parseFloat(pf.packageSize) || null,
       nutritionSource: "Dane użytkownika / etykieta",
       lastVerified: TODAY,
@@ -3241,6 +3270,9 @@ function App() {
       fiber: "",
       saturatedFat: "",
       salt: "",
+      allergens: [],
+      containsLactose: false,
+      allergenDataConfirmed: false,
       packageSize: ""
     });
     if (returnToPlanner) {
@@ -3574,9 +3606,12 @@ function App() {
     calories: recipeCalories,
     protein: recipeProtein,
     equipment: recipeEquipment,
-    vegetarian: recipeVegetarian
+    vegetarian: recipeVegetarian,
+    gluten: recipeGluten,
+    lactose: recipeLactose,
+    excludeAllergen: recipeAllergen
   });
-  var hasRecipeDetailFilters = recipeTime !== "all" || recipeDifficulty !== "all" || recipeCalories !== "all" || recipeProtein !== "all" || recipeEquipment !== "all" || recipeVegetarian !== "all";
+  var hasRecipeDetailFilters = recipeTime !== "all" || recipeDifficulty !== "all" || recipeCalories !== "all" || recipeProtein !== "all" || recipeEquipment !== "all" || recipeVegetarian !== "all" || recipeGluten !== "all" || recipeLactose !== "all" || recipeAllergen !== "all";
   var normalizedPantryEntries = normalizePantryEntries(pantryEntries);
   var sortedPantryEntries = sortPantryEntries(normalizedPantryEntries, TODAY);
   var normalizedMealTemplates = normalizeMealTemplates(mealTemplates);
@@ -5029,7 +5064,92 @@ function App() {
     value: "all"
   }, "Dowolna"), /*#__PURE__*/React.createElement("option", {
     value: "yes"
-  }, "Wegetariańska")))), hasRecipeDetailFilters && /*#__PURE__*/React.createElement("button", {
+  }, "Wegetariańska"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-gluten-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Gluten"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-gluten-filter",
+    value: recipeGluten,
+    onChange: function onChange(e) {
+      return setRecipeGluten(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Dowolnie"), /*#__PURE__*/React.createElement("option", {
+    value: "clear"
+  }, "Bez wykrytych źródeł"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-lactose-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Laktoza"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-lactose-filter",
+    value: recipeLactose,
+    onChange: function onChange(e) {
+      return setRecipeLactose(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Dowolnie"), /*#__PURE__*/React.createElement("option", {
+    value: "clear"
+  }, "Bez wykrytych źródeł"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      gridColumn: "1 / -1"
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-allergen-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Wyklucz alergen"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-allergen-filter",
+    value: recipeAllergen,
+    onChange: function onChange(e) {
+      return setRecipeAllergen(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "Nie wykluczaj"), Object.entries(RECIPE_ALLERGEN_LABELS).map(function (_refRecipeAllergen) {
+    var _refRecipeAllergen2 = _slicedToArray(_refRecipeAllergen, 2),
+      value = _refRecipeAllergen2[0],
+      label = _refRecipeAllergen2[1];
+    return /*#__PURE__*/React.createElement("option", {
+      key: value,
+      value: value
+    }, "Bez: ", label);
+  })))), hasRecipeDetailFilters && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: function onClick() {
       setRecipeTime("all");
@@ -5038,6 +5158,9 @@ function App() {
       setRecipeProtein("all");
       setRecipeEquipment("all");
       setRecipeVegetarian("all");
+      setRecipeGluten("all");
+      setRecipeLactose("all");
+      setRecipeAllergen("all");
     },
     style: {
       display: "block",
@@ -5080,6 +5203,9 @@ function App() {
       finishedWeight = originalFinishedWeight > 0 && baseIngredientWeight > 0 ? originalFinishedWeight * (currentIngredientWeight / baseIngredientWeight) : 0,
       per100Factor = finishedWeight > 0 ? 100 / finishedWeight : 0,
       substitutionSummary = summarizeRecipeSubstitutions(r.ingredients, currentItems, products),
+      dietarySummary = recipeDietarySummary({
+        ingredients: currentItems
+      }, products),
       currentPantryMatch = recipePantryMatch({
         ingredients: currentItems
       }, products, recipePantry),
@@ -5188,7 +5314,24 @@ function App() {
       onClick: function onClick(e) {
         return e.stopPropagation();
       }
-    }, currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: dietarySummary.complete ? T.surf2 : "#fff7ed",
+        border: "1px solid " + (dietarySummary.complete ? T.border : "#fdba74"),
+        borderRadius: 9,
+        color: dietarySummary.complete ? T.text2 : "#9a3412",
+        fontSize: 10,
+        lineHeight: 1.5,
+        marginTop: 10,
+        padding: "8px 9px"
+      }
+    }, dietarySummary.complete ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: T.text
+      }
+    }, dietarySummary.verification === "user" ? "Analiza składników (część danych użytkownika): " : "Analiza składników MatFit: "), dietarySummary.allergens.length ? "wykryto: " + dietarySummary.allergens.map(function (key) {
+      return RECIPE_ALLERGEN_LABELS[key];
+    }).join(", ") + ". " : "nie wykryto głównych alergenów. ", "Gluten: ", dietarySummary.gluten === "clear" ? "brak wykrytych źródeł" : "wykryto", " · Laktoza: ", dietarySummary.lactose === "clear" ? "brak wykrytych źródeł" : "wykryto", ". Sprawdź etykiety pod kątem śladowych ilości i zanieczyszczeń krzyżowych.") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("strong", null, "Niepełne dane o alergenach. "), "Sprawdź: ", dietarySummary.unknownIngredients.join(", "), ". Filtry bezpieczeństwa nie uznają tego przepisu za potwierdzony.")), currentPantryMatch.active && /*#__PURE__*/React.createElement("div", {
       style: {
         background: T.surf2,
         border: "1px solid " + (currentPantryMatch.missingIngredients.length === 0 ? "#16a34a" : T.border),
@@ -5727,6 +5870,9 @@ function App() {
         fiber: "",
         saturatedFat: "",
         salt: "",
+        allergens: [],
+        containsLactose: false,
+        allergenDataConfirmed: false,
         packageSize: ""
       });
       setModal("newProd");
@@ -8291,6 +8437,9 @@ function App() {
         fiber: "",
         saturatedFat: "",
         salt: "",
+        allergens: [],
+        containsLactose: false,
+        allergenDataConfirmed: false,
         packageSize: ""
       });
       setModal("newProdFromPlanner");
@@ -9258,6 +9407,89 @@ function App() {
       style: inp
     }));
   })), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Alergeny z etykiety / składu"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: 6,
+      marginBottom: 8
+    }
+  }, Object.entries(RECIPE_ALLERGEN_LABELS).map(function (_refProductAllergen) {
+    var _refProductAllergen2 = _slicedToArray(_refProductAllergen, 2),
+      value = _refProductAllergen2[0],
+      label = _refProductAllergen2[1];
+    var selected = Array.isArray(pf.allergens) && pf.allergens.includes(value);
+    return /*#__PURE__*/React.createElement("button", {
+      key: value,
+      type: "button",
+      "aria-pressed": selected,
+      onClick: function onClick() {
+        var current = Array.isArray(pf.allergens) ? pf.allergens : [];
+        setPf(_objectSpread(_objectSpread({}, pf), {}, {
+          allergens: selected ? current.filter(function (key) {
+            return key !== value;
+          }) : current.concat(value)
+        }));
+      },
+      style: {
+        border: "1px solid " + (selected ? "#dc2626" : T.border),
+        background: selected ? "#dc2626" + "14" : T.surf2,
+        color: selected ? "#b91c1c" : T.text2,
+        borderRadius: 999,
+        padding: "7px 10px",
+        fontSize: 11,
+        cursor: "pointer"
+      }
+    }, label);
+  })), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-pressed": pf.containsLactose === true,
+    onClick: function onClick() {
+      return setPf(_objectSpread(_objectSpread({}, pf), {}, {
+        containsLactose: pf.containsLactose !== true
+      }));
+    },
+    style: {
+      width: "100%",
+      border: "1px solid " + (pf.containsLactose === true ? "#dc2626" : T.border),
+      background: pf.containsLactose === true ? "#dc2626" + "14" : T.surf2,
+      color: pf.containsLactose === true ? "#b91c1c" : T.text2,
+      borderRadius: 10,
+      padding: "9px 10px",
+      textAlign: "left",
+      fontSize: 11,
+      cursor: "pointer",
+      marginBottom: 8
+    }
+  }, pf.containsLactose === true ? "✓ Zawiera laktozę" : "Zaznacz, jeśli zawiera laktozę"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "aria-pressed": pf.allergenDataConfirmed === true,
+    onClick: function onClick() {
+      return setPf(_objectSpread(_objectSpread({}, pf), {}, {
+        allergenDataConfirmed: pf.allergenDataConfirmed !== true
+      }));
+    },
+    style: {
+      width: "100%",
+      border: "1px solid " + (pf.allergenDataConfirmed === true ? "#16a34a" : T.border),
+      background: pf.allergenDataConfirmed === true ? "#16a34a" + "14" : T.surf2,
+      color: pf.allergenDataConfirmed === true ? "#15803d" : T.text2,
+      borderRadius: 10,
+      padding: "9px 10px",
+      textAlign: "left",
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, pf.allergenDataConfirmed === true ? "✓ Dane sprawdzone na etykiecie / w składzie" : "Potwierdź sprawdzenie etykiety / składu"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: T.text3,
+      lineHeight: 1.45,
+      margin: "5px 0 10px"
+    }
+  }, "Brak zaznaczeń po potwierdzeniu oznacza, że na etykiecie lub w składzie nie wykazano powyższych alergenów. Zawsze sprawdź ostrzeżenia o śladowych ilościach."), /*#__PURE__*/React.createElement(Lbl, {
     T: T
   }, "Rozmiar opakowania (g) \u2014 opcjonalne"), /*#__PURE__*/React.createElement("input", {
     value: pf.packageSize,

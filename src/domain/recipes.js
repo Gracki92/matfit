@@ -44,6 +44,89 @@ function ingredientDetails(recipe, products) {
   });
 }
 
+export const RECIPE_ALLERGEN_LABELS = {
+  gluten: "gluten",
+  milk: "mleko",
+  eggs: "jaja",
+  fish: "ryby",
+  crustaceans: "skorupiaki",
+  soy: "soja",
+  peanuts: "orzeszki ziemne",
+  treeNuts: "orzechy",
+  celery: "seler",
+};
+
+const GLUTEN_PRODUCT_IDS = new Set([
+  "pasta_wheat_dry", "pasta_wheat_cooked", "pasta_wholegrain_dry", "oats",
+  "couscous_dry", "bread_wheat", "bread_rye_whole", "graham_roll", "tortilla_wheat",
+  "wheat_flour_450", "oat_flour", "barley_pearl_dry", "bulgur_dry", "semolina",
+  "bread_whole_wheat",
+]);
+const EGG_PRODUCT_IDS = new Set(["egg_whole", "egg_white"]);
+const FISH_PRODUCT_IDS = new Set([
+  "tuna_water", "cod_raw", "salmon_raw", "mackerel_smoked", "sardines_oil", "tilapia_raw",
+]);
+const SOY_PRODUCT_IDS = new Set(["tofu_natural", "edamame_cooked"]);
+const TREE_NUT_PRODUCT_IDS = new Set(["almonds", "walnuts", "cashews", "hazelnuts"]);
+
+function baseProductDietaryData(product) {
+  const id = String(product && product.id || "").replace(/^base_/, "");
+  const allergens = [];
+  if (GLUTEN_PRODUCT_IDS.has(id)) allergens.push("gluten");
+  if ((product && product.category === "dairy") || id === "butter_82" || id === "ghee") allergens.push("milk");
+  if (EGG_PRODUCT_IDS.has(id)) allergens.push("eggs");
+  if (FISH_PRODUCT_IDS.has(id)) allergens.push("fish");
+  if (id === "shrimp_cooked") allergens.push("crustaceans");
+  if (SOY_PRODUCT_IDS.has(id)) allergens.push("soy");
+  if (id === "peanut_butter") allergens.push("peanuts");
+  if (TREE_NUT_PRODUCT_IDS.has(id)) allergens.push("treeNuts");
+  if (id === "celeriac") allergens.push("celery");
+  return {
+    allergens,
+    containsLactose: (product && product.category === "dairy") || id === "butter_82" || id === "ghee",
+  };
+}
+
+export function recipeDietarySummary(recipe, products) {
+  const productsById = productMap(products);
+  const ingredients = Array.isArray(recipe && recipe.ingredients) ? recipe.ingredients : [];
+  const allergens = new Set();
+  const unknownIngredients = [];
+  let containsLactose = false;
+  let userDeclaredIngredients = 0;
+
+  ingredients.forEach((item) => {
+    const product = productsById.get(String(item && item.productId));
+    if (!product) {
+      unknownIngredients.push(String(item && item.name || "Nieznany produkt"));
+      return;
+    }
+    let data = null;
+    if (product.source === "matfit" || String(product.id || "").startsWith("base_")) {
+      data = baseProductDietaryData(product);
+    } else if (product.allergenDataStatus === "user" && Array.isArray(product.allergens)) {
+      data = { allergens: product.allergens, containsLactose: product.containsLactose === true };
+      userDeclaredIngredients += 1;
+    }
+    if (!data) {
+      unknownIngredients.push(product.name || "Nieznany produkt");
+      return;
+    }
+    data.allergens.filter((key) => RECIPE_ALLERGEN_LABELS[key]).forEach((key) => allergens.add(key));
+    if (data.containsLactose) containsLactose = true;
+  });
+
+  const complete = ingredients.length > 0 && unknownIngredients.length === 0;
+  return {
+    complete,
+    verification: complete ? userDeclaredIngredients > 0 ? "user" : "matfit" : "incomplete",
+    allergens: [...allergens],
+    unknownIngredients: [...new Set(unknownIngredients)],
+    gluten: allergens.has("gluten") ? "contains" : complete ? "clear" : "unknown",
+    lactose: containsLactose ? "contains" : complete ? "clear" : "unknown",
+  };
+}
+
 export function recipePantryMatch(recipe, products, pantryValue) {
   const terms = parsePantryTerms(pantryValue);
   const ingredients = ingredientDetails(recipe, products);
@@ -110,6 +193,9 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
   const protein = options.protein || "all";
   const equipment = options.equipment || "all";
   const vegetarian = options.vegetarian || "all";
+  const gluten = options.gluten || "all";
+  const lactose = options.lactose || "all";
+  const excludeAllergen = options.excludeAllergen || "all";
 
   return (Array.isArray(recipes) ? recipes : [])
     .map((recipe, index) => ({
@@ -119,6 +205,7 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
     }))
     .filter(({ recipe, pantry: match }) => {
       const nutrition = recipeNutritionPerServing(recipe, products);
+      const dietary = recipeDietarySummary(recipe, products);
       if (category !== "all" && recipe.cat !== category) return false;
       if (difficulty !== "all" && recipe.difficulty !== difficulty) return false;
       if (equipment !== "all") {
@@ -126,6 +213,9 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
         if (!recipeEquipment.includes(equipment)) return false;
       }
       if (vegetarian === "yes" && recipe.vegetarian !== true) return false;
+      if (gluten === "clear" && dietary.gluten !== "clear") return false;
+      if (lactose === "clear" && dietary.lactose !== "clear") return false;
+      if (excludeAllergen !== "all" && (!dietary.complete || dietary.allergens.includes(excludeAllergen))) return false;
       if (time !== "all") {
         const minutes = Number(recipe.prepMinutes);
         if (!Number.isFinite(minutes) || minutes <= 0) return false;

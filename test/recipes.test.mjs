@@ -4,6 +4,7 @@ import {
   filterRecipesByPantry,
   normalizeRecipeTerm,
   parsePantryTerms,
+  recipeDietarySummary,
   recipeNutritionPerServing,
   recipeSubstitutionOptions,
   recipePantryMatch,
@@ -169,6 +170,59 @@ test("filtr wegetariański nie zgaduje statusu brakujących danych", () => {
     filterRecipesByPantry(recipesWithDiet, [], { vegetarian: "yes" })
       .map((match) => match.recipe.id),
     ["verified", "declared"],
+  );
+});
+
+test("analiza diety wykrywa alergeny i nie potwierdza niepełnych danych", () => {
+  const catalog = [
+    { id: "base_oats", name: "Płatki", category: "carbs", source: "matfit" },
+    { id: "base_milk_2", name: "Mleko", category: "dairy", source: "matfit" },
+    { id: "base_banana", name: "Banan", category: "fruit", source: "matfit" },
+    { id: "own", name: "Własny produkt", custom: true },
+    { id: "declared", name: "Sprawdzony produkt", custom: true, allergenDataStatus: "user", allergens: [], containsLactose: false },
+  ];
+  assert.deepEqual(
+    recipeDietarySummary({ ingredients: [
+      { productId: "base_oats" }, { productId: "base_milk_2" }, { productId: "base_banana" },
+    ] }, catalog),
+    { complete: true, verification: "matfit", allergens: ["gluten", "milk"], unknownIngredients: [], gluten: "contains", lactose: "contains" },
+  );
+  assert.deepEqual(
+    recipeDietarySummary({ ingredients: [{ productId: "base_banana" }] }, catalog),
+    { complete: true, verification: "matfit", allergens: [], unknownIngredients: [], gluten: "clear", lactose: "clear" },
+  );
+  const unknown = recipeDietarySummary({ ingredients: [{ productId: "own" }] }, catalog);
+  assert.equal(unknown.complete, false);
+  assert.equal(unknown.gluten, "unknown");
+  assert.deepEqual(unknown.unknownIngredients, ["Własny produkt"]);
+  assert.deepEqual(
+    recipeDietarySummary({ ingredients: [{ productId: "declared" }] }, catalog),
+    { complete: true, verification: "user", allergens: [], unknownIngredients: [], gluten: "clear", lactose: "clear" },
+  );
+});
+
+test("filtry bez glutenu, laktozy i alergenu wymagają kompletnych danych", () => {
+  const catalog = [
+    { id: "base_rice_white_dry", name: "Ryż", category: "carbs", source: "matfit" },
+    { id: "base_egg_whole", name: "Jajko", category: "protein", source: "matfit" },
+    { id: "base_oats", name: "Płatki", category: "carbs", source: "matfit" },
+    { id: "own", name: "Własny produkt", custom: true },
+  ];
+  const recipesWithClaims = [
+    { id: "rice", name: "Ryż", ingredients: [{ productId: "base_rice_white_dry" }] },
+    { id: "egg", name: "Jajko z ryżem", ingredients: [{ productId: "base_egg_whole" }, { productId: "base_rice_white_dry" }] },
+    { id: "oats", name: "Owsianka", ingredients: [{ productId: "base_oats" }] },
+    { id: "unknown", name: "Niepewny", ingredients: [{ productId: "own" }] },
+  ];
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithClaims, catalog, { gluten: "clear", lactose: "clear" })
+      .map((match) => match.recipe.id),
+    ["rice", "egg"],
+  );
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithClaims, catalog, { excludeAllergen: "eggs" })
+      .map((match) => match.recipe.id),
+    ["rice", "oats"],
   );
 });
 

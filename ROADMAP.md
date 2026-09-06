@@ -232,9 +232,10 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Rozszerzyć filtry o kalorie i białko liczone na porcję.
 - [x] Dodać wielokrotny wybór sprzętu w przepisie oraz filtrowanie po wymaganym sprzęcie.
 - [x] Dodać filtr wegetariański z rozróżnieniem weryfikacji MatFit i deklaracji użytkownika.
-- [ ] Dodać zweryfikowane oznaczenia: bez glutenu, bez laktozy i alergeny.
-- [ ] Tagów zdrowotnych nie opierać wyłącznie na deklaracji autora. Aplikacja powinna sprawdzać składniki i pokazywać ostrzeżenie, jeśli nie może potwierdzić oznaczenia lub ryzyka zanieczyszczenia krzyżowego.
-- [ ] Pozwolić użytkownikom dodawać własne przepisy i tagi, ale oddzielić treści prywatne, społecznościowe i zweryfikowane przez MatFit.
+- [x] Dodać analizę składników oraz filtry: bez wykrytych źródeł glutenu, bez wykrytej laktozy i wykluczanie głównych alergenów.
+- [x] Nie zgadywać tagów zdrowotnych: niepełne dane blokują filtr bezpieczeństwa, źródło weryfikacji jest widoczne, a aplikacja ostrzega o etykietach i zanieczyszczeniu krzyżowym.
+- [x] Pozwolić dodawać własne przepisy i deklaracje dietetyczne, oddzielając je od weryfikacji MatFit.
+- [ ] Dodać treści społecznościowe dopiero po zaprojektowaniu moderacji, zgłoszeń i poziomów weryfikacji.
 
 ### 8. Platforma i przewaga konkurencyjna
 
