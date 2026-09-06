@@ -4,6 +4,7 @@ import {
   filterRecipesByPantry,
   normalizeRecipeTerm,
   parsePantryTerms,
+  recipeNutritionPerServing,
   recipeSubstitutionOptions,
   recipePantryMatch,
   replaceRecipeIngredient,
@@ -93,6 +94,48 @@ test("filtry czasu i trudności współpracują z pozostałymi filtrami", () => 
   assert.deepEqual(
     filterRecipesByPantry(recipesWithMeta, [], { time: "all", difficulty: "all" }).map((match) => match.recipe.id),
     ["quick", "medium", "long", "unknown"],
+  );
+});
+
+test("makro przepisu jest liczone na porcję z katalogu lub zapisanych danych", () => {
+  const catalog = [
+    { id: "rice", kcal: 350, protein: 8, carbs: 78, fat: 1 },
+    { id: "chicken", kcal: 110, protein: 23, carbs: 0, fat: 2 },
+  ];
+  assert.deepEqual(
+    recipeNutritionPerServing({
+      servings: 2,
+      ingredients: [{ productId: "rice", grams: 100 }, { productId: "chicken", grams: 200 }],
+    }, catalog),
+    { known: true, kcal: 285, protein: 27 },
+  );
+  assert.deepEqual(
+    recipeNutritionPerServing({ servings: 2, kcal: 800, protein: 60 }, []),
+    { known: true, kcal: 400, protein: 30 },
+  );
+  assert.equal(recipeNutritionPerServing({ ingredients: [{ name: "Produkt" }] }, []).known, false);
+});
+
+test("filtry kalorii i białka działają na wartości jednej porcji", () => {
+  const catalog = [
+    { id: "lean", kcal: 200, protein: 30, carbs: 10, fat: 4 },
+    { id: "dense", kcal: 800, protein: 60, carbs: 80, fat: 30 },
+  ];
+  const recipesWithNutrition = [
+    { id: "light", name: "Lekki", servings: 1, ingredients: [{ productId: "lean", grams: 100 }] },
+    { id: "balanced", name: "Dwie porcje", servings: 2, ingredients: [{ productId: "dense", grams: 100 }] },
+    { id: "large", name: "Duży", servings: 1, ingredients: [{ productId: "dense", grams: 100 }] },
+    { id: "unknown", name: "Bez danych", ingredients: [{ name: "Nieznany" }] },
+  ];
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithNutrition, catalog, { calories: "max500", protein: "min30" })
+      .map((match) => match.recipe.id),
+    ["light", "balanced"],
+  );
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithNutrition, catalog, { calories: "over700", protein: "min40" })
+      .map((match) => match.recipe.id),
+    ["large"],
   );
 });
 

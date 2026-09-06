@@ -1,4 +1,4 @@
-const CACHE = "matfit-v36";
+const CACHE = "matfit-v37";
 const ASSETS = [
   "./",
   "./index.html",

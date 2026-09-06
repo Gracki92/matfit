@@ -74,12 +74,40 @@ export function recipePantryMatch(recipe, products, pantryValue) {
   };
 }
 
+export function recipeNutritionPerServing(recipe, products) {
+  const servings = Math.max(0.1, Number(recipe && recipe.servings) || 1);
+  const ingredients = Array.isArray(recipe && recipe.ingredients) ? recipe.ingredients : [];
+  const productsById = productMap(products);
+  const linkedIngredients = ingredients.length > 0
+    && ingredients.every((item) => item && item.productId !== undefined);
+  const completeCatalog = linkedIngredients
+    && ingredients.every((item) => productsById.has(String(item.productId)));
+
+  if (completeCatalog) {
+    const macro = macroForRecipeItems(ingredients, productsById);
+    return {
+      known: true,
+      kcal: macro.kcal / servings,
+      protein: macro.protein / servings,
+    };
+  }
+
+  const kcal = Number(recipe && recipe.kcal);
+  const protein = Number(recipe && recipe.protein);
+  if (Number.isFinite(kcal) && kcal >= 0 && Number.isFinite(protein) && protein >= 0) {
+    return { known: true, kcal: kcal / servings, protein: protein / servings };
+  }
+  return { known: false, kcal: 0, protein: 0 };
+}
+
 export function filterRecipesByPantry(recipes, products, options = {}) {
   const category = options.category || "all";
   const search = normalizeRecipeTerm(options.search);
   const pantry = options.pantry || "";
   const time = options.time || "all";
   const difficulty = options.difficulty || "all";
+  const calories = options.calories || "all";
+  const protein = options.protein || "all";
 
   return (Array.isArray(recipes) ? recipes : [])
     .map((recipe, index) => ({
@@ -88,6 +116,7 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
       index,
     }))
     .filter(({ recipe, pantry: match }) => {
+      const nutrition = recipeNutritionPerServing(recipe, products);
       if (category !== "all" && recipe.cat !== category) return false;
       if (difficulty !== "all" && recipe.difficulty !== difficulty) return false;
       if (time !== "all") {
@@ -97,6 +126,19 @@ export function filterRecipesByPantry(recipes, products, options = {}) {
         if (time === "max20" && minutes > 20) return false;
         if (time === "max30" && minutes > 30) return false;
         if (time === "over30" && minutes <= 30) return false;
+      }
+      if (calories !== "all") {
+        if (!nutrition.known) return false;
+        if (calories === "max300" && nutrition.kcal > 300) return false;
+        if (calories === "max500" && nutrition.kcal > 500) return false;
+        if (calories === "max700" && nutrition.kcal > 700) return false;
+        if (calories === "over700" && nutrition.kcal <= 700) return false;
+      }
+      if (protein !== "all") {
+        if (!nutrition.known) return false;
+        if (protein === "min20" && nutrition.protein < 20) return false;
+        if (protein === "min30" && nutrition.protein < 30) return false;
+        if (protein === "min40" && nutrition.protein < 40) return false;
       }
       if (match.active && !match.matchesAll) return false;
       if (!search) return true;

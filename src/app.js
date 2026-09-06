@@ -1876,6 +1876,14 @@ function App() {
     _useStateRecipeDifficulty2 = _slicedToArray(_useStateRecipeDifficulty, 2),
     recipeDifficulty = _useStateRecipeDifficulty2[0],
     setRecipeDifficulty = _useStateRecipeDifficulty2[1];
+  var _useStateRecipeCalories = useState("all"),
+    _useStateRecipeCalories2 = _slicedToArray(_useStateRecipeCalories, 2),
+    recipeCalories = _useStateRecipeCalories2[0],
+    setRecipeCalories = _useStateRecipeCalories2[1];
+  var _useStateRecipeProtein = useState("all"),
+    _useStateRecipeProtein2 = _slicedToArray(_useStateRecipeProtein, 2),
+    recipeProtein = _useStateRecipeProtein2[0],
+    setRecipeProtein = _useStateRecipeProtein2[1];
   var _useStateRecipePantry = useState(""),
     _useStateRecipePantry2 = _slicedToArray(_useStateRecipePantry, 2),
     recipePantry = _useStateRecipePantry2[0],
@@ -3522,8 +3530,11 @@ function App() {
     search: recipeSearch,
     pantry: recipePantry,
     time: recipeTime,
-    difficulty: recipeDifficulty
+    difficulty: recipeDifficulty,
+    calories: recipeCalories,
+    protein: recipeProtein
   });
+  var hasRecipeDetailFilters = recipeTime !== "all" || recipeDifficulty !== "all" || recipeCalories !== "all" || recipeProtein !== "all";
   var normalizedPantryEntries = normalizePantryEntries(pantryEntries);
   var sortedPantryEntries = sortPantryEntries(normalizedPantryEntries, TODAY);
   var normalizedMealTemplates = normalizeMealTemplates(mealTemplates);
@@ -4862,10 +4873,87 @@ function App() {
       key: value,
       value: value
     }, label);
-  })))), visibleRecipeMatches.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-calories-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Kalorie / porcję"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-calories-filter",
+    value: recipeCalories,
+    onChange: function onChange(e) {
+      return setRecipeCalories(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, [["all", "Dowolne"], ["max300", "Do 300 kcal"], ["max500", "Do 500 kcal"], ["max700", "Do 700 kcal"], ["over700", "Ponad 700 kcal"]].map(function (_refRecipeCalories) {
+    var _refRecipeCalories2 = _slicedToArray(_refRecipeCalories, 2),
+      value = _refRecipeCalories2[0],
+      label = _refRecipeCalories2[1];
+    return /*#__PURE__*/React.createElement("option", {
+      key: value,
+      value: value
+    }, label);
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    htmlFor: "recipe-protein-filter",
+    style: {
+      display: "block",
+      color: T.text3,
+      fontSize: 9,
+      fontWeight: 700,
+      marginBottom: 4,
+      textTransform: "uppercase"
+    }
+  }, "Białko / porcję"), /*#__PURE__*/React.createElement("select", {
+    id: "recipe-protein-filter",
+    value: recipeProtein,
+    onChange: function onChange(e) {
+      return setRecipeProtein(e.target.value);
+    },
+    style: _objectSpread(_objectSpread({}, inp), {}, {
+      margin: 0,
+      padding: "8px 9px",
+      fontSize: 11
+    })
+  }, [["all", "Dowolne"], ["min20", "Min. 20 g"], ["min30", "Min. 30 g"], ["min40", "Min. 40 g"]].map(function (_refRecipeProtein) {
+    var _refRecipeProtein2 = _slicedToArray(_refRecipeProtein, 2),
+      value = _refRecipeProtein2[0],
+      label = _refRecipeProtein2[1];
+    return /*#__PURE__*/React.createElement("option", {
+      key: value,
+      value: value
+    }, label);
+  })))), hasRecipeDetailFilters && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      setRecipeTime("all");
+      setRecipeDifficulty("all");
+      setRecipeCalories("all");
+      setRecipeProtein("all");
+    },
+    style: {
+      display: "block",
+      margin: "-2px 0 10px auto",
+      border: "none",
+      background: "transparent",
+      color: T.acc,
+      fontSize: 11,
+      fontWeight: 700,
+      cursor: "pointer",
+      padding: "4px 2px"
+    }
+  }, "Wyczyść filtry"), visibleRecipeMatches.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
     icon: "◇",
     title: "Nie znaleźliśmy takiego przepisu",
-    copy: useFirst ? "Żaden przepis nie wykorzystuje obecnych produktów ze spiżarni. Dodaj produkt albo wyłącz „Zużyj najpierw”." : pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : recipeTime !== "all" || recipeDifficulty !== "all" ? "Zmień czas lub poziom trudności. Starsze własne przepisy bez tych danych pojawią się po wyłączeniu filtrów." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
+    copy: useFirst ? "Żaden przepis nie wykorzystuje obecnych produktów ze spiżarni. Dodaj produkt albo wyłącz „Zużyj najpierw”." : pantryTerms.length > 0 ? "Usuń jeden ze składników albo sprawdź jego nazwę. Wszystkie wpisane składniki traktujemy jako wymagane." : hasRecipeDetailFilters ? "Zmień aktywne filtry. Starsze własne przepisy bez pełnych danych pojawią się po ich wyłączeniu." : "Zmień kategorię albo skróć wyszukiwaną frazę.",
     T: T
   }), visibleRecipeMatches.map(function (_refRecipeMatch) {
     var r = _refRecipeMatch.recipe,
