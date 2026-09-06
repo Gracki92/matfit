@@ -154,7 +154,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [x] Dodać kopiowanie pojedynczego posiłku do wybranego dnia i pory dnia.
 - [x] Chronić kopiowanie posiłku i całego dnia przed przypadkowym dodaniem identycznych wpisów.
 - [x] Uwzględnić ulubione produkty, historię ostatnich pozycji i zapamiętane gramatury w Backup/Restore PRO.
-- [ ] Dodać nazwane szablony całych posiłków po przetestowaniu szybkiego kopiowania na prawdziwych danych.
+- [x] Dodać nazwane szablony całych posiłków z bieżącymi gramaturami, szybkim wyborem dnia i pory oraz ochroną przed duplikatami.
 
 ## Strategia produktu — backlog zarządu
 
@@ -187,7 +187,7 @@ Wersja v2 działa w DEV i wymaga testu na prawdziwej historii pomiarów przed pr
 - [ ] Przed zapisaniem posiłku użytkownik zatwierdza lub poprawia składniki i porcje; AI nie przedstawia wyniku jako dokładnego pomiaru.
 - [ ] Umożliwić zdjęcie z góry i z boku albo użycie znanego rozmiaru talerza jako punktu odniesienia.
 - [x] Dodać ostatnie produkty, ulubione, zapamiętaną gramaturę oraz kopiowanie pojedynczego posiłku i całego dnia.
-- [ ] Dodać nazwane szablony posiłków po realnych testach Quick Add v1.
+- [x] Dodać nazwane szablony posiłków z lokalnym zapisem i obsługą w Backup/Restore PRO.
 - [ ] Rozważyć dodawanie głosowe, np. „200 g skyru i banan”, zawsze z ekranem potwierdzenia.
 - [ ] Obsługiwać AI wyłącznie przez bezpieczny backend; żaden klucz API nie może znaleźć się w aplikacji klienckiej.
 

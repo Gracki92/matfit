@@ -90,7 +90,7 @@ for (const exportedFunction of ["normalizeBackupData", "parseBackupJson", "merge
   if (!backup.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny kopii: ${exportedFunction}`);
 }
 if (app.includes("function plannedMealCopyKey") || app.includes("function clonePlannedMeal")) throw new Error("Logika planera wróciła do pliku aplikacji");
-for (const exportedFunction of ["plannedMealCopyKey", "clonePlannedMeal"]) {
+for (const exportedFunction of ["plannedMealCopyKey", "clonePlannedMeal", "createMealTemplate", "normalizeMealTemplates", "upsertMealTemplate", "removeMealTemplate", "instantiateMealTemplate"]) {
   if (!planner.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny planera: ${exportedFunction}`);
 }
 for (const removedHelper of ["normalizeBarcode", "isValidGtin", "mergeProductCatalog", "onlyUserProducts"]) {
@@ -110,7 +110,7 @@ for (const exportedFunction of ["pantryExpiryStatus", "normalizePantryEntries", 
   if (!pantry.includes(`export function ${exportedFunction}`)) throw new Error(`Brak eksportu domeny spiżarni: ${exportedFunction}`);
 }
 
-for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_products", "fb10_product_grams", "fb10_shopping_manual", "fb10_pantry"]) {
+for (const key of ["fb10_planer", "fb10_product_favorites", "fb10_recent_products", "fb10_product_grams", "fb10_shopping_manual", "fb10_pantry", "fb10_meal_templates"]) {
   if (!app.includes(key)) throw new Error(`Brak stabilnego klucza danych: ${key}`);
 }
 

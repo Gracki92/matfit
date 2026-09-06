@@ -2,7 +2,7 @@ export const MAX_BACKUP_FILE_BYTES = 15 * 1024 * 1024;
 
 const APP_NAME = "MatFit Pro";
 const SCHEMA_VERSION = 1;
-const DATA_VERSION = 26;
+const DATA_VERSION = 27;
 const MAX_NESTING_DEPTH = 20;
 const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
@@ -24,6 +24,7 @@ const SECTION_ALIASES = Object.freeze({
   shoppingChecked: ["shoppingChecked", "zakupy"],
   shoppingManual: ["shoppingManual", "shopping_manual"],
   pantry: ["pantry"],
+  mealTemplates: ["mealTemplates", "meal_templates"],
 });
 
 const SECTION_LABELS = Object.freeze({
@@ -44,6 +45,7 @@ const SECTION_LABELS = Object.freeze({
   shoppingChecked: "lista zakupów",
   shoppingManual: "ręcznie dodane zakupy",
   pantry: "spiżarnia",
+  mealTemplates: "szablony posiłków",
 });
 
 const OBJECT_SECTIONS = [
@@ -65,6 +67,7 @@ const ARRAY_SECTIONS = [
   "productFavorites",
   "recentProducts",
   "pantry",
+  "mealTemplates",
 ];
 
 function isPlainBackupObject(value) {
@@ -170,6 +173,7 @@ export function normalizeBackupData(raw, options = {}) {
     shoppingChecked: readNormalizedSection(source, "shoppingChecked", {}),
     shoppingManual: readNormalizedSection(source, "shoppingManual", {}),
     pantry: readNormalizedSection(source, "pantry", []),
+    mealTemplates: readNormalizedSection(source, "mealTemplates", []),
   };
   const missing = Object.keys(present)
     .filter((key) => !present[key])
@@ -188,6 +192,7 @@ export function normalizeBackupData(raw, options = {}) {
       waterDays: Object.keys(normalized.waterLog).length,
       recipes: normalized.recipes.length,
       products: normalized.products.length,
+      mealTemplates: normalized.mealTemplates.length,
     },
   };
 }

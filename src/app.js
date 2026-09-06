@@ -1,4 +1,12 @@
-import { clonePlannedMeal, plannedMealCopyKey } from "./domain/planner.js";
+import {
+  clonePlannedMeal,
+  createMealTemplate,
+  instantiateMealTemplate,
+  normalizeMealTemplates,
+  plannedMealCopyKey,
+  removeMealTemplate,
+  upsertMealTemplate,
+} from "./domain/planner.js";
 import {
   getWeek,
   getWeekNumber,
@@ -1706,6 +1714,17 @@ function App() {
     _useLS8 = _slicedToArray(_useLS7, 2),
     planer = _useLS8[0],
     setPlaner = _useLS8[1];
+  var _useLSMealTemplates = useLS("fb10_meal_templates", []),
+    _useLSMealTemplates2 = _slicedToArray(_useLSMealTemplates, 2),
+    mealTemplates = _useLSMealTemplates2[0],
+    setMealTemplates = _useLSMealTemplates2[1];
+  var _useStateMealTemplateDraft = useState({
+      name: "",
+      meals: []
+    }),
+    _useStateMealTemplateDraft2 = _slicedToArray(_useStateMealTemplateDraft, 2),
+    mealTemplateDraft = _useStateMealTemplateDraft2[0],
+    setMealTemplateDraft = _useStateMealTemplateDraft2[1];
   var _useLS9 = useLS("fb10_profile", {
       weight: "",
       height: "",
@@ -2725,6 +2744,57 @@ function App() {
     toast_(skipped ? "Skopiowano " + toCopy.length + ", pominięto " + skipped + " duplikatów" : "Skopiowano cały dzień!");
     setModal(null);
   }
+  function openSaveMealTemplate(meals, label) {
+    setMealTemplateDraft({
+      name: label || "Mój posiłek",
+      meals: (meals || []).map(function (meal) {
+        return clonePlannedMeal(meal);
+      })
+    });
+    setModal("saveMealTemplate");
+  }
+  function saveMealTemplate() {
+    var template = createMealTemplate({
+      id: "meal_template_" + Date.now(),
+      name: mealTemplateDraft.name,
+      meals: mealTemplateDraft.meals,
+      createdAt: TODAY
+    });
+    if (!template) {
+      toast_("Podaj nazwę i zapisz niepusty posiłek");
+      return;
+    }
+    setMealTemplates(function (previous) {
+      return upsertMealTemplate(previous, template);
+    });
+    setModal(null);
+    toast_("Zapisano szablon: " + template.name);
+  }
+  function addMealTemplate(template) {
+    var candidates = instantiateMealTemplate(template, addMealTime);
+    var target = planer[addDay] || [];
+    var existing = new Set(target.map(plannedMealCopyKey));
+    var additions = candidates.filter(function (meal) {
+      return !existing.has(plannedMealCopyKey(meal));
+    });
+    if (!additions.length) {
+      toast_("Ten posiłek już jest w wybranym dniu");
+      return;
+    }
+    setPlaner(function (previous) {
+      return _objectSpread(_objectSpread({}, previous), {}, _defineProperty({}, addDay, [].concat(_toConsumableArray(previous[addDay] || []), _toConsumableArray(additions))));
+    });
+    setModal(null);
+    var skipped = candidates.length - additions.length;
+    toast_(skipped ? "Dodano szablon, pominięto " + skipped + " duplikatów" : "Dodano szablon do planera!");
+  }
+  function deleteMealTemplate(template) {
+    if (!window.confirm("Usunąć szablon „" + template.name + "”?")) return;
+    setMealTemplates(function (previous) {
+      return removeMealTemplate(previous, template.id);
+    });
+    toast_("Usunięto szablon");
+  }
   var _useState83 = useState(false),
     _useState84 = _slicedToArray(_useState83, 2),
     addRecipeToPlaner = _useState84[0],
@@ -3209,7 +3279,8 @@ function App() {
       waterSettings: waterSettings,
       shoppingChecked: zChecked,
       shoppingManual: normalizeShoppingQuantities(shoppingManual),
-      pantry: normalizePantryEntries(pantryEntries)
+      pantry: normalizePantryEntries(pantryEntries),
+      mealTemplates: normalizeMealTemplates(mealTemplates)
     });
   }
   function exportData() {
@@ -3312,6 +3383,7 @@ function App() {
       setZChecked(incoming.shoppingChecked);
       setShoppingManual(incoming.shoppingManual);
       setPantryEntries(incoming.pantry);
+      setMealTemplates(incoming.mealTemplates);
     } else {
       if (present.theme) setTn(incoming.theme);
       if (present.profile) setProfile(function (prev) {
@@ -3363,6 +3435,11 @@ function App() {
         return normalizePantryEntries(incoming.pantry).reduce(function (next, entry) {
           return upsertPantryEntry(next, entry);
         }, normalizePantryEntries(prev));
+      });
+      if (present.mealTemplates) setMealTemplates(function (prev) {
+        return normalizeMealTemplates(incoming.mealTemplates).reduce(function (next, template) {
+          return upsertMealTemplate(next, template);
+        }, normalizeMealTemplates(prev));
       });
     }
     setBackupResult({
@@ -3416,6 +3493,7 @@ function App() {
   });
   var normalizedPantryEntries = normalizePantryEntries(pantryEntries);
   var sortedPantryEntries = sortPantryEntries(normalizedPantryEntries, TODAY);
+  var normalizedMealTemplates = normalizeMealTemplates(mealTemplates);
   var visibleRecipeMatches = useFirst ? rankRecipeMatchesByExpiry(filteredRecipeMatches, sortedPantryEntries, products, TODAY) : filteredRecipeMatches;
   var pantryUrgentCount = sortedPantryEntries.filter(function (entry) {
     var kind = pantryExpiryStatus(entry.expiresAt, TODAY).kind;
@@ -4197,9 +4275,28 @@ function App() {
           fontSize: 11,
           fontWeight: 600,
           color: T.text2,
-          background: T.surf2
+          background: T.surf2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8
         }
-      }, "B " + mealProtein + "g • W " + mealCarbs + "g • T " + mealFat + "g"), isMealCollapsed ? null : grouped[mt.key].map(function (m) {
+      }, /*#__PURE__*/React.createElement("span", null, "B " + mealProtein + "g • W " + mealCarbs + "g • T " + mealFat + "g"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        "aria-label": "Zapisz " + mt.label + " jako szablon",
+        onClick: function onClick() {
+          return openSaveMealTemplate(grouped[mt.key], mt.label);
+        },
+        style: {
+          border: "none",
+          background: "transparent",
+          color: T.acc,
+          cursor: "pointer",
+          fontSize: 10,
+          fontWeight: 800,
+          padding: "4px 0"
+        }
+      }, "☆ Zapisz szablon")), isMealCollapsed ? null : grouped[mt.key].map(function (m) {
         var fullMealNutrition = completeMealNutrition(m, products);
         return /*#__PURE__*/React.createElement("div", {
           key: m.id,
@@ -4326,7 +4423,23 @@ function App() {
         color: safeTn === "light" ? "#0f172a" : T.text,
         fontWeight: 700
       })
-    }, "+ Przepis")));
+    }, "+ Przepis"), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setAddDay(key);
+        setAddMealTime("sniadanie");
+        setModal("mealTemplates");
+      },
+      style: _objectSpread(_objectSpread({}, btnB), {}, {
+        flex: 1,
+        fontSize: 12,
+        padding: "9px",
+        background: safeTn === "light" ? "#ffffff" : T.surf2,
+        borderColor: safeTn === "light" ? "#dbeafe" : T.border,
+        color: safeTn === "light" ? "#0f172a" : T.text,
+        fontWeight: 700
+      })
+    }, "+ Szablon")));
   })), page === "przepisy" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PageHeader, {
     eyebrow: "Twoja kuchnia",
     title: "Przepisy",
@@ -6347,7 +6460,7 @@ function App() {
       color: T.text3,
       lineHeight: 1.5
     }
-  }, "Kopia obejmuje profil, planer, pomiary, wodę, przepisy, produkty, spiżarnię, ulubione, typy dni, listę zakupów wraz z ręcznie dodanymi brakami i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
+  }, "Kopia obejmuje profil, planer, szablony posiłków, pomiary, wodę, przepisy, produkty, spiżarnię, ulubione, typy dni, listę zakupów wraz z ręcznie dodanymi brakami i motyw. Przed importem wybierzesz scalanie albo pełne zastąpienie.")))), page === "woda" && function () {
     var selectedWaterDay = waterLog[waterDate] || {};
     var waterEntries = Array.isArray(selectedWaterDay.entries) ? selectedWaterDay.entries : [];
     var measurementDates = Object.keys(bodyLog || {}).filter(function (date) {
@@ -7614,7 +7727,150 @@ function App() {
         textAlign: "center"
       }
     }, label));
-  })), modal === "addProd" && /*#__PURE__*/React.createElement(Modal, {
+  })), modal === "saveMealTemplate" && /*#__PURE__*/React.createElement(Modal, {
+    title: "Zapisz szablon posiłku",
+    onClose: function onClose() {
+      return setModal(null);
+    },
+    T: T
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    mt: 0,
+    T: T
+  }, "Nazwa szablonu"), /*#__PURE__*/React.createElement("input", {
+    value: mealTemplateDraft.name,
+    maxLength: 80,
+    autoFocus: true,
+    onChange: function onChange(e) {
+      return setMealTemplateDraft(_objectSpread(_objectSpread({}, mealTemplateDraft), {}, {
+        name: e.target.value
+      }));
+    },
+    placeholder: "np. Śniadanie przed treningiem",
+    style: inp
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: T.surf2,
+      border: "1px solid " + T.border,
+      borderRadius: 10,
+      color: T.text2,
+      fontSize: 11,
+      lineHeight: 1.5,
+      padding: "9px 10px"
+    }
+  }, "Szablon zapisze ", mealTemplateDraft.meals.length, mealTemplateDraft.meals.length === 1 ? " pozycję" : mealTemplateDraft.meals.length < 5 ? " pozycje" : " pozycji", " z aktualnymi gramaturami."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 14
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setModal(null);
+    },
+    style: _objectSpread(_objectSpread({}, btnB), {}, {
+      flex: 1
+    })
+  }, "Anuluj"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: saveMealTemplate,
+    style: _objectSpread(_objectSpread({}, btnA), {}, {
+      flex: 2
+    })
+  }, "Zapisz szablon"))), modal === "mealTemplates" && /*#__PURE__*/React.createElement(Modal, {
+    title: "Dodaj z szablonu",
+    onClose: function onClose() {
+      return setModal(null);
+    },
+    T: T
+  }, /*#__PURE__*/React.createElement(Lbl, {
+    mt: 0,
+    T: T
+  }, "Dzień"), /*#__PURE__*/React.createElement(DS, {
+    value: addDay,
+    onChange: setAddDay,
+    week: week,
+    T: T,
+    inp: inp
+  }), /*#__PURE__*/React.createElement(Lbl, {
+    T: T
+  }, "Pora dnia"), /*#__PURE__*/React.createElement(MealTimePicker, {
+    value: addMealTime,
+    onChange: setAddMealTime
+  }), normalizedMealTemplates.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: T.surf2,
+      border: "1px dashed " + T.border,
+      borderRadius: 10,
+      color: T.text3,
+      fontSize: 11,
+      lineHeight: 1.5,
+      padding: 14,
+      textAlign: "center"
+    }
+  }, "Nie masz jeszcze szablonów. W planerze przy zapisanym posiłku wybierz „Zapisz szablon”.") : /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gap: 7,
+      marginTop: 8
+    }
+  }, normalizedMealTemplates.map(function (template) {
+    var templateKcal = Math.round(template.meals.reduce(function (sum, meal) {
+      return sum + (parseFloat(meal.kcal) || 0);
+    }, 0));
+    return /*#__PURE__*/React.createElement("div", {
+      key: template.id,
+      style: {
+        display: "flex",
+        alignItems: "stretch",
+        background: T.surf2,
+        border: "1px solid " + T.border,
+        borderRadius: 10,
+        overflow: "hidden"
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        return addMealTemplate(template);
+      },
+      style: {
+        flex: 1,
+        minWidth: 0,
+        border: "none",
+        background: "transparent",
+        color: T.text,
+        cursor: "pointer",
+        padding: "10px 11px",
+        textAlign: "left"
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        fontWeight: 800
+      }
+    }, template.name), /*#__PURE__*/React.createElement("div", {
+      style: {
+        color: T.text3,
+        fontSize: 10,
+        marginTop: 3
+      }
+    }, template.meals.length, template.meals.length === 1 ? " pozycja" : template.meals.length < 5 ? " pozycje" : " pozycji", " · ", templateKcal, " kcal")), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      "aria-label": "Usuń szablon " + template.name,
+      onClick: function onClick() {
+        return deleteMealTemplate(template);
+      },
+      style: {
+        border: "none",
+        borderLeft: "1px solid " + T.border,
+        background: "transparent",
+        color: T.text3,
+        cursor: "pointer",
+        fontSize: 17,
+        padding: "0 12px"
+      }
+    }, "×"));
+  }))), modal === "addProd" && /*#__PURE__*/React.createElement(Modal, {
     title: "Dodaj produkt",
     onClose: function onClose() {
       return setModal(null);
@@ -8796,7 +9052,7 @@ function App() {
       gap: 5,
       marginBottom: 12
     }
-  }, [[pendingBackup.summary.planDays, "dni"], [pendingBackup.summary.measurements, "pomiary"], [pendingBackup.summary.waterDays, "woda"], [pendingBackup.summary.recipes, "przepisy"], [pendingBackup.summary.products, "produkty"]].map(function (_refBackupSummary) {
+  }, [[pendingBackup.summary.planDays, "dni"], [pendingBackup.summary.measurements, "pomiary"], [pendingBackup.summary.waterDays, "woda"], [pendingBackup.summary.recipes, "przepisy"], [pendingBackup.summary.products, "produkty"], [pendingBackup.summary.mealTemplates, "szablony"]].map(function (_refBackupSummary) {
     var _refBackupSummary2 = _slicedToArray(_refBackupSummary, 2),
       value = _refBackupSummary2[0],
       label = _refBackupSummary2[1];
@@ -8905,7 +9161,7 @@ function App() {
       lineHeight: 1.65,
       marginBottom: 12
     }
-  }, "Planer: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.planDays), " dni · Pomiary: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.measurements), " · Woda: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.waterDays), " dni", /*#__PURE__*/React.createElement("br", null), "Własne przepisy: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.recipes), " · Produkty: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.products)), backupResult.safetyCreated && /*#__PURE__*/React.createElement("div", {
+  }, "Planer: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.planDays), " dni · Pomiary: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.measurements), " · Woda: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.waterDays), " dni", /*#__PURE__*/React.createElement("br", null), "Własne przepisy: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.recipes), " · Produkty: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.products), " · Szablony: ", /*#__PURE__*/React.createElement("strong", null, backupResult.summary.mealTemplates)), backupResult.safetyCreated && /*#__PURE__*/React.createElement("div", {
     style: {
       background: "rgba(74,158,255,.1)",
       borderRadius: 9,
