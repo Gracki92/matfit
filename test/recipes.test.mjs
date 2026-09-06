@@ -158,6 +158,20 @@ test("filtr sprzętu obsługuje przepisy z wieloma wymaganiami", () => {
   );
 });
 
+test("filtr wegetariański nie zgaduje statusu brakujących danych", () => {
+  const recipesWithDiet = [
+    { id: "verified", name: "MatFit", vegetarian: true, vegetarianVerification: "matfit", ingredients: [] },
+    { id: "declared", name: "Własny", vegetarian: true, vegetarianVerification: "user", ingredients: [] },
+    { id: "meat", name: "Mięsny", vegetarian: false, ingredients: [] },
+    { id: "unknown", name: "Bez danych", ingredients: [] },
+  ];
+  assert.deepEqual(
+    filterRecipesByPantry(recipesWithDiet, [], { vegetarian: "yes" })
+      .map((match) => match.recipe.id),
+    ["verified", "declared"],
+  );
+});
+
 test("zamienniki pochodzą z tej samej kategorii i pokazują oryginał jako pierwszy", () => {
   const catalog = [
     { id: "kefir", name: "Kefir", category: "dairy", custom: false },
